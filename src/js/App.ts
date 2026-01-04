@@ -2,7 +2,6 @@ import About from "./About";
 import Settings from "./Settings";
 import Storage from "./Storage";
 import Window from "./Window";
-import Tooltip from "./Tooltip";
 import Editor from "./Editor";
 import { get_config } from "./config";
 import { dom, toggle_fullscreen } from "./helper";
@@ -32,9 +31,6 @@ export class App {
   private initializeConfig(): void {
     this.storage = new Storage(this.config);
     this.config = this.storage.get_config();
-
-    // Initialize custom tooltip system
-    new Tooltip();
   }
 
   private initializeWindows(): void {
