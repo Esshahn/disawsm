@@ -158,13 +158,9 @@ export function status(text: string, state = "normal"): void {
 
 export function tipoftheday(): void {
   const tips = [
-    "Hold shift while clicking to delete pixels.",
     "You can change and define your own colors in the settings.",
-    "Press 'z' for undo and 'shift + z' for redo.",
-    "You can position all windows how you like it best. Spritemate remembers that for your next visit!",
-    "Exporting in SpritePad 1.8 format is ideal for using your sprites in a C64 program.",
-    "Sort your sprites by dragging them around with your mouse!",
-    "Right click on your sprite in the preview window to save it as PNG (works in Chrome at least).",
+    "You can position all windows how you like it best. DisAWSM remembers that for your next visit!",
+    "Press 'Ctrl+F' to toggle fullscreen mode.",
   ];
 
   const chosen_tooltip =

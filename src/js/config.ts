@@ -2,24 +2,7 @@ export function get_config() {
   const config = {
     version: "26.01.04",
     default_filename: "mysprites",
-    sprite_x: 24,
-    sprite_y: 21,
-    sprite_defaults: {
-      background_color: 11,      // Light gray (pen 0)
-      multicolor_1: 8,            // Orange (pen 2)
-      multicolor_2: 6,            // Blue (pen 3)
-      individual_color: 1,        // White (pen 1)
-      pen: 1,                     // Default drawing pen
-      animation_fps: 10,
-      animation_mode: "restart",
-    },
-    zoom_limits: {
-      editor: { min: 10, max: 26 },
-      preview: { min: 4, max: 16 },
-      list: { min: 4, max: 16 },
-      animation: { min: 4, max: 16 },
-    },
-    color_names:["black", "white", "red", "cyan", "purple","green","blue","yellow","orange","brown","pink","dark grey","grey","light green","light blue","light grey"],
+    selected_palette: "colodore",
     palettes: {
       colodore: {
         name: "Colodore",
@@ -106,72 +89,11 @@ export function get_config() {
         ],
       },
     },
-    selected_palette: "pepto",
-    window_tools: {
-      top: 50,
-      left: 20,
-      autoOpen: true,
-      closeable: false,
-    },
     window_editor: {
       top: 50,
       left: 210,
-      zoom: 18,
-      grid: true,
       autoOpen: true,
       closeable: false,
-    },
-    window_preview: {
-      top: 50,
-      left: 700,
-      zoom: 6,
-      autoOpen: true,
-      closeable: false,
-      isOpen: true,
-    },
-    window_list: {
-      top: 280,
-      left: 700,
-      width: 440,
-      height: 200,
-      zoom: 4,
-      autoOpen: true,
-      closeable: false,
-    },
-    window_palette: {
-      top: 50,
-      left: 110,
-      zoom: 1,
-      autoOpen: true,
-      closeable: false,
-    },
-    window_snapshot: {
-      top: 400,
-      left: 110,
-      width: 440,
-      height: 200,
-      zoom: 1,
-      autoOpen: false,
-      closeable: true,
-      isOpen: false,
-    },
-    window_animation: {
-      top: 280,
-      left: 210,
-      width: 440,
-      zoom: 6,
-      autoOpen: false,
-      closeable: true,
-      isOpen: false,
-    },
-    window_playfield: {
-      top: 100,
-      left: 800,
-      zoom: 1,
-      grid: false,
-      autoOpen: false,
-      closeable: true,
-      isOpen: false,
     },
   };
 

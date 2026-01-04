@@ -57,7 +57,7 @@ export default class Storage {
     if (typeof Storage !== "undefined") {
       try {
         // Read stored config (if it exists)
-        const storedConfigString = localStorage.getItem("spritemate_config");
+        const storedConfigString = localStorage.getItem("disawsm_config");
 
         if (!storedConfigString) {
           // No stored config exists, save the default
@@ -120,7 +120,7 @@ export default class Storage {
   write(data) {
     if (typeof Storage !== "undefined") {
       try {
-        localStorage.setItem("spritemate_config", JSON.stringify(data));
+        localStorage.setItem("disawsm_config", JSON.stringify(data));
       } catch (error) {
         console.error("Failed to save settings:", error);
         status("Unable to save settings. Storage may be full or disabled.");
@@ -133,7 +133,7 @@ export default class Storage {
   read() {
     if (typeof Storage !== "undefined") {
       try {
-        return JSON.parse(localStorage.getItem("spritemate_config") || "{}");
+        return JSON.parse(localStorage.getItem("disawsm_config") || "{}");
       } catch (error) {
         console.error("Failed to read settings:", error);
         status("Unable to load settings. Using defaults.");
@@ -165,7 +165,7 @@ export default class Storage {
           timestamp: new Date().toISOString(),
           data: spriteData
         };
-        localStorage.setItem("spritemate_autosave", JSON.stringify(dataToSave));
+        localStorage.setItem("disawsm_autosave", JSON.stringify(dataToSave));
       } catch (error) {
         console.error("Failed to auto-save sprite data:", error);
         // Don't show status message for auto-save failures to avoid spamming user
@@ -180,7 +180,7 @@ export default class Storage {
   read_sprites() {
     if (typeof Storage !== "undefined") {
       try {
-        const saved = localStorage.getItem("spritemate_autosave");
+        const saved = localStorage.getItem("disawsm_autosave");
         if (saved) {
           const parsed = JSON.parse(saved);
           return parsed.data; // Return just the sprite data, not the timestamp wrapper
@@ -200,7 +200,7 @@ export default class Storage {
   clear_sprites() {
     if (typeof Storage !== "undefined") {
       try {
-        localStorage.removeItem("spritemate_autosave");
+        localStorage.removeItem("disawsm_autosave");
       } catch (error) {
         console.error("Failed to clear auto-saved sprite data:", error);
       }
@@ -214,7 +214,7 @@ export default class Storage {
   get_autosave_timestamp() {
     if (typeof Storage !== "undefined") {
       try {
-        const saved = localStorage.getItem("spritemate_autosave");
+        const saved = localStorage.getItem("disawsm_autosave");
         if (saved) {
           const parsed = JSON.parse(saved);
           return parsed.timestamp;

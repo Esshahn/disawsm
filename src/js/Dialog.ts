@@ -63,7 +63,7 @@ export class Dialog {
     // Create dialog element
     this.dialog = document.createElement("dialog");
     this.dialog.id = this.config.id;
-    this.dialog.className = "spritemate-dialog";
+    this.dialog.className = "disawsm-dialog";
 
     // Create wrapper for styling and positioning
     this.wrapper = document.createElement("div");

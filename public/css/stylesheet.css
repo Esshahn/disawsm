@@ -1,10 +1,10 @@
 /**
  * ============================================================================
- * SPRITEMATE - Complete Stylesheet
+ * DISAWSM - Complete Stylesheet
  * ============================================================================
  *
  * Merged and organized from dialog.css and stylesheet.css
- * All styles for the Spritemate C64 sprite editor
+ * All styles for the DisAWSM 6502 disassembler
  */
 
 
@@ -268,7 +268,7 @@ img.center {
    ============================================================================ */
 
 /* Dialog base element */
-dialog.spritemate-dialog {
+dialog.disawsm-dialog {
   position: fixed;
   top: 0;
   left: 0;
@@ -283,22 +283,22 @@ dialog.spritemate-dialog {
   margin: 0;
 }
 
-dialog.spritemate-dialog::backdrop {
+dialog.disawsm-dialog::backdrop {
   background: rgba(0, 0, 0, 0.5);
 }
 
 /* Modal z-index */
-dialog.spritemate-dialog:modal {
+dialog.disawsm-dialog:modal {
   z-index: 1000;
 }
 
 /* Non-modal dialogs - ensure they're visible */
-dialog.spritemate-dialog[open]:not(:modal) {
+dialog.disawsm-dialog[open]:not(:modal) {
   display: block;
   pointer-events: none;
 }
 
-dialog.spritemate-dialog[open]:not(:modal) .dialog-wrapper {
+dialog.disawsm-dialog[open]:not(:modal) .dialog-wrapper {
   pointer-events: auto;
 }
 
@@ -391,7 +391,7 @@ dialog.spritemate-dialog[open]:not(:modal) .dialog-wrapper {
 }
 
 /* Dialog fade-in animation */
-dialog.spritemate-dialog[open] {
+dialog.disawsm-dialog[open] {
   animation: dialog-fade-in 0.2s ease-out;
 }
 

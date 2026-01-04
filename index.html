@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>spritemate - the Commodore 64 sprite editor by awsm</title>
+    <title>DisASWM - The 6502 Disassembler</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="Description" content="spritemate is a free online editor for Commodore 64 sprites." />
+    <meta name="Description" content="DisASWM is a free online disassembler for 6502 code." />
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet" />
@@ -15,7 +15,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png" />
     <link rel="manifest" href="favicon/manifest.json" />
     <link rel="mask-icon" href="favicon/safari-pinned-tab.svg" color="#5bbad5" />
-    <link rel="stylesheet" href="css/spritemate.css">
+    <link rel="stylesheet" href="css/stylesheet.css">
 
 
     <!-- Main application script -->
@@ -25,12 +25,9 @@
   <body>
     <div id="container">
       <div id="menubar">
-        <div id="menubar-filename" class="dropbtn">
-          File: <input type="text" id="menubar-filename-input" value="mysprites" maxlength="50">
-        </div>
         <ul>
           <li class="dropdown">
-            <a href="javascript:void(0)" class="dropbtn">Spritemate</a>
+            <a href="javascript:void(0)" class="dropbtn">DisAWSM</a>
             <div class="dropdown-content">
               <a id="menubar-info">About</a>
               <a id="menubar-settings">Settings</a>
@@ -38,89 +35,8 @@
           </li>
 
           <li class="dropdown">
-            <a href="javascript:void(0)" class="dropbtn">File</a>
-            <div class="dropdown-content">
-              <a id="menubar-new">New Project<span class="hotkey"></span></a>
-              <a id="menubar-load">Open Project (*.spm, *.spd)<span class="hotkey"></span></a>
-              <hr>
-              <a id="menubar-import-png">Import Image or Spritesheet (*.png)</a>
-              <a id="menubar-import">Import VICE Snapshot (*.vsf)</a>
-              <hr>
-              <a id="menubar-save-spm">Save Project (*.spm)</a>
-              <a id="menubar-save-spd">Save SpritePad 2.0</a>
-              <a id="menubar-save-spd-old">Save SpritePad 1.8.1</a>
-              <hr>
-              <div class="submenu-item">
-                <a>Export...<span class="submenu-arrow">›</span></a>
-                <div class="submenu-content">
-                  <div class="submenu-item">
-                    <a>Assembly Code<span class="submenu-arrow">›</span></a>
-                    <div class="submenu-content">
-                      <a id="menubar-export-kick-hex">KICK ASS (hex notation)</a>
-                      <a id="menubar-export-kick-binary">KICK ASS (binary notation)</a>
-                      <a id="menubar-export-acme-hex">ACME (hex notation)</a>
-                      <a id="menubar-export-acme-binary">ACME (binary notation)</a>
-                    </div>
-                  </div>
-                  <a id="menubar-export-basic">BASIC Code</a>
-                  <div class="submenu-item">
-                    <a>Image<span class="submenu-arrow">›</span></a>
-                    <div class="submenu-content">
-                      <a id="menubar-export-png-current">Single Sprite (24x21, *.png)</a>
-                      <a id="menubar-export-png-all">All Sprites (*.zip)</a>
-                      <a id="menubar-export-spritesheet">Spritesheet (*.png)...</a>
-                    </div>
-                  </div>
-                  
-                </div>
-              </div>
-            </div>
-          </li>
-
-          <li class="dropdown">
-            <a href="javascript:void(0)" class="dropbtn">Edit</a>
-            <div class="dropdown-content">
-              <a id="menubar-undo">Undo<span class="hotkey">Ctrl+Z</span></a>
-              <a id="menubar-redo">Redo<span class="hotkey">Ctrl+Shift+Z</span></a>
-              <hr />
-              <a id="menubar-new-sprite">New Sprite<span class="hotkey">Ctrl+N</span></a>
-              <a id="menubar-copy">Copy Sprite<span class="hotkey">Ctrl+C</span></a>
-              <a id="menubar-paste">Paste Sprite<span class="hotkey">Ctrl+V</span></a>
-              <a id="menubar-duplicate">Duplicate Sprite<span class="hotkey">Ctrl+D</span></a>
-              <hr />
-              <a id="menubar-kill">Delete Sprite<span class="hotkey">Ctrl+Del</span></a>
-            </div>
-          </li>
-
-          <li class="dropdown">
-            <a href="javascript:void(0)" class="dropbtn">Sprite</a>
-            <div class="dropdown-content">
-              <a id="menubar-colormode">Toggle Single/Multi Color<span class="hotkey">c</span></a>
-              <hr />
-              <a id="menubar-shift-left">Shift Left<span class="hotkey"></span></a>
-              <a id="menubar-shift-right">Shift Right<span class="hotkey"></span></a>
-              <a id="menubar-shift-up">Shift Up<span class="hotkey"></span></a>
-              <a id="menubar-shift-down">Shift Down<span class="hotkey"></span></a>
-              <hr />
-              <a id="menubar-flip-horizontal">Flip Horizontal<span class="hotkey"></span></a>
-              <a id="menubar-flip-vertical">Flip Vertical<span class="hotkey"></span></a>
-              <hr />
-              <a id="menubar-stretch-x">Double Width<span class="hotkey"></span></a>
-              <a id="menubar-stretch-y">Double Height<span class="hotkey"></span></a>
-              <hr />
-              <a id="menubar-invert">Invert<span class="hotkey">Ctrl+I</span></a>
-              <hr />
-              <a id="menubar-overlay">Toggle Overlay<span class="hotkey"></span></a>
-            </div>
-          </li>
-
-          <li class="dropdown">
             <a href="javascript:void(0)" class="dropbtn">View</a>
             <div class="dropdown-content">
-              <a id="menubar-animation" class="has-checkmark"><span class="checkmark">✓</span>Animation Window</a>
-              <a id="menubar-playfield" class="has-checkmark"><span class="checkmark">✓</span>Playfield Window</a>
-              <a id="menubar-monitor" class="has-checkmark"><span class="checkmark">✓</span>VICE Snapshot Monitor</a>
-              <hr />
               <a id="menubar-fullscreen">Toggle Fullscreen<span class="hotkey">Ctrl+F</span></a>
             </div>
           </li>
@@ -130,8 +46,6 @@
             <div class="dropdown-content">
               <a href="https://github.com/Esshahn/spritemate" target="_blank">README on github<span class="hotkey"></span></a>
               <a href="http://www.awsm.de" target="_blank">www.awsm.de<span class="hotkey"></span></a>
-              <a href="https://csdb.dk/scener/?id=27239" target="_blank">awsm on csdb.dk<span class="hotkey"></span></a>
-              <a href="http://beta.spritemate.com" target="_blank">beta.spritemate.com<span class="hotkey"></span></a>
             </div>
           </li>
         </ul>
