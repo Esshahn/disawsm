@@ -2,6 +2,7 @@ import About from "./About";
 import Storage from "./Storage";
 import Window from "./Window";
 import Editor from "./Editor";
+import FileLoader, { LoadedPRG } from "./FileLoader";
 import { get_config } from "./config";
 import { dom, toggle_fullscreen } from "./helper";
 
@@ -19,12 +20,20 @@ export class App {
   settings: any;
   window_editor: any;
   editor: any;
+  fileLoader!: FileLoader;
+  loadedFile: LoadedPRG | null = null;
+  assemblyOutput: string | null = null;
   allow_keyboard_shortcuts!: boolean;
 
   constructor(public config) {
     this.initializeConfig();
+    this.initializeFileLoader();
     this.initializeWindows();
     this.initializeState();
+  }
+
+  private initializeFileLoader(): void {
+    this.fileLoader = new FileLoader();
   }
 
   private initializeConfig(): void {
@@ -59,6 +68,12 @@ export class App {
   private initializeState(): void {
     this.allow_keyboard_shortcuts = true;
     this.user_interaction();
+
+    // Set initial status
+    this.setStatus('Ready');
+
+    // Initialize menu states
+    this.updateMenuState();
 
     // Always open the editor window
     this.window_editor.open();
@@ -135,6 +150,99 @@ export class App {
       this.window_about.open();
     };
 
+    dom.sel("#menubar-load-prg").onclick = async () => {
+      await this.handleLoadPRG();
+    };
+
+    dom.sel("#menubar-save-asm").onclick = () => {
+      this.handleSaveAssembly();
+    };
+
+    dom.sel("#menubar-clear").onclick = () => {
+      this.handleClear();
+    };
+
+  }
+
+  /**
+   * Handle loading a PRG file
+   */
+  async handleLoadPRG(): Promise<void> {
+    const loadedPRG = await this.fileLoader.selectAndLoadPRG();
+
+    if (loadedPRG) {
+      this.loadedFile = loadedPRG;
+      this.assemblyOutput = null; // Clear previous assembly
+
+      // Update status bar
+      const statusMsg = `Loaded: ${loadedPRG.name} - Start: $${this.toHex(loadedPRG.startAddress, 4)} - Size: ${loadedPRG.bytes.length} bytes`;
+      this.setStatus(statusMsg);
+
+      // Update editor with loaded file
+      this.editor.displayLoadedFile(loadedPRG);
+
+      console.log('File loaded successfully:', loadedPRG);
+    }
+  }
+
+  /**
+   * Handle saving assembly output
+   */
+  handleSaveAssembly(): void {
+    if (!this.assemblyOutput) {
+      alert('No assembly output to save. Please disassemble a file first.');
+      return;
+    }
+
+    // TODO: Implement file saving in Phase 5
+    console.log('Save assembly - not yet implemented');
+  }
+
+  /**
+   * Handle clearing the current file
+   */
+  handleClear(): void {
+    if (this.loadedFile) {
+      const confirmed = confirm('Clear the current file and all data?');
+      if (confirmed) {
+        this.loadedFile = null;
+        this.assemblyOutput = null;
+        this.editor.clear();
+        this.setStatus('Ready');
+
+        // Disable save menu
+        this.updateMenuState();
+      }
+    }
+  }
+
+  /**
+   * Update menu item states based on app state
+   */
+  updateMenuState(): void {
+    const saveMenuItem = dom.sel("#menubar-save-asm");
+    if (this.assemblyOutput) {
+      saveMenuItem.classList.remove('disabled');
+    } else {
+      saveMenuItem.classList.add('disabled');
+    }
+  }
+
+  /**
+   * Set status bar message
+   */
+  setStatus(message: string): void {
+    const statusText = dom.sel("#statustext");
+    if (statusText) {
+      statusText.textContent = message;
+    }
+  }
+
+  /**
+   * Convert number to hex string
+   */
+  private toHex(num: number, digits: number): string {
+    return num.toString(16).padStart(digits, '0').toLowerCase();
   }
 }
 
