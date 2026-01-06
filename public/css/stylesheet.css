@@ -14,10 +14,10 @@
 
 :root {
   /* Brand Colors */
-  --red: #e6007e;
-  --blue: #00b9ee;
-  --blue-hover: #00a3d6;
-  --blue-active: #0090bd;
+  --secondary: #e6007e;
+  --primary: #00C698;
+  --primary-hover: #03a27d;
+  --primary-active: #6eff73;
 
   /* Text Colors */
   --inactive_text: #aaaaaa;
@@ -66,15 +66,12 @@ div {
 
 body,
 html {
-  background-color: #111111;
-  color: #33bb33;
-
   /* Dotted pattern background */
   background: radial-gradient(black 25%, transparent 16%) 0 0,
     radial-gradient(black 25%, transparent 16%) 8px 8px,
     radial-gradient(rgba(255, 255, 255, 0.1) 25%, transparent 20%) 0 1px,
     radial-gradient(rgba(255, 255, 255, 0.1) 25%, transparent 20%) 8px 9px;
-  background-color: #282828;
+  background-color: #3b3b3b;
   background-size: 16px 16px;
 
   /* Prevent text selection on page when double clicking */
@@ -101,23 +98,23 @@ p {
 
 a {
   text-decoration: none;
-  color: var(--blue);
+  color: var(--primary);
 }
 
 a:hover {
-  color: var(--red);
+  color: var(--secondary);
 }
 
 h1 {
   font-size: 160%;
-  color: var(--blue);
+  color: var(--primary);
   text-align: center;
   margin-bottom: 0px;
 }
 
 h2 {
   font-size: 110%;
-  color: var(--blue);
+  color: var(--primary);
   text-align: center;
   margin: 0px 0px 12px 0px;
 }
@@ -139,7 +136,7 @@ ol li:before {
 
 legend {
   font-size: 100%;
-  color: var(--blue);
+  color: var(--primary);
   padding: 0px 20px 0px 20px;
 }
 
@@ -253,7 +250,7 @@ img.center {
 
 .control-row input[type="number"]:focus,
 .control-row input[type="text"]:focus {
-  border-color: var(--blue);
+  border-color: var(--primary);
   background-color: var(--bg-lighter);
 }
 
@@ -352,7 +349,7 @@ dialog.disawsm-dialog[open]:not(:modal) .dialog-wrapper {
   position: absolute;
   left: 8px;
   flex-shrink: 0;
-  background: var(--red);
+  background: var(--secondary);
   border-radius: 50%;
   transition: opacity 0.2s;
   opacity: 0.5;
@@ -417,26 +414,26 @@ dialog.disawsm-dialog[open] {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  border: 2px solid var(--blue);
+  border: 2px solid var(--primary);
   border-radius: var(--radius-sm);
   padding: 6px 14px;
   min-width: 120px;
   transition: all var(--transition-fast);
   box-sizing: border-box;
   /* Primary button style by default */
-  background-color: var(--blue);
+  background-color: var(--primary);
   color: var(--active_text);
   margin: var(--spacing-xs);
 }
 
 .dialog-content button:hover:not(:disabled) {
-  background-color: var(--blue-hover);
-  border-color: var(--blue-hover);
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .dialog-content button:active:not(:disabled) {
-  background-color: var(--blue-active);
-  border-color: var(--blue-active);
+  background-color: var(--primary-active);
+  border-color: var(--primary-active);
 }
 
 .dialog-content button:disabled {
@@ -452,18 +449,18 @@ dialog.disawsm-dialog[open] {
 /* Cancel button variant */
 .dialog-content button.button-cancel {
   background-color: transparent;
-  color: var(--red);
-  border-color: var(--red);
+  color: var(--secondary);
+  border-color: var(--secondary);
 }
 
 .dialog-content button.button-cancel:hover:not(:disabled) {
   background-color: rgba(230, 0, 126, 0.1);
-  border-color: var(--red);
+  border-color: var(--secondary);
 }
 
 .dialog-content button.button-cancel:active:not(:disabled) {
   background-color: rgba(230, 0, 126, 0.2);
-  border-color: var(--red);
+  border-color: var(--secondary);
 }
 
 /* Button row container - centers buttons in dialogs */
@@ -512,7 +509,7 @@ dialog.disawsm-dialog[open] {
 
 .dialog-form-row input[type="number"]:focus,
 .dialog-form-row input[type="text"]:focus {
-  border-color: var(--blue);
+  border-color: var(--primary);
   background-color: var(--bg-lighter);
 }
 
@@ -523,14 +520,14 @@ dialog.disawsm-dialog[open] {
 
 .dialog-form-row input[type="checkbox"] {
   cursor: pointer;
-  accent-color: var(--blue);
+  accent-color: var(--primary);
   width: 16px;
   height: 16px;
 }
 
 /* Input fields in dialogs */
 .dialog-content input {
-  border: 2px solid var(--blue);
+  border: 2px solid var(--primary);
   background-color: black;
   color: white;
   font-size: 100%;
@@ -546,15 +543,15 @@ dialog.disawsm-dialog[open] {
 
 
 .dialog-content input:focus {
-  background-color: var(--blue);
+  background-color: var(--primary);
 }
 
 .dialog-content input.error {
-  border-color: var(--red);
+  border-color: var(--secondary);
 }
 
 .dialog-content input.error:focus {
-  background-color: var(--red);
+  background-color: var(--secondary);
 }
 
 /* Select dropdowns in dialogs - matches new flat button style */
@@ -563,32 +560,32 @@ dialog.disawsm-dialog[open] {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  border: 2px solid var(--blue);
+  border: 2px solid var(--primary);
   border-radius: var(--radius-sm);
   padding: 6px 14px;
   min-width: 120px;
   transition: all var(--transition-fast);
   box-sizing: border-box;
-  background-color: var(--blue);
+  background-color: var(--primary);
   color: var(--active_text);
   margin: var(--spacing-xs);
 }
 
 .dialog-content select:focus {
-  background-color: var(--blue-hover);
-  border-color: var(--blue-hover);
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .dialog-content select:hover {
-  background-color: var(--blue-hover);
-  border-color: var(--blue-hover);
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 /* Textarea in dialogs */
 .dialog-content textarea {
-  border: 2px solid var(--blue);
+  border: 2px solid var(--primary);
   background-color: black;
-  color: var(--blue);
+  color: var(--primary);
   font-size: 100%;
   font-family: 'Courier New', monospace;
   padding: 8px;
@@ -615,7 +612,7 @@ dialog.disawsm-dialog[open] {
 }
 
 .dialog-content textarea.console {
-  color: var(--blue);
+  color: var(--primary);
   font-family: monospace !important;
   font-size: 16px !important;
   border: none;
@@ -641,7 +638,7 @@ dialog.disawsm-dialog[open] {
 }
 
 .dialog-content fieldset legend {
-  color: var(--blue);
+  color: var(--primary);
   padding: 0 5px;
 }
 
@@ -673,7 +670,7 @@ dialog.disawsm-dialog[open] {
 
 /* Links in dialogs */
 .dialog-content a {
-  color: var(--blue);
+  color: var(--primary);
   text-decoration: none;
 }
 
@@ -756,7 +753,7 @@ dialog.disawsm-dialog[open] {
 
 .sortable-placeholder {
   background: rgba(0, 185, 238, 0.2);
-  border: 2px dashed var(--blue);
+  border: 2px dashed var(--primary);
   box-sizing: border-box;
   display: inline-block;
   vertical-align: top;
@@ -804,7 +801,7 @@ dialog.disawsm-dialog[open] {
 }
 
 .window_menu input:hover {
-  border-color: var(--blue);
+  border-color: var(--primary);
   color: var(--active_text);
 }
 
@@ -853,26 +850,26 @@ dialog.disawsm-dialog[open] {
 
 /* Primary button - solid blue background */
 .btn-primary {
-  background-color: var(--blue);
+  background-color: var(--primary);
   color: #000;
-  border-color: var(--blue);
+  border-color: var(--primary);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--blue-hover);
-  border-color: var(--blue-hover);
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .btn-primary:active:not(:disabled) {
-  background-color: var(--blue-active);
-  border-color: var(--blue-active);
+  background-color: var(--primary-active);
+  border-color: var(--primary-active);
 }
 
 /* Cancel/Secondary button - transparent with red border */
 .btn-cancel {
   background-color: transparent;
-  color: var(--red);
-  border-color: var(--red);
+  color: var(--secondary);
+  border-color: var(--secondary);
 }
 
 .btn-cancel:hover:not(:disabled) {
@@ -945,12 +942,12 @@ dialog.disawsm-dialog[open] {
 
 /* Confirm dialog button */
 .confirm-button {
-  border: 2px solid var(--blue);
+  border: 2px solid var(--primary);
   background: black;
 }
 
 .confirm-button:hover {
-  border: 2px solid var(--blue);
+  border: 2px solid var(--primary);
   background: black;
   color: white;
   font-size: 100%;
@@ -958,7 +955,7 @@ dialog.disawsm-dialog[open] {
 }
 
 .confirm-button:focus {
-  border: 2px solid var(--blue);
+  border: 2px solid var(--primary);
   background: black;
   color: white;
   font-size: 100%;
@@ -992,7 +989,7 @@ dialog.disawsm-dialog[open] {
 }
 
 .menu_bar_input:focus {
-  border-color: var(--blue);
+  border-color: var(--primary);
   background-color: var(--bg-lighter);
 }
 
@@ -1026,7 +1023,7 @@ dialog.disawsm-dialog[open] {
 }
 
 .grid-layout-input:focus {
-  border-color: var(--blue);
+  border-color: var(--primary);
   background-color: var(--bg-lighter);
 }
 
@@ -1065,7 +1062,7 @@ dialog.disawsm-dialog[open] {
 
 #menubar li a:hover,
 #menubar .dropdown:hover .dropbtn {
-  background-color: var(--blue);
+  background-color: var(--primary);
   color: white;
 }
 
@@ -1093,7 +1090,7 @@ dialog.disawsm-dialog[open] {
 }
 
 #menubar .dropdown-content a:hover {
-  background-color: var(--blue);
+  background-color: var(--primary);
 }
 
 #menubar .dropdown:hover .dropdown-content {
@@ -1116,7 +1113,7 @@ dialog.disawsm-dialog[open] {
 }
 
 #menubar .submenu-item > a:hover {
-  background-color: var(--blue);
+  background-color: var(--primary);
 }
 
 #menubar .submenu-arrow {
@@ -1146,7 +1143,7 @@ dialog.disawsm-dialog[open] {
 }
 
 #menubar .submenu-content a:hover {
-  background-color: var(--blue);
+  background-color: var(--primary);
 }
 
 #menubar .submenu-item:hover > .submenu-content {
@@ -1203,7 +1200,7 @@ dialog.disawsm-dialog[open] {
 
 #menubar-filename-input {
   background-color: #222;
-  color: var(--blue);
+  color: var(--primary);
   border: 1px solid #444;
   padding: 4px 8px;
   font-family: 'Quicksand', sans-serif;
@@ -1213,7 +1210,7 @@ dialog.disawsm-dialog[open] {
 }
 
 #menubar-filename-input:focus {
-  border-color: var(--blue);
+  border-color: var(--primary);
   background-color: var(--bg-lighter);
 }
 
@@ -1237,7 +1234,7 @@ dialog.disawsm-dialog[open] {
   bottom: 0px;
   height: 20px;
   padding: 6px 12px 6px 12px;
-  color: var(--blue);
+  color: var(--primary);
   background: -webkit-linear-gradient(#181818, #111111);
   background: -o-linear-gradient(#181818, #111111);
   background: -moz-linear-gradient(#181818, #111111);
@@ -1249,7 +1246,7 @@ dialog.disawsm-dialog[open] {
 #custom-tooltip {
   position: fixed;
   background: rgba(20, 20, 20, 0.95);
-  color: var(--blue);
+  color: var(--primary);
   padding: 6px 12px;
   border-radius: 4px;
   font-size: 12px;
@@ -1333,13 +1330,13 @@ dialog.disawsm-dialog[open] {
 }
 
 .palette_highlight_text {
-  color: var(--blue);
+  color: var(--primary);
 }
 
 .palette_color_item_selected {
   outline-style: solid;
   outline-width: 2px;
-  outline-color: var(--blue);
+  outline-color: var(--primary);
 }
 
 
@@ -1365,7 +1362,7 @@ dialog.disawsm-dialog[open] {
 }
 
 .sprite_in_list:hover {
-  border: 1px dotted var(--red);
+  border: 1px dotted var(--secondary);
   box-sizing: border-box;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
@@ -1377,7 +1374,7 @@ dialog.disawsm-dialog[open] {
 }
 
 .sprite_in_list_selected {
-  border: 1px dotted var(--blue);
+  border: 1px dotted var(--primary);
   box-sizing: border-box;
 }
 
@@ -1404,7 +1401,7 @@ dialog.disawsm-dialog[open] {
 }
 
 .sprite_info_text {
-  color: var(--red);
+  color: var(--secondary);
   font-size: 12px;
   line-height: 12px;
   margin: 6px;
@@ -1421,7 +1418,7 @@ dialog.disawsm-dialog[open] {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  background-color: var(--blue);
+  background-color: var(--primary);
   color: white;
   font-size: 10px;
   font-weight: bold;
@@ -1475,7 +1472,7 @@ dialog.disawsm-dialog[open] {
 
 .animation-radio-group input[type="radio"] {
   cursor: pointer;
-  accent-color: var(--blue);
+  accent-color: var(--primary);
 }
 
 /* Animation buttons use .btn and .btn-primary */
@@ -1509,7 +1506,7 @@ dialog.disawsm-dialog[open] {
 
 .playfield-selection-overlay {
   position: absolute;
-  border: 1px dotted var(--blue);
+  border: 1px dotted var(--primary);
   box-sizing: border-box;
   pointer-events: none;
 }
@@ -1540,7 +1537,7 @@ dialog.disawsm-dialog[open] {
 }
 
 .playfield-color-selected {
-  border: 1px solid var(--blue) !important;
+  border: 1px solid var(--primary) !important;
 }
 
 .playfield-toolbar {
@@ -1579,7 +1576,7 @@ dialog.disawsm-dialog[open] {
 
 .playfield-control-row input[type="checkbox"] {
   cursor: pointer;
-  accent-color: var(--blue);
+  accent-color: var(--primary);
   width: 16px;
   height: 16px;
 }

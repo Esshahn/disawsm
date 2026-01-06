@@ -1,5 +1,4 @@
 import About from "./About";
-import Settings from "./Settings";
 import Storage from "./Storage";
 import Window from "./Window";
 import Editor from "./Editor";
@@ -55,17 +54,6 @@ export class App {
       onLoad: this.regain_keyboard_controls.bind(this),
     });
 
-    // settings
-    const settings_config = this.createWindowConfig("window_settings", "Settings", "settings", 6, {
-      modal: true,
-      escape: true,
-      autoOpen: false,
-      width: "760",
-    });
-    this.window_settings = new Window(settings_config);
-    this.settings = new Settings(settings_config.window_id, this.config, {
-      onLoad: this.update_config.bind(this),
-    });
   }
 
   private initializeState(): void {
@@ -147,14 +135,6 @@ export class App {
       this.window_about.open();
     };
 
-    dom.sel("#menubar-settings").onclick = () => {
-      this.allow_keyboard_shortcuts = false;
-      this.window_settings.open();
-    };
-
-    dom.sel("#menubar-fullscreen").onclick = () => {
-      toggle_fullscreen();
-    };
   }
 }
 

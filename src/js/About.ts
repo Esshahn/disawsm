@@ -8,7 +8,8 @@ export default class About {
 
     const template = `
     <div id="info">
-        <h1>DisAWSM</h1>
+        <img src="ui/logo.svg" width="200px" id="logo" alt="spritemate">
+        
         <p>The 6502 Disassembler</p>
 
         <fieldset>
