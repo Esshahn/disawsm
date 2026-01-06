@@ -78,8 +78,7 @@ export default class Storage {
         // then selectively apply user-specific settings from storage
 
         // Preserve window positions/sizes from storage
-        const windowKeys = ['window_tools', 'window_editor', 'window_preview', 'window_list',
-                            'window_palette', 'window_snapshot', 'window_animation', 'window_playfield'];
+        const windowKeys = ['window_editor'];
         windowKeys.forEach(key => {
           if (this.storage[key]) {
             this.config[key] = { ...this.config[key], ...this.storage[key] };
@@ -155,19 +154,19 @@ export default class Storage {
   }
 
   /**
-   * Writes sprite data to local storage for auto-save functionality
-   * @param spriteData - The complete sprite data object (same format as .spm files)
+   * Writes data to local storage for auto-save functionality
+   * @param data - The complete data object 
    */
-  write_sprites(spriteData: any) {
+  write_local_data(data: any) {
     if (typeof Storage !== "undefined") {
       try {
         const dataToSave = {
           timestamp: new Date().toISOString(),
-          data: spriteData
+          data: data
         };
         localStorage.setItem("disawsm_autosave", JSON.stringify(dataToSave));
       } catch (error) {
-        console.error("Failed to auto-save sprite data:", error);
+        console.error("Failed to auto-save prite data:", error);
         // Don't show status message for auto-save failures to avoid spamming user
       }
     }
@@ -175,37 +174,25 @@ export default class Storage {
 
   /**
    * Reads auto-saved sprite data from local storage
-   * @returns The sprite data object or null if none exists
+   * @returns The data object or null if none exists
    */
-  read_sprites() {
+  read_local_data() {
     if (typeof Storage !== "undefined") {
       try {
         const saved = localStorage.getItem("disawsm_autosave");
         if (saved) {
           const parsed = JSON.parse(saved);
-          return parsed.data; // Return just the sprite data, not the timestamp wrapper
+          return parsed.data; 
         }
         return null;
       } catch (error) {
-        console.error("Failed to read auto-saved sprite data:", error);
+        console.error("Failed to read auto-saved data:", error);
         return null;
       }
     }
     return null;
   }
 
-  /**
-   * Clears the auto-saved sprite data (used when creating a new file)
-   */
-  clear_sprites() {
-    if (typeof Storage !== "undefined") {
-      try {
-        localStorage.removeItem("disawsm_autosave");
-      } catch (error) {
-        console.error("Failed to clear auto-saved sprite data:", error);
-      }
-    }
-  }
 
   /**
    * Gets the timestamp of the last auto-save
