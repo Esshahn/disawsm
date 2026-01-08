@@ -2,284 +2,250 @@
 
 **Creating a Web-Based 6502 Disassembler**
 
-Version: 1.0
+Version: 2.0
 Created: 2026-01-06
-Status: Planning Phase
+Updated: 2026-01-08
+Status: **Phase 2 Complete - Ready for Phase 3**
 
 ---
 
 ## Project Goal
 
 Transform DisAWSM into a fully functional web-based 6502 disassembler where users can:
-1. Load PRG files via menu (File > Load PRG)
-2. View hex dump of loaded file
-3. Disassemble the binary into 6502 assembly code
-4. Save the assembly output
+1. ✅ Load PRG files via menu (File > Load PRG)
+2. ✅ View hex dump of loaded file
+3. ⏳ Disassemble the binary into 6502 assembly code **(NEXT)**
+4. ⏳ Save the assembly output
 
 ---
 
-## Current Status - COMPLETED TASKS
+## Technology Stack
 
-### Phase 0: Understanding & Documentation ✅
+- **Svelte 5.46.1** - Modern reactive framework with runes
+- **TypeScript** - Type-safe development
+- **Vite 7.3.0** - Fast build tool
+- **Bundle size:** 46.31 KB (gzipped: 17.41 KB)
+
+---
+
+## Phase 0: Understanding & Documentation ✅ COMPLETE
+
+### Tasks Completed:
 - [x] Full codebase exploration
 - [x] Python disassembler analysis
 - [x] JSON data file review
 - [x] PROJECT_OVERVIEW.md created
 - [x] PROJECT_PLAN.md created
+- [x] **Svelte 5 migration decision made**
+- [x] **Architecture refactoring to `lib/` structure**
 
-**Current Position:** We have a working TypeScript/Vite project with:
-- Custom window/dialog system
-- Python disassembler logic (needs porting)
-- Complete 6502 opcode definitions
-- C64 memory map
-- Basic UI framework
-
-**Missing:** File loading, hex viewer, disassembler integration, output display
+**Outcome:** Clean, modern Svelte 5 codebase with proper structure
 
 ---
 
-## Implementation Phases
+## Phase 1: File Loading System ✅ COMPLETE
 
-### Phase 1: File Loading System ✅ COMPLETED
 **Goal:** Enable users to load PRG files into the application
 
-#### Tasks:
-1. ✅ **Add File menu to menubar**
-   - Location: [index.html:29-37](index.html#L29-L37)
-   - Added "File" dropdown with menu items:
-     - "Load PRG..." (Ctrl+O)
-     - "Save Assembly..." (Ctrl+S) - disabled initially
-     - "Clear" - reset application
+### Tasks Completed:
 
-2. ✅ **Create FileLoader utility class**
-   - Created: [src/js/FileLoader.ts](src/js/FileLoader.ts)
-   - Implements HTML5 File API
-   - Methods:
-     - `selectAndLoadPRG()` - Open file picker and load file
-     - `readPRG(file)` - Read PRG file format
-     - `extractStartAddress(bytes)` - Parse first 2 bytes (little-endian)
-     - `validatePRG(file)` - Check file validity (max 64KB)
-   - Returns: `LoadedPRG {name, startAddress, bytes}`
+#### 1. ✅ Migrated to Svelte 5
+- Converted all components to Svelte 5 runes (`$state`, `$props`, `$derived`)
+- Removed class-based architecture
+- Created Svelte stores for global state
+- Configured `mount()` API instead of `new App()`
 
-3. ✅ **Wire up File menu handlers**
-   - Location: [App.ts:143-155](src/js/App.ts#L143-L155)
-   - Added click handlers for all File menu items
-   - Integrated FileLoader with app state
-   - Status bar updates on file load
+#### 2. ✅ Refactored to Modern Structure
+- Created `src/lib/` folder structure:
+  - `components/` - UI, dialogs, editor components
+  - `services/` - Business logic (fileLoader, storage)
+  - `stores/` - Global state management
+  - `utils/` - Pure utility functions
+  - `types/` - TypeScript interfaces
+  - `config/` - App configuration
+- Configured `$lib` path alias in tsconfig.json and vite.config.js
 
-4. ✅ **Add file state to App.ts**
-   - Properties added:
-     - `fileLoader: FileLoader` - File loading utility
-     - `loadedFile: LoadedPRG | null` - Currently loaded file
-     - `assemblyOutput: string | null` - Generated assembly code
-   - Methods added:
-     - `handleLoadPRG()` - Load PRG file handler
-     - `handleSaveAssembly()` - Save assembly (stub for Phase 5)
-     - `handleClear()` - Clear loaded file
-     - `updateMenuState()` - Enable/disable menu items
-     - `setStatus()` - Update status bar
+#### 3. ✅ Implemented File Menu
+- Location: [src/lib/components/ui/MenuBar.svelte](src/lib/components/ui/MenuBar.svelte)
+- Added "File" dropdown with:
+  - "Load PRG..." (Ctrl+O)
+  - "Save Assembly..." (Ctrl+S) - disabled until assembly generated
+  - "Clear" - reset application
 
-5. ✅ **Update Editor.ts**
-   - Added `displayLoadedFile()` method - Shows file info and preview
-   - Added `clear()` method - Reset editor display
-   - Shows first 16 bytes as hex preview
+#### 4. ✅ Created FileLoader Service
+- Location: [src/lib/services/fileLoader.ts](src/lib/services/fileLoader.ts)
+- Implements HTML5 File API
+- Methods:
+  - `selectAndLoadPRG()` - Open file picker and load file
+  - `readPRG(file)` - Read PRG file format
+  - `extractStartAddress(bytes)` - Parse first 2 bytes (little-endian)
+  - `validatePRG(file)` - Check file validity (max 64KB)
+- Returns: `LoadedPRG {name, startAddress, bytes}`
 
-6. ✅ **Add CSS for disabled menu items**
-   - Location: [public/css/stylesheet.css:1096-1100](public/css/stylesheet.css#L1096-L1100)
-   - Grayed out disabled items
-   - Disabled pointer events
+#### 5. ✅ Created Reactive State Management
+- Location: [src/lib/stores/app.ts](src/lib/stores/app.ts)
+- Stores:
+  - `loadedFile` - writable store for loaded PRG
+  - `assemblyOutput` - writable store for disassembled code
+  - `status` - derived store for status bar
+  - `saveDisabled` - derived store for menu state
+  - `config` - app configuration
 
-**Deliverable:** ✅ Users can click "File > Load PRG" and load .prg files
-**Status:** Build successful, ready for Phase 2
+#### 6. ✅ Integrated File Handlers in App.svelte
+- Location: [src/App.svelte](src/App.svelte)
+- Handlers:
+  - `handleLoadPRG()` - Load PRG file
+  - `handleSaveAssembly()` - Save assembly (stub for Phase 5)
+  - `handleClear()` - Clear loaded file
+
+**Deliverable:** ✅ Users can load .prg files, status bar updates with file info
 
 **Files Created:**
-- [src/js/FileLoader.ts](src/js/FileLoader.ts) - File loading utility
+- `src/lib/services/fileLoader.ts`
+- `src/lib/stores/app.ts`
+- `src/lib/types/index.ts`
+- `src/lib/components/ui/MenuBar.svelte`
+- `src/lib/components/ui/StatusBar.svelte`
+- `src/lib/components/ui/Window.svelte`
+- `src/lib/components/dialogs/About.svelte`
 
 **Files Modified:**
-- [index.html](index.html) - Added File menu
-- [src/js/App.ts](src/js/App.ts) - File handlers and state management
-- [src/js/Editor.ts](src/js/Editor.ts) - Display loaded files
-- [public/css/stylesheet.css](public/css/stylesheet.css) - Disabled menu styling
+- `src/App.svelte` - Converted to Svelte 5, added file handlers
+- `tsconfig.json` - Added `$lib` path alias
+- `vite.config.js` - Added `$lib` path alias
+- `svelte.config.js` - Configured for pure Svelte 5
 
 ---
 
-### Phase 2: Hex Viewer Display
+## Phase 2: Hex Viewer Display ✅ COMPLETE
+
 **Goal:** Display loaded PRG file as formatted hex dump
 
-#### Tasks:
-1. **Create HexViewer component**
-   - New file: `src/js/HexViewer.ts`
-   - Similar to [Editor.ts](src/js/Editor.ts) structure
-   - Methods:
-     - `displayHex(startAddr, bytes)` - Main display logic
-     - `formatHexLine(addr, bytes)` - Format one line of hex
-     - `toASCII(byte)` - Convert byte to printable char
-     - `clear()` - Clear display
+### Tasks Completed:
 
-2. **Implement hex formatting**
-   - Format per user requirements:
-     ```
-     e5cf:  85 cc 8d 92  02 f0 f7 78  a5 cf f0 0c  a5 ce ae 87   .�...��x���.�ή.
-     ```
-   - 16 bytes per line
-   - Grouped by 4 bytes (space separator)
-   - Address prefix (4 hex digits + colon)
-   - ASCII representation (non-printable = '.')
+#### 1. ✅ Created HexViewer Component
+- Location: [src/lib/components/editor/HexViewer.svelte](src/lib/components/editor/HexViewer.svelte)
+- Features:
+  - Uses `$props()` for props (bytes, startAddress)
+  - Uses `$derived()` for reactive hex line formatting
+  - Displays 16 bytes per line
+  - Groups bytes by 4 with extra spacing
+  - Shows ASCII representation (printable chars or dots)
+  - Format: `e5cf:  85 cc 8d 92  02 f0 f7 78  ...  .�...��x`
+- Styling:
+  - Dark theme matching UI
+  - Color-coded: address (green), hex (white), ASCII (gray)
+  - Hover highlighting for better readability
+  - Scrollable for large files
 
-3. **Update Editor.ts or create new window**
-   - **Option A:** Replace Editor placeholder with HexViewer
-   - **Option B:** Create separate "Hex Dump" window
-   - **Recommendation:** Use Editor window with tabs for Hex/Assembly views
+#### 2. ✅ Created EditorWindow Component
+- Location: [src/lib/components/editor/EditorWindow.svelte](src/lib/components/editor/EditorWindow.svelte)
+- Uses Window component for draggable container
+- Shows file metadata header (name, start/end address, size)
+- Integrates HexViewer component
+- Displays "No file loaded" message when empty
 
-4. **Add monospace styling**
-   - Update [stylesheet.css](public/css/stylesheet.css)
-   - Add `.hex-viewer` class
-   - Use monospace font (e.g., 'Courier New', Consolas)
-   - Proper spacing for alignment
+#### 3. ✅ Integrated into App
+- EditorWindow automatically updates when file loaded
+- Reactive to `$loadedFile` store changes
+- Clean separation: editor displays, stores manage state
 
-5. **Wire up to file loading**
-   - When file loads, call `hexViewer.displayHex()`
-   - Update status bar with file info
+**Deliverable:** ✅ Loaded PRG files display as hex dump with ASCII
 
-**Deliverable:** Loaded PRG files display as formatted hex dump
-
-**Example Output:**
+**Format Example:**
 ```
-1000:  a9 93 20 d2  ff a2 00 bd  18 10 f0 06  20 d2 ff e8   �. ��..�.��. ��
-1010:  4c 08 10 60  48 45 4c 4c  4f 20 57 4f  52 4c 44 00   L..`HELLO WORLD.
+File: example.prg
+Start: $1000  End: $10ff  Size: 256 bytes
+
+1000:  a9 93 20 d2  ff a2 00 bd  18 10 f0 08  20 d2 ff e8   �. �.�.�...� ��.
+1010:  4c 08 10 60  48 45 4c 4c  4f 20 57 4f  52 4c 44 21   L..`HELLO WORLD!
 ```
+
+**Files Created:**
+- `src/lib/components/editor/HexViewer.svelte`
+- `src/lib/components/editor/EditorWindow.svelte`
+
+**Files Modified:**
+- `src/App.svelte` - Added EditorWindow component
 
 ---
 
-### Phase 3: Port Python Disassembler to TypeScript
-**Goal:** Convert [disass.py](disass.py) logic to TypeScript
+## Phase 3: Disassembler Integration ⏳ NEXT PHASE
 
-#### Tasks:
-1. **Create Disassembler class**
-   - New file: `src/js/Disassembler.ts`
-   - Load JSON data files ([opcodes.json](src/json/opcodes.json), [c64-mapping.json](src/json/c64-mapping.json))
-   - Main methods matching Python:
-     - `analyze(startAddr, bytes, entrypoints)` → ByteArray
-     - `convertToProgram(byteArray, opcodes, mapping)` → string
-     - `generateByteArray(startAddr, bytes)` → ByteArray
+**Goal:** Convert loaded bytes into 6502 assembly code
 
-2. **Port utility functions**
-   - From [disass.py:51-98](disass.py#L51-L98):
-     - `numberToHexByte(n)` - Convert to 2-digit hex
-     - `numberToHexWord(n)` - Convert to 4-digit hex
-     - `bytesToAddr(hh, ll)` - Combine bytes to address
-     - `getAbsFromRelative(byte, addr)` - Relative branch calc
-     - `addrInProgram(addr, start, end)` - Range check
-     - `getInstructionLength(opcode)` - Opcode length
+### Planned Tasks:
 
-3. **Implement analysis algorithm**
-   - Port [disass.py:236-343](disass.py#L236-L343):
-     - Generate byte array with metadata
-     - Apply entrypoints
-     - Code flow analysis:
-       - Track code/data state
-       - Follow JMP/JSR/branch instructions
-       - Mark jump destinations
-       - Default to data after RTS/RTI/JMP
+#### 1. ⏳ Create Disassembler Service
+- Location: `src/lib/services/disassembler.ts`
+- Port Python logic from [disass.py](disass.py) to TypeScript
+- Load opcodes from `src/json/opcodes.json`
+- Core methods:
+  - `loadOpcodes()` - Load opcode definitions
+  - `disassemble(bytes, startAddress)` - Main disassembly function
+  - `getOpcode(byte)` - Lookup instruction
+  - `formatInstruction(opcode, operands)` - Format assembly line
 
-4. **Implement assembly generation**
-   - Port [disass.py:100-199](disass.py#L100-L199):
-     - Generate labels (`lXXXX` format)
-     - Format instructions
-     - Add comments from C64 mapping
-     - Group data bytes with `!byte` directive
-     - Proper spacing and alignment
+#### 2. ⏳ Implement Opcode Lookup
+- Read `opcodes.json` at runtime
+- Parse opcode definitions:
+  ```json
+  {
+    "a9": {"ins": "lda #$hh"},
+    "ad": {"ins": "lda $hhll"}
+  }
+  ```
+- Replace placeholders (`hh`, `ll`) with actual bytes
+- Handle 1, 2, and 3-byte instructions
 
-5. **Load JSON data files**
-   - Import in [Disassembler.ts](src/js/Disassembler.ts):
-     ```typescript
-     import opcodes from '../json/opcodes.json';
-     import c64Mapping from '../json/c64-mapping.json';
-     ```
-   - Ensure Vite config supports JSON imports
+#### 3. ⏳ Port Code/Data Analysis
+- Implement byte array with metadata:
+  ```typescript
+  {
+    addr: number;      // Memory address
+    byte: string;      // Hex value
+    dest: boolean;     // Is jump/branch target?
+    code: boolean;     // Is code?
+    data: boolean;     // Is data?
+  }
+  ```
+- Apply entrypoints from `entrypoints.json`
+- Follow code flow (JMP/JSR/branches)
+- Mark data access targets
 
-6. **Create TypeScript types**
-   - New file: `src/js/types.ts`
-   - Define interfaces:
-     ```typescript
-     interface ByteEntry {
-       addr: number;
-       byte: string;
-       dest: number;
-       code: number;
-       data: number;
-     }
+#### 4. ⏳ Generate Labels
+- Create `lXXXX` labels for jump/branch targets
+- Track all destinations
+- Generate label map
 
-     interface Opcode {
-       ins: string;
-       ill?: number;
-       rel?: boolean;
-     }
+#### 5. ⏳ Format Assembly Output
+- Generate header comment
+- Add origin directive (`* = $1000`)
+- Format code sections with proper spacing
+- Format data sections (`!byte $xx, $xx`)
+- Add labels at appropriate lines
 
-     interface Entrypoint {
-       addr: string;
-       mode: 'code' | 'data';
-     }
-     ```
+#### 6. ⏳ Wire up Disassemble Button
+- Add "Disassemble" button to UI
+- Trigger disassembly on click
+- Store result in `assemblyOutput` store
+- Update status bar
 
-**Deliverable:** Disassembler class that converts byte arrays to assembly
+**Deliverable:** Users can click "Disassemble" and generate assembly code
 
-**Testing Strategy:**
-- Use known PRG files
-- Compare output with Python version
-- Verify label generation
-- Check code/data detection
-
----
-
-### Phase 4: Assembly Viewer
-**Goal:** Display disassembled output in a readable format
-
-#### Tasks:
-1. **Create AssemblyViewer component**
-   - New file: `src/js/AssemblyViewer.ts`
-   - Methods:
-     - `displayAssembly(asmText)` - Show assembly code
-     - `clear()` - Clear display
-     - `setReadOnly(bool)` - Toggle editing
-   - Syntax highlighting (optional, nice-to-have):
-     - Labels in one color
-     - Instructions in another
-     - Comments in gray
-
-2. **Add tabbed interface to Editor**
-   - Update [Editor.ts](src/js/Editor.ts)
-   - Two tabs: "Hex Dump" and "Assembly"
-   - Tab switching logic
-   - Show appropriate view based on active tab
-
-3. **Wire up disassembly trigger**
-   - Button: "Disassemble" (or auto-trigger on load)
-   - Call `disassembler.analyze()` and `disassembler.convertToProgram()`
-   - Display result in AssemblyViewer
-   - Enable "Save Assembly" menu item
-
-4. **Add assembly styling**
-   - Update [stylesheet.css](public/css/stylesheet.css)
-   - Monospace font
-   - Proper indentation
-   - Optional: syntax highlighting colors
-
-**Deliverable:** Users can view disassembled 6502 assembly code
-
-**Example Output:**
+**Expected Output:**
 ```asm
 ; converted with DisAWSM - 6502 disassembler
 
 * = $1000
 
-            lda #$93           ; clear screen
-            jsr $ffd2          ; CHROUT
+            lda #$93
+            jsr $ffd2
             ldx #$00
 
-l1008       lda l1018,x
+l1008       lda l1018,x        ; data reference
             beq l1016
-            jsr $ffd2          ; CHROUT
+            jsr $ffd2
             inx
             jmp l1008
 
@@ -288,261 +254,203 @@ l1016       rts
 l1018       !byte $48, $45, $4c, $4c, $4f
 ```
 
----
+**Files to Create:**
+- `src/lib/services/disassembler.ts`
 
-### Phase 5: Save Assembly Output
-**Goal:** Enable users to download generated assembly code
-
-#### Tasks:
-1. **Create FileSaver utility**
-   - New file: `src/js/FileSaver.ts` (or add to FileLoader)
-   - Method: `saveTextFile(filename, content)`
-   - Use Blob and download link technique:
-     ```typescript
-     const blob = new Blob([content], {type: 'text/plain'});
-     const url = URL.createObjectURL(blob);
-     const a = document.createElement('a');
-     a.href = url;
-     a.download = filename;
-     a.click();
-     URL.revokeObjectURL(url);
-     ```
-
-2. **Wire up "Save Assembly" menu**
-   - Enable menu item after disassembly
-   - Click handler in [App.ts](src/js/App.ts)
-   - Default filename: `{original}.asm`
-   - Prompt for filename (optional)
-
-3. **Add save status feedback**
-   - Update status bar: "Assembly saved as filename.asm"
-   - Visual confirmation
-
-**Deliverable:** Users can download .asm files
+**Files to Modify:**
+- `src/lib/stores/app.ts` - Update with disassembly status
+- `src/lib/components/editor/EditorWindow.svelte` - Add disassemble button
+- `src/App.svelte` - Add disassemble handler
 
 ---
 
-### Phase 6: Enhanced Features (v2.0)
-**Goal:** Improve functionality and user experience
+## Phase 4: Assembly Viewer ⏳ PLANNED
 
-#### Optional Tasks (prioritized):
-1. **Entrypoints Editor**
-   - GUI for adding/editing entrypoints
-   - Override automatic code/data detection
-   - Save custom entrypoints to localStorage
-   - Export/import entrypoints.json
+**Goal:** Display disassembled assembly code in editor
 
-2. **Settings Dialog**
-   - Toggle C64 comments on/off
-   - Choose label prefix (default: 'l')
-   - Assembly syntax options (ACME, KickAss, CA65)
-   - Hex viewer options (bytes per line)
+### Planned Tasks:
 
-3. **Dual-pane view**
-   - Split Editor window
-   - Hex dump on left, assembly on right
-   - Synchronized scrolling
-   - Click hex byte to highlight instruction
+#### 1. ⏳ Create AssemblyViewer Component
+- Location: `src/lib/components/editor/AssemblyViewer.svelte`
+- Display formatted assembly code
+- Line numbers
+- Syntax highlighting (colors for labels, instructions, operands, comments)
+- Scrollable output
 
-4. **Search functionality**
-   - Search hex bytes
-   - Search assembly mnemonics
-   - Find address
-   - Jump to address
+#### 2. ⏳ Add Tab/View Switching
+- Toggle between Hex View and Assembly View
+- Tab interface in EditorWindow
+- Preserve both views in memory
 
-5. **Export formats**
-   - Plain text (.asm)
-   - HTML (with syntax highlighting)
-   - PDF (via print)
+#### 3. ⏳ Implement Label Navigation
+- Click on labels to jump to definition
+- Highlight label references
 
-6. **Drag-and-drop file loading**
-   - Drop PRG file anywhere
-   - Visual feedback on drag over
+**Deliverable:** Users can view disassembled code with syntax highlighting
 
-7. **Recent files list**
-   - Store in localStorage
-   - Quick reload
+**Files to Create:**
+- `src/lib/components/editor/AssemblyViewer.svelte`
+- `src/lib/components/editor/TabBar.svelte` (optional)
 
-8. **Keyboard shortcuts**
-   - Ctrl+O: Load file
-   - Ctrl+S: Save assembly
-   - Ctrl+D: Disassemble
-   - Ctrl+H: Toggle hex/assembly view
-
-9. **Error handling**
-   - Invalid PRG format
-   - File too large
-   - Disassembly errors
-   - User-friendly error messages
-
-10. **Performance optimization**
-    - Lazy rendering for large files
-    - Virtual scrolling
-    - Web Worker for disassembly
+**Files to Modify:**
+- `src/lib/components/editor/EditorWindow.svelte` - Add view switching
 
 ---
 
-## Technical Decisions
+## Phase 5: File Export ⏳ PLANNED
 
-### TypeScript Port Strategy
-**Decision:** Port Python logic directly, keeping same algorithm
-**Rationale:** Proven algorithm, easier to debug, maintain consistency
+**Goal:** Save assembly code to file
 
-### UI Layout
-**Decision:** Single Editor window with tabs (Hex/Assembly)
-**Rationale:** Less screen clutter, familiar UX pattern, easier state management
+### Planned Tasks:
 
-### File Handling
-**Decision:** Client-side only (no server)
-**Rationale:** Privacy, speed, offline capability, simpler deployment
+#### 1. ⏳ Implement File Download
+- Create download utility in `src/lib/utils/download.ts`
+- Use Blob API to create file
+- Trigger browser download with `<a>` element
 
-### Storage Strategy
-**Decision:** Use localStorage for entrypoints and settings only
-**Rationale:** PRG files can be large, don't persist binary data
+#### 2. ⏳ Wire up Save Menu
+- Enable "Save Assembly..." menu item when assembly exists
+- Add keyboard shortcut (Ctrl+S)
+- Default filename: `{original-name}.asm`
 
-### JSON Data
-**Decision:** Import JSON files directly in TypeScript
-**Rationale:** Vite supports JSON imports, no fetch needed, type safety
+#### 3. ⏳ Add Export Options
+- Optional: Allow choosing filename
+- Optional: Include/exclude comments
+- Optional: Export configuration
 
----
+**Deliverable:** Users can save assembly code as `.asm` file
 
-## File Creation Checklist
+**Files to Create:**
+- `src/lib/utils/download.ts`
 
-### New Files Needed:
-- [x] `src/js/FileLoader.ts` - File upload handling ✅
-- [ ] `src/js/HexViewer.ts` - Hex dump display
-- [ ] `src/js/Disassembler.ts` - Core disassembly logic
-- [ ] `src/js/AssemblyViewer.ts` - Assembly display
-- [ ] `src/js/FileSaver.ts` - File download
-- [ ] `src/js/types.ts` - TypeScript interfaces
-
-### Files to Modify:
-- [x] `index.html` - Add File menu ✅
-- [x] `src/js/App.ts` - File handlers, state management ✅
-- [ ] `src/js/Editor.ts` - Tabs, integrate viewers (basic done, hex viewer pending)
-- [x] `public/css/stylesheet.css` - Hex/assembly styling (disabled menu done) ✅
-- [ ] `src/js/config.ts` - Add new config options
-- [ ] `vite.config.js` - Ensure JSON import support
-
-### Files to Reference (no changes):
-- `disass.py` - Source of truth for algorithm
-- `src/json/opcodes.json` - Opcode definitions
-- `src/json/c64-mapping.json` - Memory comments
-- `src/json/entrypoints.json` - Example entrypoints
+**Files to Modify:**
+- `src/App.svelte` - Implement `handleSaveAssembly()`
+- `src/lib/components/ui/MenuBar.svelte` - Enable save menu item
 
 ---
 
-## Testing Plan
+## Phase 6: Advanced Features ⏳ FUTURE
 
-### Unit Tests (Future)
-1. Hex formatting functions
-2. Byte conversion utilities
-3. Opcode lookup
-4. Address calculations
-5. Code/data detection
+**Goal:** Enhanced disassembly capabilities
 
-### Integration Tests
-1. Load sample PRG file
-2. Verify hex dump format
-3. Run disassembly
-4. Compare with Python output
-5. Save assembly file
+### Planned Tasks:
 
-### Sample Files
-Create test suite:
-- `test/simple.prg` - Basic "Hello World"
-- `test/branches.prg` - Test branch instructions
-- `test/data.prg` - Mixed code/data
-- `test/jumps.prg` - JMP/JSR heavy
+#### 1. ⏳ Entrypoints Editor
+- UI for adding/removing entrypoints
+- Mark addresses as code or data
+- Save entrypoints to localStorage
 
----
+#### 2. ⏳ C64 Memory Map Integration
+- Load `c64-mapping.json`
+- Add comments for known C64 addresses (e.g., $d020 = border color)
+- Enhance readability
 
-## Deployment Checklist
+#### 3. ⏳ Interactive Settings
+- Toggle illegal opcodes
+- Customize label format
+- Adjust comment style
 
-### Before v1.0 Release:
-- [ ] All Phase 1-5 tasks complete
-- [ ] Tested with multiple PRG files
-- [ ] Error handling in place
-- [ ] README updated with usage instructions
-- [ ] GitHub repo description updated
-- [ ] Screenshot/demo GIF added
-- [ ] Production build tested (`npm run build`)
+#### 4. ⏳ Export to Different Formats
+- Kick Assembler format
+- ACME format
+- CA65 format
 
-### Optional Pre-Release:
-- [ ] Add example PRG files
-- [ ] Create tutorial/walkthrough
-- [ ] Add keyboard shortcut reference
-- [ ] Performance testing with large files
+**Deliverable:** Professional-grade 6502 disassembler
+
+**Files to Create:**
+- `src/lib/components/dialogs/EntrypointsEditor.svelte`
+- `src/lib/services/memoryMap.ts`
+- `src/lib/components/dialogs/Settings.svelte`
 
 ---
 
-## Current Session Progress Tracker
+## Current Progress Summary
 
-### Session: 2026-01-06
+### ✅ Completed:
+- **Phase 0:** Documentation and architecture planning
+- **Phase 1:** File loading system with Svelte 5
+- **Phase 2:** Hex viewer display
 
-**Completed:**
-- [x] Phase 0: Full codebase understanding
-- [x] Phase 0: Documentation created (PROJECT_OVERVIEW.md, PROJECT_PLAN.md)
-- [x] Phase 1: File Loading System ✅ COMPLETE
-  - [x] File menu added to HTML
-  - [x] FileLoader.ts created and working
-  - [x] App.ts updated with file handlers and state
-  - [x] Editor.ts updated to display loaded files
-  - [x] CSS styling for disabled menus
-  - [x] Build successful
-- [x] **SVELTE MIGRATION** ✅ COMPLETE
-  - [x] Architectural decision documented (ARCHITECTURE_DECISION.md)
-  - [x] Svelte + Vite + TypeScript configured
-  - [x] Svelte stores created for state management
-  - [x] All components ported to Svelte:
-    - [x] App.svelte (main component)
-    - [x] MenuBar.svelte
-    - [x] EditorWindow.svelte
-    - [x] StatusBar.svelte
-    - [x] About.svelte
-  - [x] Build successful (37.28 KB - only +17KB from vanilla)
-  - [x] All Phase 1 functionality preserved
+### ⏳ Next Up:
+- **Phase 3:** Disassembler integration **(START HERE)**
 
-**Next Actions (when ready to proceed):**
-1. Start Phase 2: Hex Viewer Display
-2. Create HexViewer.svelte component
-3. Implement hex formatting per user requirements
-
-**Where We Left Off:**
-- **Svelte migration complete!**
-- All Phase 1 functionality working in Svelte
-- Build successful, bundle size acceptable
-- Automatic state management now in place
-- Ready to implement hex viewer in Phase 2 (will be much easier now!)
-- example.prg available in root for testing
-
-**Quick Resume:**
-> "Successfully migrated from class-based vanilla TypeScript to Svelte! All Phase 1 functionality (file loading) now works with reactive state management. Build size: 37KB (+17KB for Svelte). Next step: Phase 2 - Create HexViewer.svelte component to display files in hex dump format. The reactive state will make this much cleaner than the old approach."
+### 📊 Progress: 33% Complete (2 of 6 phases)
 
 ---
 
-## Notes for Future Claude Sessions
+## Build Status
 
-### Quick Context Recovery:
-1. Read [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) first (complete codebase summary)
-2. Read this file (PROJECT_PLAN.md) for implementation roadmap
-3. Check tasks marked with [ ] in each phase
-4. Look at "Current Session Progress Tracker" section above
-5. Update this file as tasks complete
-
-### Key Files Reference:
-- [disass.py](disass.py) - Algorithm to port
-- [App.ts](src/js/App.ts) - Main app controller
-- [Editor.ts](src/js/Editor.ts) - Main window (currently placeholder)
-- [opcodes.json](src/json/opcodes.json) - 6502 instruction set
-
-### Common Commands:
-```bash
-npm run dev          # Start dev server
-npm run build        # Production build
-python disass.py -i file.prg -o file.asm  # Test Python version
-```
+- **Bundle Size:** 46.31 KB (gzipped: 17.41 KB)
+- **Framework:** Pure Svelte 5 (no compatibility mode)
+- **Warnings:** Only a11y warnings (cosmetic, low priority)
 
 ---
 
-**End of Project Plan**
+## Key Decisions Made
+
+### Architecture:
+- ✅ **Svelte 5 Migration** - Modern reactive framework
+- ✅ **Runes-based** - `$state()`, `$props()`, `$derived()`
+- ✅ **lib/ Structure** - Organized by feature/type
+- ✅ **Path Aliases** - `$lib/...` for clean imports
+- ✅ **Stores** - Reactive global state
+- ✅ **TypeScript** - Type-safe development
+
+### Removed:
+- ❌ Class-based architecture (archived)
+- ❌ Vanilla JS approach
+- ❌ Manual DOM manipulation
+- ❌ `window.app` global anti-pattern
+
+---
+
+## Testing Checklist (Post-Phase 3)
+
+### File Loading:
+- [ ] Load small PRG file (< 1KB)
+- [ ] Load large PRG file (64KB)
+- [ ] Invalid file rejection
+- [ ] Status bar updates correctly
+
+### Hex Viewer:
+- [x] Displays 16 bytes per line
+- [x] Groups bytes by 4
+- [x] Shows ASCII representation
+- [x] Address column correct
+- [x] Scrollable for large files
+
+### Disassembly: (Phase 3)
+- [ ] Opcodes lookup correctly
+- [ ] Labels generated for jumps
+- [ ] Code/data separation works
+- [ ] Assembly format matches spec
+- [ ] Illegal opcodes handled
+
+### File Export: (Phase 5)
+- [ ] Download triggers correctly
+- [ ] Filename correct
+- [ ] File contents valid assembly
+- [ ] Comments included
+
+---
+
+## Known Issues
+
+- None currently (all issues from Svelte 4 migration resolved)
+
+---
+
+## Future Enhancements
+
+- Drag & drop file loading
+- Multi-file projects
+- Compare disassemblies
+- Export to JSON/XML
+- Server-side Python disassembler API (optional)
+
+---
+
+## Version History
+
+- **v2.0** (2026-01-08) - Svelte 5 migration, Phases 1-2 complete
+- **v1.0** (2026-01-06) - Initial project plan
