@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { saveDisabled } from '../stores';
+  import { saveDisabled } from '$lib/stores/app';
 
   let {
     onloadPRG,

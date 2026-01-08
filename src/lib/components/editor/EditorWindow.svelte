@@ -1,7 +1,7 @@
 <script lang="ts">
-  import Window from './Window.svelte';
+  import Window from '$lib/components/ui/Window.svelte';
   import HexViewer from './HexViewer.svelte';
-  import { loadedFile, config } from '../stores';
+  import { loadedFile, config } from '$lib/stores/app';
 
   function toHex(num: number, digits: number): string {
     return num.toString(16).padStart(digits, '0').toLowerCase();

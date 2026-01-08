@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { config } from '../stores';
+  import { config } from '$lib/stores/app';
 
   let {
     onclose

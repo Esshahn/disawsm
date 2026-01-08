@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import MenuBar from './components/MenuBar.svelte';
-  import EditorWindow from './components/EditorWindow.svelte';
-  import StatusBar from './components/StatusBar.svelte';
-  import About from './components/About.svelte';
-  import Storage from './js/Storage';
-  import FileLoader from './js/FileLoader';
-  import { loadedFile, assemblyOutput, config, status } from './stores';
-  import { get_config } from './js/config';
+  import MenuBar from '$lib/components/ui/MenuBar.svelte';
+  import EditorWindow from '$lib/components/editor/EditorWindow.svelte';
+  import StatusBar from '$lib/components/ui/StatusBar.svelte';
+  import About from '$lib/components/dialogs/About.svelte';
+  import Storage from '$lib/services/storage';
+  import FileLoader from '$lib/services/fileLoader';
+  import { loadedFile, assemblyOutput, config, status } from '$lib/stores/app';
+  import { get_config } from '$lib/config';
 
   // Initialize immediately (not in onMount)
   let fileLoader = new FileLoader();

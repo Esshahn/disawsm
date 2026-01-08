@@ -2,11 +2,7 @@
  * FileLoader - Handles PRG file loading via HTML5 File API
  */
 
-export interface LoadedPRG {
-  name: string;
-  startAddress: number;
-  bytes: Uint8Array;
-}
+import type { LoadedPRG } from '$lib/types';
 
 export default class FileLoader {
   private fileInput: HTMLInputElement;

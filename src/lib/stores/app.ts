@@ -4,7 +4,7 @@
  */
 
 import { writable, derived } from 'svelte/store';
-import type { LoadedPRG } from './js/FileLoader';
+import type { LoadedPRG, AppConfig } from '$lib/types';
 
 // Application state stores
 export const loadedFile = writable<LoadedPRG | null>(null);
@@ -28,7 +28,7 @@ export const saveDisabled = derived(
 );
 
 // Configuration store (for window positions, settings, etc.)
-export const config = writable<any>({
+export const config = writable<AppConfig>({
   version: "26.01.04",
   window_editor: {
     left: 50,
