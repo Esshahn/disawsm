@@ -14,6 +14,7 @@
 
   let spriteSheetUrl = $state<string | null>(null);
   let charsetLoaded = $state(false);
+  let hoveredByteIndex = $state<number | null>(null); // Track which byte is being hovered (global index)
 
   onMount(async () => {
     try {
@@ -28,10 +29,15 @@
     return num.toString(16).padStart(digits, '0').toLowerCase();
   }
 
+  interface HexByte {
+    value: number;
+    index: number; // Global byte index
+  }
+
   interface HexLine {
     address: string;
-    hexBytes: string;
-    petsciiBytes: number[]; // Array of byte values for PETSCII display
+    hexBytes: HexByte[];
+    startIndex: number; // Starting byte index for this line
   }
 
   function formatHexDump(): HexLine[] {
@@ -41,32 +47,19 @@
       const addr = startAddress + i;
       const lineBytes = bytes.slice(i, Math.min(i + bytesPerLine, bytes.length));
 
-      // Format hex bytes with grouping of 8 bytes
-      let hexBytes = '';
-      for (let j = 0; j < bytesPerLine; j++) {
-        if (j < lineBytes.length) {
-          hexBytes += toHex(lineBytes[j], 2);
-        } else {
-          hexBytes += '  '; // Empty space for missing bytes
-        }
-
-        // Add space after each byte, and extra gap after every 8 bytes
-        if (j < bytesPerLine - 1) {
-          if ((j + 1) % 8 === 0) {
-            hexBytes += '  '; // Double space gap between groups
-          } else {
-            hexBytes += ' '; // Single space between bytes
-          }
-        }
+      // Create array of HexByte objects with global indices
+      const hexBytes: HexByte[] = [];
+      for (let j = 0; j < lineBytes.length; j++) {
+        hexBytes.push({
+          value: lineBytes[j],
+          index: i + j, // Global byte index
+        });
       }
-
-      // Store byte values for PETSCII rendering
-      const petsciiBytes = Array.from(lineBytes);
 
       lines.push({
         address: toHex(addr, 4),
         hexBytes: hexBytes,
-        petsciiBytes: petsciiBytes,
+        startIndex: i,
       });
     }
 
@@ -86,13 +79,34 @@
     {#each hexLines as line}
       <div class="hex-line">
         <span class="hex-addr">{line.address}</span>
-        <span class="hex-bytes">{line.hexBytes}</span>
+        <span class="hex-bytes-container">
+          {#each line.hexBytes as hexByte, idx}
+            <span
+              class="hex-byte"
+              class:highlighted={hoveredByteIndex === hexByte.index}
+              onmouseenter={() => hoveredByteIndex = hexByte.index}
+              onmouseleave={() => hoveredByteIndex = null}
+            >
+              {toHex(hexByte.value, 2)}
+            </span>
+            {#if idx < line.hexBytes.length - 1}
+              {#if (idx + 1) % 8 === 0}
+                <span class="byte-gap-large"></span>
+              {:else}
+                <span class="byte-gap"></span>
+              {/if}
+            {/if}
+          {/each}
+        </span>
         <span class="hex-petscii">
           {#if charsetLoaded && spriteSheetUrl}
-            {#each line.petsciiBytes as byte}
+            {#each line.hexBytes as hexByte}
               <span
                 class="petscii-char"
-                style="background-image: url({spriteSheetUrl}); background-position: {getPetsciiCharPosition(byte)};"
+                class:highlighted={hoveredByteIndex === hexByte.index}
+                style="background-image: url({spriteSheetUrl}); background-position: {getPetsciiCharPosition(hexByte.value)};"
+                onmouseenter={() => hoveredByteIndex = hexByte.index}
+                onmouseleave={() => hoveredByteIndex = null}
               ></span>
             {/each}
           {:else}
@@ -161,13 +175,38 @@
     font-family: 'Courier New', Courier, monospace !important;
   }
 
-  .hex-bytes {
+  .hex-bytes-container {
     flex: 1;
     min-width: 200px;
-    color: #ffffff;
+    display: flex;
     font-variant-numeric: tabular-nums;
     font-family: 'Courier New', Courier, monospace !important;
-    white-space: pre;
+  }
+
+  .hex-byte {
+    color: #ffffff;
+    cursor: pointer;
+    padding: 1px 2px;
+    border-radius: 2px;
+    transition: background-color 0.1s;
+  }
+
+  .hex-byte:hover {
+     box-shadow: 0 0 0 2px rgb(242, 0, 226);
+  }
+
+  .hex-byte.highlighted {
+    box-shadow: 0 0 0 2px rgb(242, 0, 226);
+  }
+
+  .byte-gap {
+    display: inline-block;
+    width: 0.5ch;
+  }
+
+  .byte-gap-large {
+    display: inline-block;
+    width: 1ch;
   }
 
   .hex-petscii {
@@ -186,6 +225,18 @@
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: box-shadow 0.1s;
+    position: relative;
+  }
+
+  .petscii-char:hover {
+    box-shadow: 0 0 0 2px rgb(242, 0, 226);
+  }
+
+  .petscii-char.highlighted {
+    box-shadow: 0 0 0 2px rgb(242, 0, 226);
   }
 
   .loading {
