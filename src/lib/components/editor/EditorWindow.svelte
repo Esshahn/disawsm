@@ -3,18 +3,20 @@
   import HexViewer from './HexViewer.svelte';
   import { loadedFile, config } from '$lib/stores/app';
 
+  let bytesPerLine = $state(16);
+
   function toHex(num: number, digits: number): string {
     return num.toString(16).padStart(digits, '0').toLowerCase();
   }
 
-  // Reactive declarations to ensure config values are properly accessed
-  $: editorConfig = $config?.window_editor;
-  $: left = editorConfig?.left ?? 210;
-  $: top = editorConfig?.top ?? 50;
-  $: width = `${editorConfig?.width ?? 700}px`;
-  $: height = `${editorConfig?.height ?? 400}px`;
-  $: closeable = editorConfig?.closeable ?? false;
-  $: resizable = editorConfig?.resizable ?? false;
+  // Reactive declarations using $derived
+  let editorConfig = $derived($config?.window_editor);
+  let left = $derived(editorConfig?.left ?? 210);
+  let top = $derived(editorConfig?.top ?? 50);
+  let width = $derived(`${editorConfig?.width ?? 700}px`);
+  let height = $derived(`${editorConfig?.height ?? 400}px`);
+  let closeable = $derived(editorConfig?.closeable ?? false);
+  let resizable = $derived(editorConfig?.resizable ?? false);
 </script>
 
 {#if editorConfig}
@@ -36,10 +38,21 @@
           <span>Start: ${toHex($loadedFile.startAddress, 4)}</span>
           <span>End: ${toHex($loadedFile.startAddress + $loadedFile.bytes.length - 1, 4)}</span>
           <span>Size: {$loadedFile.bytes.length} bytes</span>
+          <span class="bytes-per-line-control">
+            <label for="bytesPerLine">Bytes/Line:</label>
+            <input
+              id="bytesPerLine"
+              type="number"
+              bind:value={bytesPerLine}
+              min="1"
+              max="32"
+              step="1"
+            />
+          </span>
         </div>
       </div>
       <div class="hex-viewer-container">
-        <HexViewer bytes={$loadedFile.bytes} startAddress={$loadedFile.startAddress} />
+        <HexViewer bytes={$loadedFile.bytes} startAddress={$loadedFile.startAddress} {bytesPerLine} />
       </div>
     </div>
   {:else}
@@ -83,10 +96,37 @@
     font-family: 'Courier New', monospace;
   }
 
+  .bytes-per-line-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .bytes-per-line-control label {
+    color: #aaaaaa;
+    font-family: 'Quicksand', sans-serif;
+  }
+
+  .bytes-per-line-control input {
+    width: 50px;
+    padding: 2px 6px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 3px;
+    color: #00c698;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+  }
+
+  .bytes-per-line-control input:focus {
+    outline: none;
+    border-color: #00c698;
+  }
+
   .hex-viewer-container {
     flex: 1;
     overflow: hidden;
-    width: 650px;
+    
   }
 
   p {
