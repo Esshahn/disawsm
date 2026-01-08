@@ -6,11 +6,11 @@ export function get_config() {
       top: 50,
       left: 210,
       width: 800,
-      height: 400,
+      height: 600,
       autoOpen: true,
       closeable: false,
       isOpen: true,
-      resizable: false
+      resizable: true
     }
   };
 

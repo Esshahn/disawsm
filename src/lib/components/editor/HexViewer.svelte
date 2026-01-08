@@ -13,7 +13,7 @@
 
   function toAscii(byte: number): string {
     // Display printable ASCII chars, otherwise show a dot
-    if (byte >= 32 && byte <= 126) {
+    if (byte >= 0 && byte <= 255) {
       return String.fromCharCode(byte);
     }
     return '.';
@@ -78,7 +78,7 @@
   <div class="hex-content">
     {#each hexLines as line}
       <div class="hex-line">
-        <span class="hex-addr">{line.address}:</span>
+        <span class="hex-addr">{line.address}</span>
         <span class="hex-bytes">{line.hexBytes}</span>
         <span class="hex-ascii">{line.ascii}</span>
       </div>
