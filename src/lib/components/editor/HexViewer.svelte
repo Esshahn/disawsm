@@ -16,6 +16,12 @@
   let charsetLoaded = $state(false);
   let hoveredByteIndex = $state<number | null>(null); // Track which byte is being hovered (global index)
 
+  function getTooltipText(value: number, address: number): string {
+    const hexAddr = toHex(address, 4);
+    const hexVal = toHex(value, 2);
+    return `${hexAddr}: $${hexVal} / ${value}`;
+  }
+
   onMount(async () => {
     try {
       spriteSheetUrl = await loadPetsciiCharset();
@@ -84,6 +90,7 @@
             <span
               class="hex-byte"
               class:highlighted={hoveredByteIndex === hexByte.index}
+              data-tooltip={getTooltipText(hexByte.value, startAddress + hexByte.index)}
               onmouseenter={() => hoveredByteIndex = hexByte.index}
               onmouseleave={() => hoveredByteIndex = null}
             >
@@ -104,10 +111,15 @@
               <span
                 class="petscii-char"
                 class:highlighted={hoveredByteIndex === hexByte.index}
+                data-tooltip={getTooltipText(hexByte.value, startAddress + hexByte.index)}
                 style="background-image: url({spriteSheetUrl}); background-position: {getPetsciiCharPosition(hexByte.value)};"
                 onmouseenter={() => hoveredByteIndex = hexByte.index}
                 onmouseleave={() => hoveredByteIndex = null}
               ></span>
+            {/each}
+            <!-- Fill remaining space with empty placeholders -->
+            {#each Array(bytesPerLine - line.hexBytes.length) as _}
+              <span class="petscii-char petscii-empty"></span>
             {/each}
           {:else}
             <span class="loading">Loading...</span>
@@ -131,7 +143,7 @@
 
   .hex-header {
     display: flex;
-    gap: 8px;
+    gap: 16px;
     padding-bottom: 8px;
     border-bottom: 1px solid #333;
     margin-bottom: 8px;
@@ -142,15 +154,15 @@
 
   .hex-header-addr {
     width: 45px;
+    flex-shrink: 0;
   }
 
   .hex-header-hex {
-    flex: 1;
-    min-width: 200px;
+    flex-shrink: 0;
   }
 
   .hex-header-petscii {
-    min-width: 80px;
+    flex-shrink: 0;
   }
 
   .hex-content {
@@ -160,7 +172,7 @@
 
   .hex-line {
     display: flex;
-    gap: 8px;
+    gap: 16px;
     font-family: 'Courier New', Courier, monospace !important;
   }
 
@@ -173,14 +185,14 @@
     width: 45px;
     user-select: none;
     font-family: 'Courier New', Courier, monospace !important;
+    flex-shrink: 0;
   }
 
   .hex-bytes-container {
-    flex: 1;
-    min-width: 200px;
     display: flex;
     font-variant-numeric: tabular-nums;
     font-family: 'Courier New', Courier, monospace !important;
+    flex-shrink: 0;
   }
 
   .hex-byte {
@@ -189,6 +201,7 @@
     padding: 1px 2px;
     border-radius: 2px;
     transition: background-color 0.1s;
+    position: relative;
   }
 
   .hex-byte:hover {
@@ -197,6 +210,47 @@
 
   .hex-byte.highlighted {
     box-shadow: 0 0 0 2px rgb(242, 0, 226);
+  }
+
+  /* Modern tooltip for hex bytes */
+  .hex-byte[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(18, 18, 18, 0.95);
+    color: #00c698;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
+    border: 1px solid rgba(0, 198, 152, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    font-family: 'Courier New', monospace;
+  }
+
+  .hex-byte[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: rgba(18, 18, 18, 0.95);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
+  }
+
+  .hex-byte[data-tooltip]:hover::after,
+  .hex-byte[data-tooltip]:hover::before {
+    opacity: 1;
   }
 
   .byte-gap {
@@ -210,11 +264,10 @@
   }
 
   .hex-petscii {
-    min-width: 80px;
     display: flex;
     gap: 1px;
     align-items: center;
-    flex-wrap: wrap;
+    flex-shrink: 0;
   }
 
   .petscii-char {
@@ -237,6 +290,56 @@
 
   .petscii-char.highlighted {
     box-shadow: 0 0 0 2px rgb(242, 0, 226);
+  }
+
+  /* Modern tooltip for PETSCII characters */
+  .petscii-char[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(18, 18, 18, 0.95);
+    color: #00c698;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
+    border: 1px solid rgba(0, 198, 152, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    font-family: 'Courier New', monospace;
+  }
+
+  .petscii-char[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: rgba(18, 18, 18, 0.95);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
+  }
+
+  .petscii-char[data-tooltip]:hover::after,
+  .petscii-char[data-tooltip]:hover::before {
+    opacity: 1;
+  }
+
+  /* Empty PETSCII placeholder - no hover effects */
+  .petscii-empty {
+    cursor: default;
+  }
+
+  .petscii-empty:hover {
+    box-shadow: none;
   }
 
   .loading {
