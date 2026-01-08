@@ -33,9 +33,9 @@
         <img src="/ui/logo.svg" alt="DisAWSM Logo" />
       </div>
 
-      <h3>DisAWSM</h3>
+           <p>A browser-based 6502 disassembler</p>
       <p class="version">Version {$config.version}</p>
-      <p>A browser-based 6502 disassembler</p>
+ 
 
       <hr />
 
@@ -82,11 +82,6 @@
     align-items: center;
   }
 
-  .dialog-header h2 {
-    margin: 0;
-    color: #00c698;
-    font-size: 18px;
-  }
 
   .close-button {
     background: none;
@@ -118,11 +113,6 @@
     height: auto;
   }
 
-  h3 {
-    color: #00c698;
-    margin: 0 0 8px 0;
-    font-size: 24px;
-  }
 
   .version {
     color: #aaaaaa;

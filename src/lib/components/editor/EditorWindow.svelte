@@ -6,17 +6,17 @@
   function toHex(num: number, digits: number): string {
     return num.toString(16).padStart(digits, '0').toLowerCase();
   }
-  console.log(config.window_editor.width);
+
 </script>
 
 <Window
   title="Editor"
-  left={$config.window_editor?.left || 210}
-  top={$config.window_editor?.top || 50}
-  width="{$config.window_editor?.width || 700}px"
-  height="{$config.window_editor?.height || 400}px"
-  closeable={$config.window_editor?.closeable || false}
-  resizable={$config.window_editor?.resizable || false}
+  left={$config.window_editor.left}
+  top={$config.window_editor.top}
+  width="{$config.window_editor.width}px"
+  height="{$config.window_editor.height}px"
+  closeable={$config.window_editor.closeable}
+  resizable={$config.window_editor.resizable}
   windowKey="window_editor"
 >
   {#if $loadedFile}
@@ -76,6 +76,7 @@
   .hex-viewer-container {
     flex: 1;
     overflow: hidden;
+    width: 650px;
   }
 
   p {
