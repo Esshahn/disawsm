@@ -73,10 +73,6 @@ export default class FileLoader {
     // Remove first 2 bytes to get actual program data
     const programBytes = bytes.slice(2);
 
-    console.log(`Loaded PRG: ${file.name}`);
-    console.log(`Start address: $${this.toHex(startAddress, 4)}`);
-    console.log(`Program size: ${programBytes.length} bytes`);
-
     return {
       name: file.name,
       startAddress,

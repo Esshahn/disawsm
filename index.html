@@ -5,62 +5,17 @@
     <title>DisASWM - The 6502 Disassembler</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="Description" content="DisASWM is a free online disassembler for 6502 code." />
-    
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet" />
     <link rel="stylesheet" href="css/stylesheet.css">
 
-
-    <!-- Main application script -->
-    <script type="module" src="./src/js/App.ts"></script>
+    <!-- Svelte application entry point -->
+    <script type="module" src="./src/main.ts"></script>
   </head>
 
   <body>
-    <div id="container">
-      <div id="menubar">
-        <ul>
-          <li class="dropdown">
-            <a href="javascript:void(0)" class="dropbtn">DisAWSM</a>
-            <div class="dropdown-content">
-              <a id="menubar-info">About</a>
-            </div>
-          </li>
-
-          <li class="dropdown">
-            <a href="javascript:void(0)" class="dropbtn">File</a>
-            <div class="dropdown-content">
-              <a id="menubar-load-prg">Load PRG...<span class="hotkey">Ctrl+O</span></a>
-              <a id="menubar-save-asm" class="disabled">Save Assembly...<span class="hotkey">Ctrl+S</span></a>
-              <hr>
-              <a id="menubar-clear">Clear</a>
-            </div>
-          </li>
-
-          <li class="dropdown">
-            <a href="javascript:void(0)" class="dropbtn">View</a>
-            <div class="dropdown-content">
-              <a id="menubar-fullscreen">Toggle Fullscreen<span class="hotkey">Ctrl+F</span></a>
-            </div>
-          </li>
-
-          <li class="dropdown">
-            <a href="javascript:void(0)" class="dropbtn">Help</a>
-            <div class="dropdown-content">
-              <a href="https://github.com/Esshahn/spritemate" target="_blank">README on github<span class="hotkey"></span></a>
-              <a href="http://www.awsm.de" target="_blank">www.awsm.de<span class="hotkey"></span></a>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <div id="dialog-confirm" title="New File">
-        All current data will be erased. Are you sure?
-      </div>
-      <div id="app"></div>
-      <div id="statusbar">
-        <div id="statustext"></div>
-      </div>
-      <div id="custom-tooltip"></div>
-    </div>
+    <!-- Svelte mounts here -->
+    <div id="app"></div>
   </body>
 </html>

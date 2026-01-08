@@ -4,7 +4,7 @@ import Window from "./Window";
 import Editor from "./Editor";
 import FileLoader, { LoadedPRG } from "./FileLoader";
 import { get_config } from "./config";
-import { dom, toggle_fullscreen } from "./helper";
+import { dom } from "./helper";
 
 declare global {
   interface Window {

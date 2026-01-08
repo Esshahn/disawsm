@@ -12,6 +12,8 @@
     "build": "vite build"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@tsconfig/svelte": "^5.0.6",
     "@types/jszip": "^3.4.1",
     "@typescript-eslint/eslint-plugin": "^8.50.1",
     "@typescript-eslint/parser": "^8.50.1",
@@ -19,6 +21,8 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "prettier": "^3.7.4",
+    "svelte": "^5.46.1",
+    "svelte-check": "^4.3.5",
     "vite": "^7.3.0"
   },
   "dependencies": {

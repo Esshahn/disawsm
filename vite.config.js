@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -6,6 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
+  plugins: [svelte()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -13,7 +15,8 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    assetsDir: 'assets', // Default asset directory, you can change if needed
+    assetsDir: 'assets',
   },
-  base: '/', // Make sure this is correct for production
+  base: '/',
+  assetsInclude: ['**/*.json'], // Ensure JSON files can be imported
 });
