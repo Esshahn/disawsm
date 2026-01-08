@@ -33,18 +33,20 @@
       const addr = startAddress + i;
       const lineBytes = bytes.slice(i, Math.min(i + bytesPerLine, bytes.length));
 
-      // Format hex bytes with grouping of 4
+      // Format hex bytes with grouping of 8 (two groups of 8)
       let hexBytes = '';
       for (let j = 0; j < bytesPerLine; j++) {
         if (j < lineBytes.length) {
-          hexBytes += toHex(lineBytes[j], 2) + ' ';
+          hexBytes += toHex(lineBytes[j], 2);
         } else {
-          hexBytes += '   '; // Empty space for missing bytes
+          hexBytes += '  '; // Empty space for missing bytes
         }
 
-        // Add extra space after every 4 bytes
-        if ((j + 1) % 4 === 0) {
-          hexBytes += ' ';
+        // Add space after each byte, and extra gap after every 8 bytes
+        if ((j + 1) % 8 === 0 && j < bytesPerLine - 1) {
+          hexBytes += '  '; // Double space gap between groups
+        } else if (j < bytesPerLine - 1) {
+          hexBytes += ' '; // Single space between bytes
         }
       }
 
@@ -86,7 +88,7 @@
 
 <style>
   .hex-viewer {
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Courier New', Courier, monospace !important;
     font-size: 13px;
     background: #1a1a1a;
     color: #ffffff;
@@ -103,6 +105,7 @@
     margin-bottom: 8px;
     color: #00c698;
     font-weight: 600;
+    font-family: 'Courier New', Courier, monospace !important;
   }
 
   .hex-header-addr {
@@ -120,11 +123,13 @@
 
   .hex-content {
     line-height: 160%;
+    font-family: 'Courier New', Courier, monospace !important;
   }
 
   .hex-line {
     display: flex;
     gap: 8px;
+    font-family: 'Courier New', Courier, monospace !important;
   }
 
   .hex-line:hover {
@@ -135,6 +140,7 @@
     color: #00c698;
     width: 45px;
     user-select: none;
+    font-family: 'Courier New', Courier, monospace !important;
   }
 
   .hex-bytes {
@@ -142,10 +148,13 @@
     min-width: 400px;
     color: #ffffff;
     font-variant-numeric: tabular-nums;
+    font-family: 'Courier New', Courier, monospace !important;
+    white-space: pre;
   }
 
   .hex-ascii {
     width: 160px;
     color: #aaaaaa;
+    font-family: 'Courier New', Courier, monospace !important;
   }
 </style>

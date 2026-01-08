@@ -2,11 +2,11 @@
 
 **Quick Start Guide for Claude Sessions**
 
-Last Updated: 2026-01-06
+Last Updated: 2026-01-08
 
 ## Project Summary
 
-DisAWSM is a web-based 6502 disassembler that converts Commodore 64 PRG files (machine code binaries) into annotated assembly code. The project combines a Python-based disassembler engine ([disass.py](disass.py)) with a modern TypeScript web interface.
+DisAWSM is a web-based 6502 disassembler that converts Commodore 64 PRG files (machine code binaries) into annotated assembly code. The project combines a Python-based disassembler engine ([disass.py](disass.py)) with a modern **Svelte 5** web interface.
 
 **Goal:** Create a browser-based application where users can upload PRG files, view hex dumps, and generate disassembled 6502 assembly code.
 
@@ -15,10 +15,10 @@ DisAWSM is a web-based 6502 disassembler that converts Commodore 64 PRG files (m
 ## Technology Stack
 
 ### Frontend
+- **Svelte 5.46.1** (modern reactive framework with runes)
 - **TypeScript** (ES2017, strict mode)
 - **Vite 7.3.0** (build tool with hot reload)
-- **Vanilla JS/DOM** (no framework - custom window/dialog system)
-- **Native HTML5 `<dialog>` API** for modals
+- **Svelte Stores** for reactive state management
 - **LocalStorage** for persistence
 
 ### Backend/Logic
@@ -30,7 +30,7 @@ DisAWSM is a web-based 6502 disassembler that converts Commodore 64 PRG files (m
 ### Build System
 ```bash
 npm run dev    # Development server (http://localhost:5173)
-npm run build  # Production build to dist/
+npm run build  # Production build to dist/ (46.31 KB)
 ```
 
 ---
@@ -41,69 +41,120 @@ npm run build  # Production build to dist/
 /Users/ingohinterding/github/disawsm/
 ├── index.html                 # Main HTML entry
 ├── package.json              # NPM config (v1.2.1)
-├── tsconfig.json             # TypeScript config
-├── vite.config.js            # Vite config
+├── tsconfig.json             # TypeScript config with $lib alias
+├── vite.config.js            # Vite config with Svelte plugin
+├── svelte.config.js          # Svelte 5 configuration
 ├── disass.py                 # Python disassembler (CLI tool)
 │
 ├── src/
-│   ├── js/                   # TypeScript application code
-│   │   ├── App.ts           # Main app entry (143 lines)
-│   │   ├── Window.ts        # Window/dialog manager
-│   │   ├── Dialog.ts        # Custom dialog wrapper
-│   │   ├── Editor.ts        # Editor window (currently placeholder)
-│   │   ├── About.ts         # About dialog
-│   │   ├── Storage.ts       # LocalStorage manager
-│   │   ├── helper.ts        # DOM utilities
-│   │   └── config.ts        # Default configuration
+│   ├── App.svelte            # Root Svelte component
+│   ├── main.ts               # Entry point (uses mount API)
 │   │
-│   └── json/                # Data files
-│       ├── opcodes.json     # 6502 instruction set (883 lines)
-│       ├── c64-mapping.json # C64 memory map (172 lines)
-│       └── entrypoints.json # Disassembly hints (5 lines)
+│   └── lib/                  # Core application code (Svelte convention)
+│       ├── components/
+│       │   ├── ui/           # Generic UI components
+│       │   │   ├── Window.svelte       # Draggable window component
+│       │   │   ├── MenuBar.svelte      # Top menu bar
+│       │   │   └── StatusBar.svelte    # Bottom status bar
+│       │   ├── dialogs/      # Modal/dialog components
+│       │   │   └── About.svelte        # About dialog
+│       │   └── editor/       # Editor-specific components
+│       │       ├── EditorWindow.svelte # Main editor window
+│       │       └── HexViewer.svelte    # Hex dump viewer
+│       │
+│       ├── services/         # Business logic services
+│       │   ├── fileLoader.ts # PRG file loading via HTML5 File API
+│       │   └── storage.ts    # LocalStorage manager
+│       │
+│       ├── utils/            # Pure utility functions
+│       │   └── dom.ts        # DOM manipulation utilities
+│       │
+│       ├── stores/           # Svelte stores for state management
+│       │   └── app.ts        # Global application state
+│       │
+│       ├── config/           # Configuration
+│       │   └── index.ts      # Default configuration
+│       │
+│       └── types/            # TypeScript type definitions
+│           └── index.ts      # Shared interfaces (LoadedPRG, AppConfig)
 │
-└── public/
-    ├── css/
-    │   └── stylesheet.css   # Main CSS (1,686 lines)
-    └── ui/
-        ├── logo.svg         # Logo
-        └── bg_glossy.png    # Background texture
+├── public/
+│   ├── css/
+│   │   └── stylesheet.css   # Main CSS (1,686 lines)
+│   └── ui/
+│       ├── logo.svg         # Logo
+│       └── bg_glossy.png    # Background texture
+│
+└── archive/
+    └── old-class-based/     # Archived pre-Svelte 5 TypeScript files
 ```
 
 ---
 
 ## Key Components
 
-### 1. App.ts ([src/js/App.ts:14-143](src/js/App.ts#L14-L143))
-Main application controller:
-- Initializes Storage, Windows, and Editor
-- Manages keyboard shortcuts
-- Stores window positions to localStorage
-- Creates global `window.app` reference
-- Currently creates two windows: Editor and About
+### 1. App.svelte ([src/App.svelte](src/App.svelte))
+Main application component using Svelte 5 runes:
+- Uses `$state()` for reactive local variables
+- Initializes Storage, FileLoader, and manages global state
+- Handles menu events (loadPRG, saveAssembly, showAbout, clear)
+- Manages keyboard shortcuts and About dialog visibility
 
-### 2. Window.ts
-Custom window management system:
-- Wraps HTML5 `<dialog>` elements
-- Draggable and resizable windows
-- Z-index stacking management
-- Modal and non-modal support
-- Position/resize callbacks for persistence
+### 2. Window.svelte ([src/lib/components/ui/Window.svelte](src/lib/components/ui/Window.svelte))
+Reusable draggable window component:
+- Uses `$props()` for component props
+- Uses `$state()` for reactive drag state
+- Implements drag-and-drop with `svelte:window` event listeners
+- Z-index management for window stacking
+- `{@render children?.()}` for slot content
 
-### 3. Editor.ts ([src/js/Editor.ts:3-17](src/js/Editor.ts#L3-L17))
-**Current state:** Placeholder with "Hello World"
-**Future state:** Main disassembly viewer/editor
+### 3. HexViewer.svelte ([src/lib/components/editor/HexViewer.svelte](src/lib/components/editor/HexViewer.svelte))
+Hex dump display component:
+- Shows 16 bytes per line, grouped by 4
+- Displays ASCII representation
+- Uses `$derived()` for reactive hex line formatting
+- Format: `e5cf:  85 cc 8d 92  02 f0 f7 78  ...  .�...��x`
 
-### 4. Storage.ts
-LocalStorage wrapper:
-- Version comparison system (`YY.MM.DD.patch`)
-- Config persistence
-- Auto-save functionality
+### 4. Stores ([src/lib/stores/app.ts](src/lib/stores/app.ts))
+Svelte reactive stores:
+- `loadedFile` - writable store for loaded PRG file
+- `assemblyOutput` - writable store for disassembled code
+- `status` - derived store for status bar message
+- `saveDisabled` - derived store for menu state
+- `config` - writable store for app configuration
 
-### 5. disass.py ([disass.py:1-419](disass.py#L1-L419))
-Python disassembler engine:
+### 5. FileLoader ([src/lib/services/fileLoader.ts](src/lib/services/fileLoader.ts))
+Service for loading PRG files:
+- Creates hidden file input element
+- Parses PRG format (2-byte little-endian start address)
+- Returns `LoadedPRG` interface with name, startAddress, bytes
+- Validates file size (max 64KB for 6502)
+
+### 6. disass.py ([disass.py:1-419](disass.py#L1-L419))
+Python disassembler engine (to be ported to TypeScript):
 - **load_file()** - Reads PRG files, extracts start address
 - **analyze()** - Distinguishes code from data
 - **convert_to_program()** - Generates assembly output
+
+---
+
+## Svelte 5 Architecture
+
+### State Management
+- **Runes** for reactivity: `$state()`, `$derived()`, `$props()`
+- **Stores** for global state: writable, derived
+- **No compatibility mode** - pure Svelte 5 syntax
+
+### Component Communication
+- **Props**: Using `$props()` destructuring
+- **Events**: Function props (e.g., `onloadPRG`, `onclose`)
+- **Stores**: Reactive subscriptions with `$` prefix
+
+### Modern Patterns
+- `mount()` API instead of `new App()`
+- `{@render children?.()}` instead of `<slot />`
+- `onclick` instead of `on:click`
+- Path aliases: `$lib/...` for clean imports
 
 ---
 
@@ -203,47 +254,75 @@ User-defined hints for analysis:
 
 ---
 
-## Current Menu System
+## Current Features (Phase 1-2 Complete)
 
-From [index.html:20-43](index.html#L20-L43):
+### Phase 1: File Loading ✅
+- File menu with "Load PRG..." option
+- FileLoader service using HTML5 File API
+- Status bar updates with file info
+- Reactive state management with stores
 
-### DisAWSM
-- About (opens About dialog)
+### Phase 2: Hex Viewer ✅
+- HexViewer component displays loaded files
+- 16 bytes per line, grouped by 4
+- ASCII representation column
+- Address column in hex format
+- Scrollable for large files
 
-### View
-- Toggle Fullscreen (Ctrl+F)
+---
 
-### Help
-- README on github
-- www.awsm.de
+## Next Steps (Phase 3+)
 
-**Note:** No File menu yet for loading PRG files!
+### Phase 3: Disassembler Integration (NEXT)
+- Port Python disassembler logic to TypeScript
+- Implement opcode lookup from opcodes.json
+- Code/data analysis algorithm
+- Label generation
+- Assembly output formatting
+
+### Phase 4: Assembly Viewer
+- Display disassembled code in editor
+- Syntax highlighting
+- Line numbers
+- Label navigation
+
+### Phase 5: File Export
+- Save assembly to .asm file
+- Export configuration
+- Download functionality
+
+### Phase 6: Advanced Features
+- Entrypoints editor
+- C64 memory map annotations
+- Interactive disassembly settings
 
 ---
 
 ## UI Architecture
 
-### Window System
-- Based on HTML5 `<dialog>` elements
-- Custom dragging/resizing logic
-- Z-index management (starts at 100)
-- Position persistence via localStorage
+### Component Hierarchy
+```
+App.svelte
+├── MenuBar (ui)
+├── EditorWindow (editor)
+│   ├── Window (ui)
+│   └── HexViewer (editor)
+├── StatusBar (ui)
+└── About (dialogs)
+```
 
 ### Styling
 - Dark theme with custom colors
 - CSS variables in [public/css/stylesheet.css](public/css/stylesheet.css)
 - Dotted background pattern
 - Quicksand font family
-
-### Current Windows
-1. **Editor** (window_editor) - Main window, non-closeable
-2. **About** (window_about) - Modal, auto-opens on version update
+- Component-scoped styles in `.svelte` files
 
 ---
 
 ## Storage & Configuration
 
-### config.ts ([src/js/config.ts](src/js/config.ts))
+### config/index.ts ([src/lib/config/index.ts](src/lib/config/index.ts))
 Default configuration:
 ```typescript
 {
@@ -257,7 +336,7 @@ Default configuration:
 }
 ```
 
-### Storage.ts ([src/js/Storage.ts](src/js/Storage.ts))
+### Storage Service ([src/lib/services/storage.ts](src/lib/services/storage.ts))
 - Merges defaults with localStorage
 - Version comparison for updates
 - Auto-save functionality
@@ -265,60 +344,25 @@ Default configuration:
 
 ---
 
-## Next Steps (From Current State)
-
-The project has:
-- ✅ Working window/dialog system
-- ✅ Python disassembler engine
-- ✅ JSON data files (opcodes, C64 map)
-- ✅ Basic UI framework
-- ✅ Configuration/storage system
-
-Missing:
-- ❌ File upload/loading mechanism
-- ❌ Hex viewer display
-- ❌ Integration of Python logic into TypeScript
-- ❌ Assembly output viewer
-- ❌ File download/save functionality
-
----
-
-## Hex Dump Format (Target)
-
-Example from user requirements:
-```
-e5cf:  85 cc 8d 92  02 f0 f7 78  a5 cf f0 0c  a5 ce ae 87   .�...��x���.�ή.
-e5df:  02 a0 00 84  cf 20 13 ea  20 b4 e5 c9  83 d0 10 a2   .�..� .� ���.�.�
-e5ef:  09 78 86 c6  bd e6 ec 9d  76 02 ca d0  f7 f0 cf c9   .x.ƽ��.v.������
-```
-
-Format breakdown:
-- `e5cf:` - Address in hex (4 digits)
-- `85 cc ... 87` - 16 bytes in hex (grouped by 4)
-- `.�...��x...` - ASCII representation (non-printable = .)
-
----
-
 ## Important Notes
 
 ### Code Style
+- **Svelte 5 runes** for reactivity
 - TypeScript strict mode enabled
-- No framework dependencies (vanilla DOM)
-- Class-based architecture
-- Helper utilities in [helper.ts](src/js/helper.ts)
+- Modern ES2017+ features
+- Path aliases (`$lib/...`) for clean imports
+- Component-based architecture
 
-### Python Integration Strategy
-The Python code in [disass.py](disass.py) needs to be ported to TypeScript:
-- File parsing logic
-- Opcode lookup
-- Code/data analysis algorithm
-- Label generation
-- Assembly formatting
+### Build Output
+- Bundle size: **46.31 KB** (gzipped: 17.41 KB)
+- Pure Svelte 5 (no compatibility mode)
+- Production-ready optimizations
 
-### Browser Constraints
-- No access to filesystem (use File API)
-- All processing must be client-side
+### Browser Features
+- HTML5 File API for file loading
 - LocalStorage for persistence
+- Client-side processing only
+- No backend required
 
 ---
 
@@ -340,16 +384,20 @@ python disass.py -i input.prg -o output.asm -e entrypoints.json
 ## Key Files to Understand
 
 For new features:
-1. [App.ts](src/js/App.ts) - Application entry point
-2. [Editor.ts](src/js/Editor.ts) - Main editing area (currently empty)
-3. [disass.py](disass.py) - Disassembly logic to port
-4. [opcodes.json](src/json/opcodes.json) - Instruction definitions
-5. [Window.ts](src/js/Window.ts) - Dialog/window management
+1. [App.svelte](src/App.svelte) - Root component
+2. [lib/stores/app.ts](src/lib/stores/app.ts) - Global state
+3. [lib/services/fileLoader.ts](src/lib/services/fileLoader.ts) - File loading
+4. [lib/components/editor/HexViewer.svelte](src/lib/components/editor/HexViewer.svelte) - Hex display
+5. [disass.py](disass.py) - Disassembly logic to port (Phase 3)
+6. [lib/types/index.ts](src/lib/types/index.ts) - TypeScript interfaces
 
 ---
 
 ## Version History
 
-- v26.01.04 - Current version
-- Storage system tracks version updates
-- About dialog auto-opens on new versions
+- v26.01.08 - **Svelte 5 Migration Complete**
+  - Converted to pure Svelte 5 with runes
+  - Refactored to modern `lib/` structure
+  - Implemented Phases 1-2 (file loading + hex viewer)
+  - Bundle size: 46.31 KB
+- v26.01.04 - Initial version with class-based architecture

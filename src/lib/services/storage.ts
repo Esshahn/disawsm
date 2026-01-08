@@ -1,13 +1,15 @@
 import { status } from "$lib/utils/dom";
+import type { AppConfig, UserConfig } from "$lib/types";
 
 // handles writing and reading of the local html5 storage in the browser
 
 export default class Storage {
   is_new_version: boolean;
-  storage: any = {};
+  config: AppConfig;
+  userConfig: UserConfig | null = null;
 
-  constructor(public config) {
-    this.config = config;
+  constructor(appConfig: AppConfig) {
+    this.config = appConfig;
     this.is_new_version = false; // will be true if the storage config has an older version number
     this.init();
   }
@@ -56,54 +58,49 @@ export default class Storage {
   init() {
     if (typeof Storage !== "undefined") {
       try {
-        // Read stored config (if it exists)
-        const storedConfigString = localStorage.getItem("disawsm_config");
+        // Read stored user config (if it exists)
+        const storedConfigString = localStorage.getItem("disawsm_userconfig");
 
         if (!storedConfigString) {
-          // No stored config exists, save the default
-          this.write(this.config);
+          // No stored config exists, create initial user config
+          const initialUserConfig: UserConfig = {
+            version: this.config.version,
+            default_filename: this.config.default_filename
+          };
+          this.writeUserConfig(initialUserConfig);
           this.is_new_version = true;
           return;
         }
 
-        // Parse stored config
-        this.storage = JSON.parse(storedConfigString);
+        // Parse stored user config
+        this.userConfig = JSON.parse(storedConfigString);
 
-        // Check if config version has been updated
-        if (this.isNewerVersion(this.config.version, this.storage.version)) {
+        // Check if app version has been updated
+        if (this.isNewerVersion(this.config.version, this.userConfig!.version)) {
           this.is_new_version = true;
+          // Update version in user config
+          this.userConfig!.version = this.config.version;
         }
 
-        // Merge strategy: Start with defaults from code (this.config),
-        // then selectively apply user-specific settings from storage
+        // Merge user config into app config
+        // ONLY merge user-adjustable properties (position, size, isOpen)
+        // NOT functional properties (closeable, resizable, autoOpen)
 
-        // Preserve window positions/sizes from storage
-        const windowKeys = ['window_editor'];
-        windowKeys.forEach(key => {
-          if (this.storage[key]) {
-            this.config[key] = { ...this.config[key], ...this.storage[key] };
-          }
-        });
-
-        // Preserve selected palette (if valid)
-        if (this.storage.selected_palette && this.config.palettes[this.storage.selected_palette]) {
-          this.config.selected_palette = this.storage.selected_palette;
+        if (this.userConfig!.window_editor) {
+          const userWindow = this.userConfig!.window_editor;
+          if (userWindow.left !== undefined) this.config.window_editor.left = userWindow.left;
+          if (userWindow.top !== undefined) this.config.window_editor.top = userWindow.top;
+          if (userWindow.width !== undefined) this.config.window_editor.width = userWindow.width;
+          if (userWindow.height !== undefined) this.config.window_editor.height = userWindow.height;
+          if (userWindow.isOpen !== undefined) this.config.window_editor.isOpen = userWindow.isOpen;
         }
 
-        // Preserve custom palette from storage
-        const customPalette = this.storage.palettes?.custom;
-        if (customPalette) {
-          if (Array.isArray(customPalette) && customPalette.length === 16) {
-            // Old format: migrate to new format
-            this.config.palettes.custom.values = customPalette;
-          } else if (customPalette.values && Array.isArray(customPalette.values) && customPalette.values.length === 16) {
-            // New format
-            this.config.palettes.custom.values = customPalette.values;
-          }
+        if (this.userConfig!.default_filename) {
+          this.config.default_filename = this.userConfig!.default_filename;
         }
 
-        // Save merged config back to localStorage (adds any new properties from code)
-        this.write(this.config);
+        // Save merged config back to localStorage
+        this.writeUserConfig(this.userConfig!);
 
       } catch (error) {
         console.error("Failed to initialize storage:", error);
@@ -116,12 +113,15 @@ export default class Storage {
     }
   }
 
-  write(data) {
+  /**
+   * Writes user config to localStorage
+   */
+  writeUserConfig(userConfig: UserConfig) {
     if (typeof Storage !== "undefined") {
       try {
-        localStorage.setItem("disawsm_config", JSON.stringify(data));
+        localStorage.setItem("disawsm_userconfig", JSON.stringify(userConfig));
       } catch (error) {
-        console.error("Failed to save settings:", error);
+        console.error("Failed to save user settings:", error);
         status("Unable to save settings. Storage may be full or disabled.");
       }
     } else {
@@ -129,20 +129,54 @@ export default class Storage {
     }
   }
 
-  read() {
-    if (typeof Storage !== "undefined") {
-      try {
-        return JSON.parse(localStorage.getItem("disawsm_config") || "{}");
-      } catch (error) {
-        console.error("Failed to read settings:", error);
-        status("Unable to load settings. Using defaults.");
-        return {};
-      }
-    } else {
-      status("I can't read from web storage.");
-      this.storage = this.config;
-      return this.config;
+  /**
+   * Updates specific user config properties and saves to localStorage
+   */
+  updateUserConfig(updates: Partial<UserConfig>) {
+    if (!this.userConfig) {
+      this.userConfig = {
+        version: this.config.version
+      };
     }
+
+    // Deep merge for nested properties
+    if (updates.window_editor) {
+      this.userConfig.window_editor = {
+        ...this.userConfig.window_editor,
+        ...updates.window_editor
+      };
+    }
+
+    if (updates.default_filename !== undefined) {
+      this.userConfig.default_filename = updates.default_filename;
+    }
+
+    this.writeUserConfig(this.userConfig);
+  }
+
+  /**
+   * Legacy write method - now writes to user config
+   */
+  write(data: AppConfig) {
+    const userConfig: UserConfig = {
+      version: data.version,
+      default_filename: data.default_filename,
+      window_editor: {
+        left: data.window_editor.left,
+        top: data.window_editor.top,
+        width: data.window_editor.width,
+        height: data.window_editor.height,
+        isOpen: data.window_editor.isOpen
+      }
+    };
+    this.writeUserConfig(userConfig);
+  }
+
+  /**
+   * Legacy read method - returns merged config
+   */
+  read(): AppConfig {
+    return this.config;
   }
 
   is_updated_version() {
