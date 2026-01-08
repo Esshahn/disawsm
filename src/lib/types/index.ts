@@ -13,7 +13,12 @@ export interface AppConfig {
   window_editor?: {
     left: number;
     top: number;
+    width: number;
+    height: number;
+    autoOpen: boolean;
     closeable: boolean;
+    isOpen: boolean;
+    resizable: boolean;
   };
   filename?: string;
   [key: string]: any;

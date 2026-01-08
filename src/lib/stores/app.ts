@@ -5,6 +5,7 @@
 
 import { writable, derived } from 'svelte/store';
 import type { LoadedPRG, AppConfig } from '$lib/types';
+import { get_config } from '$lib/config';
 
 // Application state stores
 export const loadedFile = writable<LoadedPRG | null>(null);
@@ -28,12 +29,37 @@ export const saveDisabled = derived(
 );
 
 // Configuration store (for window positions, settings, etc.)
-export const config = writable<AppConfig>({
-  version: "26.01.04",
-  window_editor: {
-    left: 50,
-    top: 50,
-    closeable: false
-  },
-  filename: "mycode"
-});
+// Initialize with defaults from config/index.ts immediately
+// This will be updated in App.svelte after merging with localStorage
+export const config = writable<AppConfig>(get_config());
+
+// Storage reference (will be set by App.svelte after Storage is initialized)
+let storageInstance: any = null;
+
+export function setStorageInstance(storage: any) {
+  storageInstance = storage;
+}
+
+/**
+ * Updates window configuration and persists to localStorage
+ * @param windowKey - The window key (e.g., 'window_editor')
+ * @param updates - Partial window config to update
+ */
+export function updateWindowConfig(windowKey: string, updates: Partial<any>) {
+  config.update(cfg => {
+    const newConfig = {
+      ...cfg,
+      [windowKey]: {
+        ...cfg[windowKey],
+        ...updates
+      }
+    };
+
+    // Save to localStorage immediately
+    if (storageInstance) {
+      storageInstance.write(newConfig);
+    }
+
+    return newConfig;
+  });
+}

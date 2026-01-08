@@ -76,12 +76,21 @@ export default class Storage {
 
         // Merge strategy: Start with defaults from code (this.config),
         // then selectively apply user-specific settings from storage
+        // ONLY merge user-adjustable properties (position, size)
+        // NOT functional properties (closeable, resizable, etc)
 
-        // Preserve window positions/sizes from storage
+        // Preserve window positions/sizes from storage (but not other properties)
         const windowKeys = ['window_editor'];
         windowKeys.forEach(key => {
           if (this.storage[key]) {
-            this.config[key] = { ...this.config[key], ...this.storage[key] };
+            // Only preserve user-adjusted values, not configuration flags
+            const userAdjustedProps = {
+              ...(this.storage[key].left !== undefined && { left: this.storage[key].left }),
+              ...(this.storage[key].top !== undefined && { top: this.storage[key].top }),
+              ...(this.storage[key].width !== undefined && { width: this.storage[key].width }),
+              ...(this.storage[key].height !== undefined && { height: this.storage[key].height }),
+            };
+            this.config[key] = { ...this.config[key], ...userAdjustedProps };
           }
         });
 

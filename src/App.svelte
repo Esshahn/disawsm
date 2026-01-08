@@ -6,7 +6,7 @@
   import About from '$lib/components/dialogs/About.svelte';
   import Storage from '$lib/services/storage';
   import FileLoader from '$lib/services/fileLoader';
-  import { loadedFile, assemblyOutput, config, status } from '$lib/stores/app';
+  import { loadedFile, assemblyOutput, config, status, setStorageInstance } from '$lib/stores/app';
   import { get_config } from '$lib/config';
 
   // Initialize immediately (not in onMount)
@@ -21,6 +21,9 @@
     storage = new Storage(defaultConfig);
     const savedConfig = storage.get_config();
     config.set(savedConfig);
+
+    // Register storage instance for auto-save
+    setStorageInstance(storage);
 
     // Show about dialog if version updated
     if (storage.is_updated_version()) {
