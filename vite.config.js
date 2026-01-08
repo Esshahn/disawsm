@@ -19,5 +19,5 @@ export default defineConfig({
     assetsDir: 'assets',
   },
   base: '/',
-  assetsInclude: ['**/*.json'], // Ensure JSON files can be imported
+  assetsInclude: ['**/*.json', '**/*.bin'], // Ensure JSON and BIN files can be imported as assets
 });

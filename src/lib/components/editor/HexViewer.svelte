@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { petsciiCharset } from '$lib/services/petsciiCharset';
+
   let {
     bytes,
     startAddress
@@ -7,22 +10,26 @@
     startAddress: number;
   } = $props();
 
+  let spriteSheetUrl = $state<string | null>(null);
+  let charsetLoaded = $state(false);
+
+  onMount(async () => {
+    try {
+      spriteSheetUrl = await petsciiCharset.load();
+      charsetLoaded = true;
+    } catch (error) {
+      console.error('Failed to load PETSCII charset:', error);
+    }
+  });
+
   function toHex(num: number, digits: number): string {
     return num.toString(16).padStart(digits, '0').toLowerCase();
-  }
-
-  function toAscii(byte: number): string {
-    // Display printable ASCII chars, otherwise show a dot
-    if (byte >= 0 && byte <= 255) {
-      return String.fromCharCode(byte);
-    }
-    return '.';
   }
 
   interface HexLine {
     address: string;
     hexBytes: string;
-    ascii: string;
+    petsciiBytes: number[]; // Array of byte values for PETSCII display
   }
 
   function formatHexDump(): HexLine[] {
@@ -50,16 +57,13 @@
         }
       }
 
-      // Format ASCII representation
-      let ascii = '';
-      for (let j = 0; j < lineBytes.length; j++) {
-        ascii += toAscii(lineBytes[j]);
-      }
+      // Store byte values for PETSCII rendering
+      const petsciiBytes = Array.from(lineBytes);
 
       lines.push({
         address: toHex(addr, 4),
         hexBytes: hexBytes,
-        ascii: ascii,
+        petsciiBytes: petsciiBytes,
       });
     }
 
@@ -73,14 +77,25 @@
   <div class="hex-header">
     <span class="hex-header-addr">Addr</span>
     <span class="hex-header-hex">Hex Dump</span>
-    <span class="hex-header-ascii">ASCII</span>
+    <span class="hex-header-petscii">PETSCII</span>
   </div>
   <div class="hex-content">
     {#each hexLines as line}
       <div class="hex-line">
         <span class="hex-addr">{line.address}</span>
         <span class="hex-bytes">{line.hexBytes}</span>
-        <span class="hex-ascii">{line.ascii}</span>
+        <span class="hex-petscii">
+          {#if charsetLoaded && spriteSheetUrl}
+            {#each line.petsciiBytes as byte}
+              <span
+                class="petscii-char"
+                style="background-image: url({spriteSheetUrl}); background-position: {petsciiCharset.getCharPosition(byte)};"
+              ></span>
+            {/each}
+          {:else}
+            <span class="loading">Loading...</span>
+          {/if}
+        </span>
       </div>
     {/each}
   </div>
@@ -117,7 +132,7 @@
     min-width: 400px;
   }
 
-  .hex-header-ascii {
+  .hex-header-petscii {
     width: 160px;
   }
 
@@ -152,9 +167,26 @@
     white-space: pre;
   }
 
-  .hex-ascii {
+  .hex-petscii {
     width: 160px;
+    display: flex;
+    gap: 1px;
+    align-items: center;
+  }
+
+  .petscii-char {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+
+  .loading {
     color: #aaaaaa;
-    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 11px;
+    font-style: italic;
   }
 </style>
