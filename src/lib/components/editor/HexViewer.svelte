@@ -90,19 +90,13 @@
             <span
               class="hex-byte"
               class:highlighted={hoveredByteIndex === hexByte.index}
+              class:gap-after-8={(idx + 1) % 8 === 0 && idx < line.hexBytes.length - 1}
               data-tooltip={getTooltipText(hexByte.value, startAddress + hexByte.index)}
               onmouseenter={() => hoveredByteIndex = hexByte.index}
               onmouseleave={() => hoveredByteIndex = null}
             >
               {toHex(hexByte.value, 2)}
             </span>
-            {#if idx < line.hexBytes.length - 1}
-              {#if (idx + 1) % 8 === 0}
-                <span class="byte-gap-large"></span>
-              {:else}
-                <span class="byte-gap"></span>
-              {/if}
-            {/if}
           {/each}
         </span>
         <span class="hex-petscii">
@@ -132,13 +126,14 @@
 
 <style>
   .hex-viewer {
-    font-family: 'Courier New', Courier, monospace !important;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
     background: #1a1a1a;
     color: #ffffff;
     padding: 12px;
     overflow: auto;
     height: 100%;
+    contain: layout style paint;
   }
 
   .hex-header {
@@ -149,7 +144,6 @@
     margin-bottom: 8px;
     color: #00c698;
     font-weight: 600;
-    font-family: 'Courier New', Courier, monospace !important;
   }
 
   .hex-header-addr {
@@ -167,13 +161,13 @@
 
   .hex-content {
     line-height: 160%;
-    font-family: 'Courier New', Courier, monospace !important;
+    will-change: scroll-position;
   }
 
   .hex-line {
     display: flex;
     gap: 16px;
-    font-family: 'Courier New', Courier, monospace !important;
+    contain: layout style;
   }
 
   .hex-line:hover {
@@ -184,36 +178,42 @@
     color: #00c698;
     width: 45px;
     user-select: none;
-    font-family: 'Courier New', Courier, monospace !important;
     flex-shrink: 0;
+    font-family: 'Courier New', Courier, monospace;
   }
 
   .hex-bytes-container {
     display: flex;
+    font-family: 'Courier New', Courier, monospace;
     font-variant-numeric: tabular-nums;
-    font-family: 'Courier New', Courier, monospace !important;
     flex-shrink: 0;
+    gap: 0.5ch;
   }
 
   .hex-byte {
     color: #ffffff;
     cursor: pointer;
     padding: 1px 2px;
-    border-radius: 2px;
-    transition: background-color 0.1s;
     position: relative;
+    font-family: inherit;
+  }
+
+  .hex-byte.gap-after-8 {
+    margin-right: 0.5ch;
   }
 
   .hex-byte:hover {
-     box-shadow: 0 0 0 2px rgb(242, 0, 226);
+    outline: 2px solid rgb(242, 0, 226);
+    outline-offset: -2px;
   }
 
   .hex-byte.highlighted {
-    box-shadow: 0 0 0 2px rgb(242, 0, 226);
+    outline: 2px solid rgb(242, 0, 226);
+    outline-offset: -2px;
   }
 
-  /* Modern tooltip for hex bytes */
-  .hex-byte[data-tooltip]::after {
+  /* Modern tooltip for hex bytes - only create on hover */
+  .hex-byte:hover::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: calc(100% + 8px);
@@ -223,18 +223,16 @@
     color: #00c698;
     padding: 6px 10px;
     border-radius: 6px;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 11px;
     white-space: nowrap;
     pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease;
     z-index: 1000;
     border: 1px solid rgba(0, 198, 152, 0.3);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    font-family: 'Courier New', monospace;
   }
 
-  .hex-byte[data-tooltip]::before {
+  .hex-byte:hover::before {
     content: '';
     position: absolute;
     bottom: calc(100% + 2px);
@@ -243,24 +241,7 @@
     border: 6px solid transparent;
     border-top-color: rgba(18, 18, 18, 0.95);
     pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease;
     z-index: 1000;
-  }
-
-  .hex-byte[data-tooltip]:hover::after,
-  .hex-byte[data-tooltip]:hover::before {
-    opacity: 1;
-  }
-
-  .byte-gap {
-    display: inline-block;
-    width: 0.5ch;
-  }
-
-  .byte-gap-large {
-    display: inline-block;
-    width: 1ch;
   }
 
   .hex-petscii {
@@ -276,24 +257,22 @@
     height: 8px;
     background-repeat: no-repeat;
     image-rendering: pixelated;
-    image-rendering: -moz-crisp-edges;
-    image-rendering: crisp-edges;
     cursor: pointer;
-    border-radius: 2px;
-    transition: box-shadow 0.1s;
     position: relative;
   }
 
   .petscii-char:hover {
-    box-shadow: 0 0 0 2px rgb(242, 0, 226);
+    outline: 2px solid rgb(242, 0, 226);
+    outline-offset: -2px;
   }
 
   .petscii-char.highlighted {
-    box-shadow: 0 0 0 2px rgb(242, 0, 226);
+    outline: 2px solid rgb(242, 0, 226);
+    outline-offset: -2px;
   }
 
-  /* Modern tooltip for PETSCII characters */
-  .petscii-char[data-tooltip]::after {
+  /* Modern tooltip for PETSCII characters - only create on hover */
+  .petscii-char:not(.petscii-empty):hover::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: calc(100% + 8px);
@@ -303,18 +282,16 @@
     color: #00c698;
     padding: 6px 10px;
     border-radius: 6px;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 11px;
     white-space: nowrap;
     pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease;
     z-index: 1000;
     border: 1px solid rgba(0, 198, 152, 0.3);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    font-family: 'Courier New', monospace;
   }
 
-  .petscii-char[data-tooltip]::before {
+  .petscii-char:not(.petscii-empty):hover::before {
     content: '';
     position: absolute;
     bottom: calc(100% + 2px);
@@ -323,14 +300,7 @@
     border: 6px solid transparent;
     border-top-color: rgba(18, 18, 18, 0.95);
     pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease;
     z-index: 1000;
-  }
-
-  .petscii-char[data-tooltip]:hover::after,
-  .petscii-char[data-tooltip]:hover::before {
-    opacity: 1;
   }
 
   /* Empty PETSCII placeholder - no hover effects */
@@ -339,7 +309,7 @@
   }
 
   .petscii-empty:hover {
-    box-shadow: none;
+    outline: none;
   }
 
   .loading {
