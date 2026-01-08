@@ -1093,6 +1093,12 @@ dialog.disawsm-dialog[open] {
   background-color: var(--primary);
 }
 
+#menubar .dropdown-content a.disabled {
+  color: var(--inactive_text);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 #menubar .dropdown:hover .dropdown-content {
   display: block;
 }

@@ -1,4 +1,4 @@
-import { status } from "./helper";
+import { status } from "$lib/utils/dom";
 
 // handles writing and reading of the local html5 storage in the browser
 
