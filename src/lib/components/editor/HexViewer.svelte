@@ -4,10 +4,12 @@
 
   let {
     bytes,
-    startAddress
+    startAddress,
+    bytesPerLine = 16
   }: {
     bytes: Uint8Array;
     startAddress: number;
+    bytesPerLine?: number;
   } = $props();
 
   let spriteSheetUrl = $state<string | null>(null);
@@ -34,13 +36,12 @@
 
   function formatHexDump(): HexLine[] {
     const lines: HexLine[] = [];
-    const bytesPerLine = 16;
 
     for (let i = 0; i < bytes.length; i += bytesPerLine) {
       const addr = startAddress + i;
       const lineBytes = bytes.slice(i, Math.min(i + bytesPerLine, bytes.length));
 
-      // Format hex bytes with grouping of 8 (two groups of 8)
+      // Format hex bytes with grouping of 8 bytes
       let hexBytes = '';
       for (let j = 0; j < bytesPerLine; j++) {
         if (j < lineBytes.length) {
@@ -50,10 +51,12 @@
         }
 
         // Add space after each byte, and extra gap after every 8 bytes
-        if ((j + 1) % 8 === 0 && j < bytesPerLine - 1) {
-          hexBytes += '  '; // Double space gap between groups
-        } else if (j < bytesPerLine - 1) {
-          hexBytes += ' '; // Single space between bytes
+        if (j < bytesPerLine - 1) {
+          if ((j + 1) % 8 === 0) {
+            hexBytes += '  '; // Double space gap between groups
+          } else {
+            hexBytes += ' '; // Single space between bytes
+          }
         }
       }
 
@@ -129,11 +132,11 @@
 
   .hex-header-hex {
     flex: 1;
-    min-width: 400px;
+    min-width: 200px;
   }
 
   .hex-header-petscii {
-    width: 160px;
+    min-width: 80px;
   }
 
   .hex-content {
@@ -160,7 +163,7 @@
 
   .hex-bytes {
     flex: 1;
-    min-width: 400px;
+    min-width: 200px;
     color: #ffffff;
     font-variant-numeric: tabular-nums;
     font-family: 'Courier New', Courier, monospace !important;
@@ -168,10 +171,11 @@
   }
 
   .hex-petscii {
-    width: 160px;
+    min-width: 80px;
     display: flex;
     gap: 1px;
     align-items: center;
+    flex-wrap: wrap;
   }
 
   .petscii-char {
