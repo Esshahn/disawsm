@@ -8,18 +8,42 @@ export interface LoadedPRG {
   bytes: Uint8Array;
 }
 
+/**
+ * Window configuration settings
+ */
+export interface WindowConfig {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  autoOpen: boolean;
+  closeable: boolean;
+  isOpen: boolean;
+  resizable: boolean;
+}
+
+/**
+ * Application configuration (defaults from code)
+ * This defines the default state of the application
+ */
 export interface AppConfig {
   version: string;
+  default_filename: string;
+  window_editor: WindowConfig;
+}
+
+/**
+ * User configuration (persisted in localStorage)
+ * Only contains user-adjustable settings
+ */
+export interface UserConfig {
+  version: string;
+  default_filename?: string;
   window_editor?: {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-    autoOpen: boolean;
-    closeable: boolean;
-    isOpen: boolean;
-    resizable: boolean;
+    left?: number;
+    top?: number;
+    width?: number;
+    height?: number;
+    isOpen?: boolean;
   };
-  filename?: string;
-  [key: string]: any;
 }

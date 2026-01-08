@@ -20,22 +20,21 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!-- Simple modal overlay -->
+<!-- Modal overlay using unified styles -->
 <div class="modal-overlay" onclick={handleClose}>
-  <div class="about-dialog" onclick={(e: MouseEvent) => e.stopPropagation()}>
-    <div class="dialog-header">
-      <h2>About DisAWSM</h2>
-      <button class="close-button" onclick={handleClose}>×</button>
+  <div class="dialog-wrapper about-dialog" onclick={(e: MouseEvent) => e.stopPropagation()}>
+    <div class="dialog-titlebar" style="cursor: default;">
+      <span class="dialog-title">About DisAWSM</span>
+      <button class="window-close-button" onclick={handleClose}>×</button>
     </div>
 
-    <div class="dialog-content">
+    <div class="dialog-content about-content">
       <div class="logo">
         <img src="/ui/logo.svg" alt="DisAWSM Logo" />
       </div>
 
-           <p>A browser-based 6502 disassembler</p>
+      <p>A browser-based 6502 disassembler</p>
       <p class="version">Version {$config.version}</p>
- 
 
       <hr />
 
@@ -50,56 +49,16 @@
 </div>
 
 <style>
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
+  /* Component-specific styles - base .modal-overlay, .dialog-wrapper,
+     .dialog-titlebar, .dialog-title, and .window-close-button are in stylesheet.css */
 
   .about-dialog {
-    background: #121212 url("/ui/bg_glossy.png") 50% top repeat-x;
-    border-radius: 4px;
-    border: 1px solid #2a2a2a;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    position: static;
     width: 680px;
     max-width: 90vw;
-    color: #ffffff;
-    font-family: 'Quicksand', sans-serif;
   }
 
-  .dialog-header {
-    border-bottom: 1px solid #141414;
-    padding: 12px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-
-  .close-button {
-    background: none;
-    border: none;
-    color: #aaaaaa;
-    font-size: 28px;
-    cursor: pointer;
-    padding: 0;
-    width: 30px;
-    height: 30px;
-    line-height: 1;
-  }
-
-  .close-button:hover {
-    color: #ffffff;
-  }
-
-  .dialog-content {
+  .about-content {
     padding: 24px;
     text-align: center;
   }
@@ -112,7 +71,6 @@
     max-width: 200px;
     height: auto;
   }
-
 
   .version {
     color: #aaaaaa;

@@ -80,7 +80,9 @@
   />
 
   <div id="app">
-    <EditorWindow />
+    {#if $config?.window_editor?.isOpen}
+      <EditorWindow />
+    {/if}
   </div>
 
   <StatusBar message={$status} />

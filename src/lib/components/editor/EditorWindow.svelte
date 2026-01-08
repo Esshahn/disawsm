@@ -7,16 +7,25 @@
     return num.toString(16).padStart(digits, '0').toLowerCase();
   }
 
+  // Reactive declarations to ensure config values are properly accessed
+  $: editorConfig = $config?.window_editor;
+  $: left = editorConfig?.left ?? 210;
+  $: top = editorConfig?.top ?? 50;
+  $: width = `${editorConfig?.width ?? 700}px`;
+  $: height = `${editorConfig?.height ?? 400}px`;
+  $: closeable = editorConfig?.closeable ?? false;
+  $: resizable = editorConfig?.resizable ?? false;
 </script>
 
+{#if editorConfig}
 <Window
   title="Editor"
-  left={$config.window_editor.left}
-  top={$config.window_editor.top}
-  width="{$config.window_editor.width}px"
-  height="{$config.window_editor.height}px"
-  closeable={$config.window_editor.closeable}
-  resizable={$config.window_editor.resizable}
+  {left}
+  {top}
+  {width}
+  {height}
+  {closeable}
+  {resizable}
   windowKey="window_editor"
 >
   {#if $loadedFile}
@@ -40,6 +49,7 @@
     </div>
   {/if}
 </Window>
+{/if}
 
 <style>
   .editor-content {

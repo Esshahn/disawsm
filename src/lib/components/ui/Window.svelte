@@ -132,10 +132,10 @@
   style="left: {currentLeft}px; top: {currentTop}px; width: {currentWidth}; height: {currentHeight}; z-index: {zIndex};"
 >
   <div class="dialog-titlebar" onmousedown={handleTitleMouseDown}>
-    {#if closeable}
-      <div class="window-close-button" onclick={handleClose}>×</div>
-    {/if}
     <span class="dialog-title">{title}</span>
+    {#if closeable}
+      <button class="window-close-button" onclick={handleClose}>×</button>
+    {/if}
   </div>
 
   <div class="dialog-content">
@@ -148,73 +148,7 @@
 </div>
 
 <style>
-  /* Use existing CSS classes from stylesheet.css */
-  .dialog-wrapper {
-    position: absolute;
-    background: #121212 url('/ui/bg_glossy.png') 50% top repeat-x;
-    border-radius: 4px;
-    border: 1px solid #2a2a2a;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    min-width: 200px;
-    min-height: 100px;
-  }
-
-  .dialog-titlebar {
-    border-bottom: 1px solid #141414;
-    padding: 4px 12px;
-    cursor: move;
-    user-select: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(0, 0, 0, 0.2);
-  }
-
-  .dialog-title {
-    color: #00c698;
-    font-weight: 600;
-    font-size: 14px;
-    flex: 1;
-  }
-
-  .window-close-button {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    opacity: 0.6;
-    font-size: 20px;
-    line-height: 12px;
-    text-align: center;
-    color: #aaaaaa;
-    flex-shrink: 0;
-  }
-
-  .window-close-button:hover {
-    opacity: 1;
-    color: #ff6b6b;
-  }
-
-  .dialog-content {
-    flex: 1;
-    overflow: auto;
-    padding: 4px;
-    color: #ffffff;
-  }
-
-  .resize-handle {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: 16px;
-    height: 16px;
-    cursor: nwse-resize;
-    background: linear-gradient(135deg, transparent 0%, transparent 50%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.2) 100%);
-    border-bottom-right-radius: 4px;
-  }
-
-  .resize-handle:hover {
-    background: linear-gradient(135deg, transparent 0%, transparent 50%, rgba(0,198,152,0.3) 50%, rgba(0,198,152,0.5) 100%);
-  }
+  /* Component-specific styles - base styles are in stylesheet.css */
+  /* All base .dialog-wrapper, .dialog-titlebar, .dialog-title, .window-close-button,
+     .dialog-content, and .resize-handle styles are now in public/css/stylesheet.css */
 </style>
