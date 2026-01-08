@@ -175,18 +175,6 @@ tr:nth-child(even) {
   background-color: #222222;
 }
 
-canvas {
-  display: block;
-  margin: 0px;
-  padding: 0px;
-  /* Pixel-perfect rendering for all browsers (matches .pixel-perfect utility) */
-  image-rendering: optimizeSpeed;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: -o-crisp-edges;
-  image-rendering: pixelated;
-  -ms-interpolation-mode: nearest-neighbor;
-}
 
 
 /* ============================================================================
@@ -206,15 +194,7 @@ img.center {
   margin: 0 auto;
 }
 
-/* Pixel-perfect rendering utility - use on canvas and pixel art elements */
-.pixel-perfect {
-  image-rendering: optimizeSpeed;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: -o-crisp-edges;
-  image-rendering: pixelated;
-  -ms-interpolation-mode: nearest-neighbor;
-}
+
 
 /* Control row utility - shared layout for animation and playfield controls */
 .control-row {
