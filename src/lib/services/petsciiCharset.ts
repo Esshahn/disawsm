@@ -3,152 +3,87 @@
  * Loads C64 character set and creates a CSS sprite sheet for efficient rendering
  */
 
-// Import the charset file - Vite will handle this as a URL
-import charsetUrl from '../../charset/c64-charset.bin?url';
+const CHARSET_URL = '/charset/c64-charset.bin';
+const CACHE_KEY = 'petscii_sprite_sheet';
 
-export class PetsciiCharset {
-  private spriteSheetUrl: string | null = null;
-  private isLoaded = false;
+let cachedSpriteSheet: string | null = null;
 
-  /**
-   * Loads the C64 charset from binary file and creates a sprite sheet
-   * @returns Promise that resolves to the sprite sheet data URL
-   */
-  async load(): Promise<string> {
-    if (this.spriteSheetUrl) {
-      return this.spriteSheetUrl;
-    }
-
-    try {
-      // Fetch the charset binary file using Vite's asset handling
-      const response = await fetch(charsetUrl);
-      const arrayBuffer = await response.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-
-      // Validate file size (should be 2048 bytes = 256 chars × 8 bytes)
-      if (bytes.length !== 2048) {
-        throw new Error(`Invalid charset file size: ${bytes.length} bytes (expected 2048)`);
-      }
-
-      // Convert charset bytes to character bitmaps
-      const charset = this.convertCharset(bytes);
-
-      // Create sprite sheet canvas (16×16 grid of 8×8 characters = 128×128 pixels)
-      const spriteSheet = this.createSpriteSheet(charset);
-
-      // Convert to data URL for CSS usage
-      this.spriteSheetUrl = spriteSheet.toDataURL();
-      this.isLoaded = true;
-
-      return this.spriteSheetUrl;
-    } catch (error) {
-      console.error('Failed to load PETSCII charset:', error);
-      throw error;
-    }
+/**
+ * Loads the C64 charset and returns a sprite sheet data URL
+ * Uses localStorage cache to avoid re-processing on subsequent loads
+ */
+export async function loadPetsciiCharset(): Promise<string> {
+  // Return cached version if already loaded
+  if (cachedSpriteSheet) {
+    return cachedSpriteSheet;
   }
 
-  /**
-   * Converts binary charset data into 2D array of character bitmaps
-   * @param bytes - Uint8Array containing the charset binary data
-   * @returns Array of 256 characters, each an array of 8 rows (binary strings)
-   */
-  private convertCharset(bytes: Uint8Array): string[][] {
-    const charset: string[][] = [];
-    let charBytes: string[] = [];
-    let lineCounter = 0;
-
-    for (let i = 0; i < bytes.length; i++) {
-      // Convert byte to 8-bit binary string
-      const binary = bytes[i].toString(2).padStart(8, '0');
-      charBytes.push(binary);
-
-      lineCounter++;
-      if (lineCounter === 8) {
-        charset.push(charBytes);
-        charBytes = [];
-        lineCounter = 0;
-      }
+  // Try to load from localStorage cache
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      cachedSpriteSheet = cached;
+      return cached;
     }
-
-    return charset;
+  } catch (e) {
+    // localStorage might not be available, continue without cache
   }
 
-  /**
-   * Creates a sprite sheet canvas with all 256 characters
-   * Arranged in a 16×16 grid, each character is 8×8 pixels
-   * @param charset - Array of character bitmaps
-   * @returns Canvas element containing the sprite sheet
-   */
-  private createSpriteSheet(charset: string[][]): HTMLCanvasElement {
-    const canvas = document.createElement('canvas');
-    const charsPerRow = 16;
-    const charSize = 8;
-    const sheetSize = charsPerRow * charSize; // 128×128
+  // Load and process the charset
+  const response = await fetch(CHARSET_URL);
+  const arrayBuffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
 
-    canvas.width = sheetSize;
-    canvas.height = sheetSize;
+  if (bytes.length !== 2048) {
+    throw new Error(`Invalid charset file size: ${bytes.length} bytes (expected 2048)`);
+  }
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error('Failed to get canvas 2D context');
-    }
+  // Create sprite sheet
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;  // 16 chars × 8 pixels
+  canvas.height = 128; // 16 chars × 8 pixels
 
-    // Use C64 green color for characters
-    ctx.fillStyle = '#00c698'; // Using DisAWSM primary color
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = '#00c698'; // DisAWSM primary color
 
-    // Draw each character to the sprite sheet
-    charset.forEach((charBitmap, charIndex) => {
-      const gridX = charIndex % charsPerRow;
-      const gridY = Math.floor(charIndex / charsPerRow);
-      const offsetX = gridX * charSize;
-      const offsetY = gridY * charSize;
+  // Draw all 256 characters to sprite sheet
+  for (let charIndex = 0; charIndex < 256; charIndex++) {
+    const charOffset = charIndex * 8; // Each char is 8 bytes
+    const gridX = charIndex % 16;
+    const gridY = Math.floor(charIndex / 16);
+    const offsetX = gridX * 8;
+    const offsetY = gridY * 8;
 
-      // Draw each pixel of the character
-      for (let y = 0; y < 8; y++) {
-        for (let x = 0; x < 8; x++) {
-          if (charBitmap[y][x] === '1') {
-            ctx.fillRect(offsetX + x, offsetY + y, 1, 1);
-          }
+    // Draw each pixel of the 8x8 character
+    for (let y = 0; y < 8; y++) {
+      const byte = bytes[charOffset + y];
+      for (let x = 0; x < 8; x++) {
+        if (byte & (1 << (7 - x))) {
+          ctx.fillRect(offsetX + x, offsetY + y, 1, 1);
         }
       }
-    });
-
-    return canvas;
+    }
   }
 
-  /**
-   * Gets the CSS background-position for a specific character code
-   * @param charCode - Character code (0-255)
-   * @returns CSS background-position string
-   */
-  getCharPosition(charCode: number): string {
-    const charsPerRow = 16;
-    const charSize = 8;
+  // Convert to data URL
+  const dataUrl = canvas.toDataURL();
+  cachedSpriteSheet = dataUrl;
 
-    const gridX = charCode % charsPerRow;
-    const gridY = Math.floor(charCode / charsPerRow);
-
-    const x = -(gridX * charSize);
-    const y = -(gridY * charSize);
-
-    return `${x}px ${y}px`;
+  // Cache in localStorage for faster subsequent loads
+  try {
+    localStorage.setItem(CACHE_KEY, dataUrl);
+  } catch (e) {
+    // localStorage might be full or disabled, continue without cache
   }
 
-  /**
-   * Gets the sprite sheet data URL
-   * @returns Data URL or null if not loaded
-   */
-  getSpriteSheetUrl(): string | null {
-    return this.spriteSheetUrl;
-  }
-
-  /**
-   * Checks if the charset is loaded
-   */
-  isCharsetLoaded(): boolean {
-    return this.isLoaded;
-  }
+  return dataUrl;
 }
 
-// Singleton instance
-export const petsciiCharset = new PetsciiCharset();
+/**
+ * Gets the CSS background-position for a character code
+ */
+export function getPetsciiCharPosition(charCode: number): string {
+  const gridX = charCode % 16;
+  const gridY = Math.floor(charCode / 16);
+  return `${-(gridX * 8)}px ${-(gridY * 8)}px`;
+}

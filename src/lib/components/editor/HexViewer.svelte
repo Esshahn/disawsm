@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { petsciiCharset } from '$lib/services/petsciiCharset';
+  import { loadPetsciiCharset, getPetsciiCharPosition } from '$lib/services/petsciiCharset';
 
   let {
     bytes,
@@ -15,7 +15,7 @@
 
   onMount(async () => {
     try {
-      spriteSheetUrl = await petsciiCharset.load();
+      spriteSheetUrl = await loadPetsciiCharset();
       charsetLoaded = true;
     } catch (error) {
       console.error('Failed to load PETSCII charset:', error);
@@ -89,7 +89,7 @@
             {#each line.petsciiBytes as byte}
               <span
                 class="petscii-char"
-                style="background-image: url({spriteSheetUrl}); background-position: {petsciiCharset.getCharPosition(byte)};"
+                style="background-image: url({spriteSheetUrl}); background-position: {getPetsciiCharPosition(byte)};"
               ></span>
             {/each}
           {:else}
