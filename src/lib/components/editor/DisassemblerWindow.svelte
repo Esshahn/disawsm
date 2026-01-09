@@ -130,25 +130,28 @@
             >
               {#snippet children(line, idx)}
                 <div
-                  class="code-line"
+                  class="code-line-wrapper"
                   class:highlighted={hoveredLineIndex === idx}
-                  class:has-label={line.label}
                   onmouseenter={() => hoveredLineIndex = idx}
                   onmouseleave={() => hoveredLineIndex = null}
                 >
-                  <span class="code-addr">{toHex(line.address, 4)}</span>
-                  <span
-                    class="code-bytes"
-                    data-tooltip={getTooltipText(line)}
-                  >
-                    {formatBytes(line.bytes)}
-                  </span>
-                  <span class="code-instruction">
-                    {#if line.label}
+                  {#if line.label}
+                    <div class="code-label-line">
                       <span class="code-label">{line.label}</span>
-                    {/if}
-                    {line.instruction}
-                  </span>
+                    </div>
+                  {/if}
+                  <div class="code-line">
+                    <span class="code-addr">{toHex(line.address, 4)}</span>
+                    <span
+                      class="code-bytes"
+                      data-tooltip={getTooltipText(line)}
+                    >
+                      {formatBytes(line.bytes)}
+                    </span>
+                    <span class="code-instruction">
+                      {line.instruction}
+                    </span>
+                  </div>
                 </div>
               {/snippet}
             </VirtualScroller>
@@ -220,25 +223,28 @@
     flex: 1;
   }
 
+  .code-line-wrapper {
+    contain: layout style;
+  }
+
+  .code-line-wrapper:hover {
+    background: rgba(0, 198, 152, 0.1);
+  }
+
+  .code-line-wrapper.highlighted {
+    background: rgba(0, 198, 152, 0.1);
+  }
+
+  .code-label-line {
+    padding: 4px 0 2px 0;
+    margin-top: 8px;
+    border-top: 1px solid rgba(0, 198, 152, 0.15);
+  }
+
   .code-line {
     line-height: 160%;
     display: flex;
     gap: 16px;
-    contain: layout style;
-  }
-
-  .code-line:hover {
-    background: rgba(0, 198, 152, 0.1);
-  }
-
-  .code-line.highlighted {
-    background: rgba(0, 198, 152, 0.1);
-  }
-
-  .code-line.has-label {
-    border-top: 1px solid rgba(0, 198, 152, 0.15);
-    padding-top: 4px;
-    margin-top: 4px;
   }
 
   .code-addr {
