@@ -2,12 +2,9 @@
   import Window from '$lib/components/ui/Window.svelte';
   import HexViewer from './HexViewer.svelte';
   import { loadedFile, config } from '$lib/stores/app';
+  import { toHex } from '$lib/utils/format';
 
   let bytesPerLine = $state(16);
-
-  function toHex(num: number, digits: number): string {
-    return num.toString(16).padStart(digits, '0').toLowerCase();
-  }
 
   // Reactive declarations using $derived
   let editorConfig = $derived($config?.window_editor);

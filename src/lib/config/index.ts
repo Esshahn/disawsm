@@ -1,6 +1,6 @@
 export function get_config() {
   const config = {
-    version: "26.01.08.3",  // Bumped version to force update
+    version: "26.01.09.2",  // Bumped version for z-index fixes
     default_filename: "mycode",
     window_editor: {
       top: 50,
@@ -9,6 +9,16 @@ export function get_config() {
       height: 600,
       autoOpen: true,
       closeable: false,
+      isOpen: true,
+      resizable: true
+    },
+    window_codeview: {
+      top: 50,
+      left: 1030,
+      width: 600,
+      height: 600,
+      autoOpen: true,
+      closeable: true,
       isOpen: true,
       resizable: true
     }
