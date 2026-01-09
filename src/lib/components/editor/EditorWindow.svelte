@@ -18,7 +18,7 @@
 
 {#if editorConfig}
 <Window
-  title="Editor"
+  title="Data View"
   {left}
   {top}
   {width}
@@ -30,11 +30,7 @@
   {#if $loadedFile}
     <div class="editor-content">
       <div class="editor-header">
-        <h2>File: {$loadedFile.name}</h2>
         <div class="file-info">
-          <span>Start: ${toHex($loadedFile.startAddress, 4)}</span>
-          <span>End: ${toHex($loadedFile.startAddress + $loadedFile.bytes.length - 1, 4)}</span>
-          <span>Size: {$loadedFile.bytes.length} bytes</span>
           <span class="bytes-per-line-control">
             <label for="bytesPerLine">Bytes/Line:</label>
             <input

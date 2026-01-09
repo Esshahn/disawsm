@@ -27,14 +27,6 @@
 >
   {#if $loadedFile}
     <div class="codeview-content">
-      <div class="codeview-header">
-        <h2>Disassembly: {$loadedFile.name}</h2>
-        <div class="file-info">
-          <span>Start: ${toHex($loadedFile.startAddress, 4)}</span>
-          <span>End: ${toHex($loadedFile.startAddress + $loadedFile.bytes.length - 1, 4)}</span>
-          <span>Size: {$loadedFile.bytes.length} bytes</span>
-        </div>
-      </div>
       <div class="code-viewer-container">
         <CodeView bytes={$loadedFile.bytes} startAddress={$loadedFile.startAddress} />
       </div>
@@ -57,11 +49,6 @@
     flex-direction: column;
   }
 
-  .codeview-header {
-    padding: 12px 16px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid #2a2a2a;
-  }
 
   h2 {
     color: #00c698;
@@ -69,16 +56,6 @@
     font-size: 16px;
   }
 
-  .file-info {
-    display: flex;
-    gap: 20px;
-    font-size: 12px;
-    color: #aaaaaa;
-  }
-
-  .file-info span {
-    font-family: 'Courier New', monospace;
-  }
 
   .code-viewer-container {
     flex: 1;

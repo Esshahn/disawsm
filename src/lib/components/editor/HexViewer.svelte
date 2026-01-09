@@ -102,13 +102,14 @@
 </script>
 
 <div class="hex-viewer">
+
+  <JumpToAddress onjump={handleJump} />
+
   <div class="hex-header">
     <span class="hex-header-addr">Addr</span>
     <span class="hex-header-hex">Hex Dump</span>
     <span class="hex-header-petscii">PETSCII</span>
   </div>
-
-  <JumpToAddress onjump={handleJump} />
 
   <VirtualScroller
     items={hexLines}

@@ -21,6 +21,16 @@ export function get_config() {
       closeable: false,
       isOpen: true,
       resizable: true
+    },
+    window_info: {
+      top: 50,
+      left: 700,
+      width: 400,
+      height: 500,
+      autoOpen: true,
+      closeable: false,
+      isOpen: true,
+      resizable: false
     }
   };
 
