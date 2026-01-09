@@ -1,6 +1,5 @@
 <script lang="ts">
   import Window from '$lib/components/ui/Window.svelte';
-  import info from './info.svelte';
   import { loadedFile, config } from '$lib/stores/app';
   import { toHex } from '$lib/utils/format';
 
