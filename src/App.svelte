@@ -10,7 +10,7 @@
   import About from '$lib/components/dialogs/About.svelte';
   import Storage from '$lib/services/storage';
   import FileLoader from '$lib/services/fileLoader';
-  import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance } from '$lib/stores/app';
+  import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance, loadPRGFile } from '$lib/stores/app';
   import { entrypoints } from '$lib/stores/entrypoints';
   import { get_config } from '$lib/config';
 
@@ -42,12 +42,7 @@
   async function handleLoadPRG() {
     const file = await fileLoader.selectAndLoadPRG();
     if (file) {
-      loadedFile.set(file);
-      assemblyOutput.set(null); // Clear previous assembly
-
-      // Clear old entrypoints and add start address as code entrypoint
-      entrypoints.clear();
-      entrypoints.add(file.startAddress, 'code');
+      loadPRGFile(file);
     }
   }
 

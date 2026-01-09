@@ -6,6 +6,7 @@
 import { writable, derived } from 'svelte/store';
 import type { LoadedPRG, AppConfig } from '$lib/types';
 import { get_config } from '$lib/config';
+import { entrypoints } from '$lib/stores/entrypoints';
 
 // Application state stores
 export const loadedFile = writable<LoadedPRG | null>(null);
@@ -73,4 +74,17 @@ export function updateWindowConfig(windowKey: string, updates: Partial<any>) {
 
     return newConfig;
   });
+}
+
+/**
+ * Load a PRG file and initialize entrypoints
+ * Centralizes file loading logic to avoid duplication
+ */
+export function loadPRGFile(file: LoadedPRG) {
+  loadedFile.set(file);
+  assemblyOutput.set(null);
+
+  // Clear old entrypoints and add start address as code entrypoint
+  entrypoints.clear();
+  entrypoints.add(file.startAddress, 'code');
 }

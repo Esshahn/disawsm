@@ -212,6 +212,42 @@ export function analyze(
 }
 
 /**
+ * Helper: Create a grouped data line from consecutive bytes
+ */
+function createDataLine(
+  byteArray: DisassembledByte[],
+  startIndex: number,
+  label: string | undefined,
+  end: number
+): { line: DisassembledLine; nextIndex: number } {
+  const MAX_BYTES_PER_LINE = 8; // Limit to prevent line wrapping in UI
+  const dataBytes: string[] = [byteArray[startIndex].byte];
+  const allBytes: number[] = [hexToNumber(byteArray[startIndex].byte)];
+  const dataAddress = byteArray[startIndex].addr;
+
+  // Look ahead to group consecutive data bytes (but stop at labels/destinations)
+  let j = startIndex + 1;
+  while (j < end && dataBytes.length < MAX_BYTES_PER_LINE) {
+    const nextByte = byteArray[j];
+    if (nextByte.dest || nextByte.code) break;
+    dataBytes.push(nextByte.byte);
+    allBytes.push(hexToNumber(nextByte.byte));
+    j++;
+  }
+
+  return {
+    line: {
+      address: dataAddress,
+      label,
+      instruction: '!byte $' + dataBytes.join(', $'),
+      bytes: allBytes,
+      isData: true
+    },
+    nextIndex: j
+  };
+}
+
+/**
  * Convert analyzed bytes to assembly program
  */
 export function convertToProgram(
@@ -227,45 +263,13 @@ export function convertToProgram(
   while (i < end) {
     const byteData = byteArray[i];
     const byte = byteData.byte;
-    let label: string | undefined;
-    let instruction: string;
-    const instructionBytes: number[] = [hexToNumber(byte)];
+    const label = byteData.dest ? labelPrefix + numberToHexWord(byteData.addr) : undefined;
 
-    // Add label if this is a destination
-    if (byteData.dest) {
-      label = labelPrefix + numberToHexWord(byteData.addr);
-    }
-
-    // DATA - Group consecutive data bytes
+    // DATA - Group consecutive data bytes or handle invalid opcodes
     if (!byteData.code || byteData.data) {
-      const dataBytes: string[] = [byte];
-      const allBytes: number[] = [hexToNumber(byte)];
-      const dataAddress = byteData.addr;
-      const MAX_BYTES_PER_LINE = 8; // Limit to prevent line wrapping in UI
-
-      // Look ahead to group consecutive data bytes (but stop at labels/destinations)
-      let j = i + 1;
-      while (j < end && dataBytes.length < MAX_BYTES_PER_LINE) {
-        const nextByte = byteArray[j];
-        // Stop if next byte is a destination (has a label) or is code
-        if (nextByte.dest || nextByte.code) {
-          break;
-        }
-        dataBytes.push(nextByte.byte);
-        allBytes.push(hexToNumber(nextByte.byte));
-        j++;
-      }
-
-      // Format as ACME syntax: !byte $xx, $yy, $zz
-      instruction = '!byte $' + dataBytes.join(', $');
-      program.push({
-        address: dataAddress,
-        label,
-        instruction,
-        bytes: allBytes,
-        isData: true
-      });
-      i = j;
+      const { line, nextIndex } = createDataLine(byteArray, i, label, end);
+      program.push(line);
+      i = nextIndex;
       continue;
     }
 
@@ -273,35 +277,29 @@ export function convertToProgram(
     if (byteData.code) {
       const opcode = opcodes[byte as keyof typeof opcodes];
 
+      // Invalid opcode - treat as data
       if (!opcode) {
-        // Invalid opcode, treat as data
-        instruction = '!byte $' + byte;
-        program.push({
-          address: byteData.addr,
-          label,
-          instruction,
-          bytes: instructionBytes,
-          isData: true
-        });
-        i++;
+        const { line, nextIndex } = createDataLine(byteArray, i, label, end);
+        program.push(line);
+        i = nextIndex;
         continue;
       }
 
-      let ins = opcode.ins;
-      const length = getInstructionLength(ins);
+      let instruction = opcode.ins;
+      const length = getInstructionLength(instruction);
+      const instructionBytes: number[] = [hexToNumber(byte)];
 
       // TWO BYTE INSTRUCTION
       if (length === 1 && i + 1 < end) {
         i++;
         const highByte = byteArray[i].byte;
         instructionBytes.push(hexToNumber(highByte));
-        const intByte = hexToNumber(highByte);
 
         if ('rel' in opcode) {
           const address = numberToHexWord(getAbsFromRelative(highByte, startAddr + i));
-          ins = ins.replace('$hh', labelPrefix + address);
+          instruction = instruction.replace('$hh', labelPrefix + address);
         } else {
-          ins = ins.replace('hh', numberToHexByte(intByte));
+          instruction = instruction.replace('hh', numberToHexByte(hexToNumber(highByte)));
         }
       }
 
@@ -313,17 +311,15 @@ export function convertToProgram(
         i++;
         const highByte = byteArray[i].byte;
         instructionBytes.push(hexToNumber(highByte));
-        ins = ins.replace('hh', highByte);
-        ins = ins.replace('ll', lowByte);
+        instruction = instruction.replace('hh', highByte).replace('ll', lowByte);
         const addr = bytesToAddr(highByte, lowByte);
 
         // Turn absolute address into label if it's within the program
         if (addrInProgram(addr, startAddr, endAddr)) {
-          ins = ins.replace('$', labelPrefix);
+          instruction = instruction.replace('$', labelPrefix);
         }
       }
 
-      instruction = ins;
       program.push({
         address: byteData.addr,
         label,
