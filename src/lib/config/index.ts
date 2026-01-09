@@ -24,9 +24,9 @@ export function get_config() {
     },
     window_info: {
       top: 50,
-      left: 700,
-      width: 400,
-      height: 500,
+      left: 50,
+      width: 300,
+      height: 300,
       autoOpen: true,
       closeable: false,
       isOpen: true,

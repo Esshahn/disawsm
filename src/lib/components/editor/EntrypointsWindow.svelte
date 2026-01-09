@@ -139,7 +139,6 @@
   .entrypoints-content {
     color: #ffffff;
     font-family: 'Quicksand', sans-serif;
-    height: 100%;
     display: flex;
     flex-direction: column;
     padding: 12px;

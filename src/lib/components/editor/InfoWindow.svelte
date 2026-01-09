@@ -113,7 +113,6 @@
   .info-content {
     color: #ffffff;
     font-family: 'Quicksand', sans-serif;
-    height: 100%;
     display: flex;
     flex-direction: column;
   }
@@ -144,7 +143,6 @@
   }
 
   .drop-zone {
-    margin-top: 24px;
     padding: 40px;
     border: 2px dashed #3a3a3a;
     border-radius: 8px;
