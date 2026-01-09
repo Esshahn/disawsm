@@ -49,6 +49,20 @@ export default class FileLoader {
   }
 
   /**
+   * Load a PRG file from a File object (for drag and drop)
+   */
+  async loadPRGFromFile(file: File): Promise<LoadedPRG | null> {
+    try {
+      return await this.readPRG(file);
+    } catch (error) {
+      console.error('Error loading PRG file:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Error loading file: ${message}`);
+      return null;
+    }
+  }
+
+  /**
    * Read and parse a PRG file
    */
   private async readPRG(file: File): Promise<LoadedPRG> {

@@ -9,7 +9,7 @@
   import About from '$lib/components/dialogs/About.svelte';
   import Storage from '$lib/services/storage';
   import FileLoader from '$lib/services/fileLoader';
-  import { loadedFile, assemblyOutput, config, status, setStorageInstance } from '$lib/stores/app';
+  import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance } from '$lib/stores/app';
   import { get_config } from '$lib/config';
 
   // Initialize immediately (not in onMount)
@@ -27,6 +27,9 @@
 
     // Register storage instance for auto-save
     setStorageInstance(storage);
+
+    // Register fileLoader instance for drag and drop
+    setFileLoaderInstance(fileLoader);
 
     // Show about dialog if version updated
     if (storage.is_updated_version()) {
@@ -83,16 +86,16 @@
   />
 
   <div id="app">
-    {#if $config?.window_editor?.isOpen}
+    {#if $loadedFile && $config?.window_editor?.isOpen}
       <EditorWindow />
     {/if}
-    {#if $config?.window_codeview?.isOpen}
+    {#if $loadedFile && $config?.window_codeview?.isOpen}
       <CodeViewWindow />
     {/if}
     {#if $config?.window_info?.isOpen}
       <InfoWindow />
     {/if}
-        {#if $config?.window_entrypoints?.isOpen}
+    {#if $loadedFile && $config?.window_entrypoints?.isOpen}
       <EntrypointsWindow />
     {/if}
   </div>
