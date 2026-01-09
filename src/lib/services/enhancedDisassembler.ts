@@ -10,12 +10,35 @@ import type { Entrypoint } from '$lib/stores/entrypoints';
 let opcodes: Record<string, { ins: string; ill?: number; rel?: number }> = {};
 let opcodesLoaded = false;
 
+// Load C64 address mapping for comments
+let c64Mapping: Map<number, string> = new Map();
+let mappingLoaded = false;
+
 async function loadOpcodes() {
   if (opcodesLoaded) return;
 
   const response = await fetch('/json/opcodes.json');
   opcodes = await response.json();
   opcodesLoaded = true;
+}
+
+async function loadC64Mapping() {
+  if (mappingLoaded) return;
+
+  const response = await fetch('/json/c64-mapping.json');
+  const data = await response.json();
+
+  // Convert to Map for O(1) lookup
+  for (const entry of data.mapping) {
+    const addr = parseInt(entry.addr, 16);
+    c64Mapping.set(addr, entry.comm);
+  }
+
+  mappingLoaded = true;
+}
+
+function getC64Comment(address: number): string | undefined {
+  return c64Mapping.get(address);
 }
 
 export interface DisassembledByte {
@@ -248,6 +271,18 @@ function createDataLine(
 }
 
 /**
+ * Extract absolute address from instruction if present
+ */
+function extractAbsoluteAddress(instruction: string): number | null {
+  // Match $xxxx pattern (4-digit hex address)
+  const match = instruction.match(/\$([0-9a-f]{4})/i);
+  if (match) {
+    return parseInt(match[1], 16);
+  }
+  return null;
+}
+
+/**
  * Convert analyzed bytes to assembly program
  */
 export function convertToProgram(
@@ -320,10 +355,18 @@ export function convertToProgram(
         }
       }
 
+      // Extract C64 comment if instruction references a known address
+      let comment: string | undefined;
+      const absAddr = extractAbsoluteAddress(instruction);
+      if (absAddr !== null) {
+        comment = getC64Comment(absAddr);
+      }
+
       program.push({
         address: byteData.addr,
         label,
         instruction,
+        comment,
         bytes: instructionBytes
       });
     }
@@ -342,8 +385,9 @@ export async function disassembleWithEntrypoints(
   startAddress: number,
   entrypoints: Entrypoint[]
 ): Promise<DisassembledLine[]> {
-  // Load opcodes first
+  // Load opcodes and C64 mapping
   await loadOpcodes();
+  await loadC64Mapping();
 
   // Analyze bytes to determine code/data regions
   const byteArray = analyze(startAddress, bytes, entrypoints);

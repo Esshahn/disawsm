@@ -21,6 +21,7 @@
   let isLoading = $state(true);
   let error = $state<string | null>(null);
   let scrollToLineIndex = $state<number | undefined>(undefined);
+  let showComments = $state(true);
 
   // Line height in pixels - measured from actual rendered content
   const LINE_HEIGHT = 21;
@@ -114,7 +115,13 @@
           {:else if error}
             <div class="loading">Error: {error}</div>
           {:else}
-            <JumpToAddress onjump={handleJump} />
+            <div class="controls-row">
+              <JumpToAddress onjump={handleJump} />
+              <label class="toggle-comments">
+                <input type="checkbox" bind:checked={showComments} />
+                Show Comments
+              </label>
+            </div>
 
             <div class="code-header">
               <span class="code-header-addr">Addr</span>
@@ -155,6 +162,9 @@
                     {/if}
                     <span class="code-instruction">
                       {line.instruction}
+                      {#if showComments && line.comment}
+                        <span class="code-comment">; {line.comment}</span>
+                      {/if}
                     </span>
                   </div>
                 </div>
@@ -202,6 +212,29 @@
     display: flex;
     flex-direction: column;
     contain: layout style paint;
+  }
+
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
+
+  .toggle-comments {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffffff;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-comments input[type="checkbox"] {
+    cursor: pointer;
   }
 
   .code-header {
@@ -322,6 +355,12 @@
     color: #ffffff;
     flex: 1;
     font-family: 'Courier New', Courier, monospace;
+  }
+
+  .code-comment {
+    color: #888888;
+    margin-left: 12px;
+    font-style: italic;
   }
 
   .code-label {
