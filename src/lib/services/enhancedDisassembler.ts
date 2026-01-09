@@ -32,6 +32,7 @@ export interface DisassembledLine {
   instruction: string;
   comment?: string;
   bytes: number[];
+  isData?: boolean;  // true if this is a data section (.byte)
 }
 
 function numberToHexByte(num: number): string {
@@ -235,16 +236,35 @@ export function convertToProgram(
       label = labelPrefix + numberToHexWord(byteData.addr);
     }
 
-    // DATA
+    // DATA - Group consecutive data bytes
     if (!byteData.code || byteData.data) {
-      instruction = '.byte $' + byte;
+      const dataBytes: string[] = [byte];
+      const allBytes: number[] = [hexToNumber(byte)];
+      const dataAddress = byteData.addr;
+
+      // Look ahead to group consecutive data bytes (but stop at labels/destinations)
+      let j = i + 1;
+      while (j < end) {
+        const nextByte = byteArray[j];
+        // Stop if next byte is a destination (has a label) or is code
+        if (nextByte.dest || nextByte.code) {
+          break;
+        }
+        dataBytes.push(nextByte.byte);
+        allBytes.push(hexToNumber(nextByte.byte));
+        j++;
+      }
+
+      // Format as ACME syntax: !byte $xx, $yy, $zz
+      instruction = '!byte $' + dataBytes.join(', $');
       program.push({
-        address: byteData.addr,
+        address: dataAddress,
         label,
         instruction,
-        bytes: instructionBytes
+        bytes: allBytes,
+        isData: true
       });
-      i++;
+      i = j;
       continue;
     }
 
@@ -254,12 +274,13 @@ export function convertToProgram(
 
       if (!opcode) {
         // Invalid opcode, treat as data
-        instruction = '.byte $' + byte;
+        instruction = '!byte $' + byte;
         program.push({
           address: byteData.addr,
           label,
           instruction,
-          bytes: instructionBytes
+          bytes: instructionBytes,
+          isData: true
         });
         i++;
         continue;

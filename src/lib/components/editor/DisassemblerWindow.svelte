@@ -132,6 +132,7 @@
                 <div
                   class="code-line-wrapper"
                   class:highlighted={hoveredLineIndex === idx}
+                  class:is-data={line.isData}
                   onmouseenter={() => hoveredLineIndex = idx}
                   onmouseleave={() => hoveredLineIndex = null}
                 >
@@ -225,6 +226,13 @@
 
   .code-line-wrapper {
     contain: layout style;
+    border-left: 3px solid transparent;
+    padding-left: 8px;
+  }
+
+  .code-line-wrapper.is-data {
+    border-left-color: rgba(255, 170, 0, 0.4);
+    background: rgba(255, 170, 0, 0.03);
   }
 
   .code-line-wrapper:hover {
