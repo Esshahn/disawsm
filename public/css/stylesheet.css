@@ -325,7 +325,7 @@ h2 {
   background: -o-linear-gradient(#181818, #111111);
   background: -moz-linear-gradient(#181818, #111111);
   background: linear-gradient(#181818, #111111);
-  z-index: -100;
+  z-index: 1000;
   font-size: 110%;
 }
 

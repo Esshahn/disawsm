@@ -40,6 +40,17 @@ export function setStorageInstance(storage: any) {
   storageInstance = storage;
 }
 
+// FileLoader reference (will be set by App.svelte after FileLoader is initialized)
+let fileLoaderInstance: any = null;
+
+export function setFileLoaderInstance(fileLoader: any) {
+  fileLoaderInstance = fileLoader;
+}
+
+export function getFileLoaderInstance() {
+  return fileLoaderInstance;
+}
+
 /**
  * Updates window configuration and persists to localStorage
  * @param windowKey - The window key (e.g., 'window_editor')
