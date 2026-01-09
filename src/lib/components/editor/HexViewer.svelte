@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { loadPetsciiCharset, getPetsciiCharPosition } from '$lib/services/petsciiCharset';
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
+  import { toHex } from '$lib/utils/format';
 
   let {
     bytes,
@@ -34,10 +35,6 @@
       console.error('Failed to load PETSCII charset:', error);
     }
   });
-
-  function toHex(num: number, digits: number): string {
-    return num.toString(16).padStart(digits, '0').toLowerCase();
-  }
 
   interface HexByte {
     value: number;

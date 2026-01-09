@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { disassemble, type DisassembledLine } from '$lib/services/disassembler';
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
+  import { toHex } from '$lib/utils/format';
 
   let {
     bytes,
@@ -18,10 +19,6 @@
 
   // Line height in pixels - measured from actual rendered content
   const LINE_HEIGHT = 21;
-
-  function toHex(num: number, digits: number): string {
-    return num.toString(16).padStart(digits, '0').toLowerCase();
-  }
 
   function getTooltipText(line: DisassembledLine): string {
     const hexAddr = toHex(line.address, 4);

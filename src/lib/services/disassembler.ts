@@ -18,17 +18,10 @@ export interface DisassembledLine {
 }
 
 /**
- * Converts a number to hex string
+ * Converts a number to hex string (2 digits)
  */
 function numberToHexByte(num: number): string {
   return num.toString(16).padStart(2, '0');
-}
-
-/**
- * Converts a number to hex word (2 bytes)
- */
-function numberToHexWord(num: number): string {
-  return num.toString(16).padStart(4, '0');
 }
 
 /**
@@ -50,7 +43,10 @@ export async function disassemble(data: Uint8Array, startAddress: number): Promi
   // Ensure opcodes are loaded
   await loadOpcodes();
 
-  const lines: DisassembledLine[] = [];
+  // Pre-allocate with estimated size (assume ~2 bytes per instruction on average)
+  const estimatedSize = Math.ceil(data.length / 2);
+  const lines: DisassembledLine[] = new Array(estimatedSize);
+  let lineIndex = 0;
   let i = 0;
   const end = data.length;
 
@@ -61,12 +57,12 @@ export async function disassemble(data: Uint8Array, startAddress: number): Promi
 
     if (!opcode) {
       // Unknown opcode - treat as single byte
-      lines.push({
+      lines[lineIndex++] = {
         address: startAddress + i,
         bytes: [byte],
         instruction: '???',
         opcode: byteHex.toUpperCase()
-      });
+      };
       i++;
       continue;
     }
@@ -77,43 +73,48 @@ export async function disassemble(data: Uint8Array, startAddress: number): Promi
     const currentAddress = startAddress + i;
 
     // TWO BYTE INSTRUCTION (opcode + 1 operand byte)
-    if (instrLength === 1 && i + 1 < end) {
-      i++;
-      const highByte = data[i];
-      instrBytes.push(highByte);
-      const highByteHex = numberToHexByte(highByte);
+    if (instrLength === 1) {
+      if (i + 1 < end) {
+        i++;
+        const highByte = data[i];
+        instrBytes.push(highByte);
+        const highByteHex = numberToHexByte(highByte);
 
-      // Replace $hh with actual hex value
-      ins = ins.replace('$hh', '$' + highByteHex);
-      ins = ins.replace('hh', highByteHex);
+        // Replace $hh with actual hex value
+        ins = ins.replace('$hh', '$' + highByteHex);
+        ins = ins.replace('hh', highByteHex);
+      }
     }
-
     // THREE BYTE INSTRUCTION (opcode + 2 operand bytes)
-    if (instrLength === 2 && i + 2 < end) {
-      i++;
-      const lowByte = data[i];
-      instrBytes.push(lowByte);
-      i++;
-      const highByte = data[i];
-      instrBytes.push(highByte);
+    else if (instrLength === 2) {
+      if (i + 2 < end) {
+        i++;
+        const lowByte = data[i];
+        instrBytes.push(lowByte);
+        i++;
+        const highByte = data[i];
+        instrBytes.push(highByte);
 
-      const lowByteHex = numberToHexByte(lowByte);
-      const highByteHex = numberToHexByte(highByte);
+        const lowByteHex = numberToHexByte(lowByte);
+        const highByteHex = numberToHexByte(highByte);
 
-      // Replace ll and hh with actual hex values
-      ins = ins.replace('hh', highByteHex);
-      ins = ins.replace('ll', lowByteHex);
+        // Replace ll and hh with actual hex values
+        ins = ins.replace('hh', highByteHex);
+        ins = ins.replace('ll', lowByteHex);
+      }
     }
 
-    lines.push({
+    lines[lineIndex++] = {
       address: currentAddress,
       bytes: instrBytes,
       instruction: ins,
       opcode: byteHex.toUpperCase()
-    });
+    };
 
     i++;
   }
 
+  // Trim array to actual size
+  lines.length = lineIndex;
   return lines;
 }

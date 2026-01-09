@@ -2,10 +2,7 @@
   import Window from '$lib/components/ui/Window.svelte';
   import CodeView from './CodeView.svelte';
   import { loadedFile, config } from '$lib/stores/app';
-
-  function toHex(num: number, digits: number): string {
-    return num.toString(16).padStart(digits, '0').toLowerCase();
-  }
+  import { toHex } from '$lib/utils/format';
 
   // Reactive declarations using $derived
   let codeviewConfig = $derived($config?.window_codeview);
