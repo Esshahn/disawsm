@@ -1,6 +1,7 @@
 <script lang="ts">
   import Window from '$lib/components/ui/Window.svelte';
   import { loadedFile, config, getFileLoaderInstance } from '$lib/stores/app';
+  import { entrypoints } from '$lib/stores/entrypoints';
   import { toHex } from '$lib/utils/format';
 
   // Reactive declarations using $derived
@@ -45,6 +46,10 @@
     const loadedPRG = await fileLoader.loadPRGFromFile(file);
     if (loadedPRG) {
       loadedFile.set(loadedPRG);
+
+      // Clear old entrypoints and add start address as code entrypoint
+      entrypoints.clear();
+      entrypoints.add(loadedPRG.startAddress, 'code');
     }
   }
 
@@ -55,6 +60,10 @@
     const loadedPRG = await fileLoader.selectAndLoadPRG();
     if (loadedPRG) {
       loadedFile.set(loadedPRG);
+
+      // Clear old entrypoints and add start address as code entrypoint
+      entrypoints.clear();
+      entrypoints.add(loadedPRG.startAddress, 'code');
     }
   }
 

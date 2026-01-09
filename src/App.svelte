@@ -11,6 +11,7 @@
   import Storage from '$lib/services/storage';
   import FileLoader from '$lib/services/fileLoader';
   import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance } from '$lib/stores/app';
+  import { entrypoints } from '$lib/stores/entrypoints';
   import { get_config } from '$lib/config';
 
   // Initialize immediately (not in onMount)
@@ -43,6 +44,10 @@
     if (file) {
       loadedFile.set(file);
       assemblyOutput.set(null); // Clear previous assembly
+
+      // Clear old entrypoints and add start address as code entrypoint
+      entrypoints.clear();
+      entrypoints.add(file.startAddress, 'code');
     }
   }
 
@@ -63,6 +68,7 @@
       if (confirmed) {
         loadedFile.set(null);
         assemblyOutput.set(null);
+        entrypoints.clear();
       }
     }
   }
