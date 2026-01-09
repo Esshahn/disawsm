@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { loadPetsciiCharset, getPetsciiCharPosition } from '$lib/services/petsciiCharset';
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
+  import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
   import { toHex } from '$lib/utils/format';
 
   let {
@@ -17,6 +18,7 @@
   let spriteSheetUrl = $state<string | null>(null);
   let charsetLoaded = $state(false);
   let hoveredByteIndex = $state<number | null>(null); // Track which byte is being hovered (global index)
+  let scrollToLineIndex = $state<number | undefined>(undefined);
 
   // Line height in pixels - measured from actual rendered content
   const LINE_HEIGHT = 21;
@@ -74,6 +76,29 @@
   }
 
   let hexLines = $derived(formatHexDump());
+
+  function handleJump(targetAddress: number) {
+    // Check if address is within range
+    const endAddress = startAddress + bytes.length - 1;
+
+    if (targetAddress < startAddress || targetAddress > endAddress) {
+      // Address out of range - could show error message
+      console.warn(`Address $${toHex(targetAddress, 4)} is out of range ($${toHex(startAddress, 4)}-$${toHex(endAddress, 4)})`);
+      return;
+    }
+
+    // Calculate which line contains this address
+    const byteOffset = targetAddress - startAddress;
+    const lineIndex = Math.floor(byteOffset / bytesPerLine);
+
+    // Trigger scroll to this line
+    scrollToLineIndex = lineIndex;
+
+    // Reset after a brief moment to allow future jumps to same line
+    setTimeout(() => {
+      scrollToLineIndex = undefined;
+    }, 100);
+  }
 </script>
 
 <div class="hex-viewer">
@@ -83,10 +108,13 @@
     <span class="hex-header-petscii">PETSCII</span>
   </div>
 
+  <JumpToAddress onjump={handleJump} />
+
   <VirtualScroller
     items={hexLines}
     itemHeight={LINE_HEIGHT}
-    containerHeight="calc(100% - 40px)"
+    containerHeight="calc(100% - 90px)"
+    scrollToIndex={scrollToLineIndex}
   >
     {#snippet children(line, idx)}
       <div class="hex-line">

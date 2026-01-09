@@ -156,6 +156,14 @@ export default class Storage {
       };
     }
 
+    // Deep merge for nested properties
+    if (updates.window_codeview) {
+      this.userConfig.window_codeview = {
+        ...this.userConfig.window_codeview,
+        ...updates.window_codeview
+      };
+    }
+
     if (updates.default_filename !== undefined) {
       this.userConfig.default_filename = updates.default_filename;
     }
@@ -176,6 +184,13 @@ export default class Storage {
         width: data.window_editor.width,
         height: data.window_editor.height,
         isOpen: data.window_editor.isOpen
+      },
+      window_codeview: {
+        left: data.window_codeview.left,
+        top: data.window_codeview.top,
+        width: data.window_codeview.width,
+        height: data.window_codeview.height,
+        isOpen: data.window_codeview.isOpen
       }
     };
     this.writeUserConfig(userConfig);

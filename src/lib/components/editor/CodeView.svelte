@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { disassemble, type DisassembledLine } from '$lib/services/disassembler';
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
+  import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
   import { toHex } from '$lib/utils/format';
 
   let {
@@ -16,6 +17,7 @@
   let disassembledLines = $state<DisassembledLine[]>([]);
   let isLoading = $state(true);
   let error = $state<string | null>(null);
+  let scrollToLineIndex = $state<number | undefined>(undefined);
 
   // Line height in pixels - measured from actual rendered content
   const LINE_HEIGHT = 21;
@@ -43,6 +45,32 @@
       isLoading = false;
     }
   });
+
+  function handleJump(targetAddress: number) {
+    // Find the line with this address
+    const lineIndex = disassembledLines.findIndex(line => line.address === targetAddress);
+
+    if (lineIndex === -1) {
+      // Address not found - find closest address
+      const closestIndex = disassembledLines.findIndex(line => line.address > targetAddress);
+
+      if (closestIndex === -1) {
+        // Address is beyond last instruction
+        console.warn(`Address $${toHex(targetAddress, 4)} not found in disassembled code`);
+        return;
+      }
+
+      // Jump to closest line
+      scrollToLineIndex = Math.max(0, closestIndex - 1);
+    } else {
+      scrollToLineIndex = lineIndex;
+    }
+
+    // Reset after a brief moment to allow future jumps to same line
+    setTimeout(() => {
+      scrollToLineIndex = undefined;
+    }, 100);
+  }
 </script>
 
 <div class="code-viewer">
@@ -57,10 +85,13 @@
   {:else if error}
     <div class="loading">Error: {error}</div>
   {:else}
+    <JumpToAddress onjump={handleJump} />
+
     <VirtualScroller
       items={disassembledLines}
       itemHeight={LINE_HEIGHT}
-      containerHeight="calc(100% - 40px)"
+      containerHeight="calc(100% - 90px)"
+      scrollToIndex={scrollToLineIndex}
     >
       {#snippet children(line, idx)}
         <div

@@ -10,7 +10,7 @@
   let top = $derived(codeviewConfig?.top ?? 50);
   let width = $derived(`${codeviewConfig?.width ?? 600}px`);
   let height = $derived(`${codeviewConfig?.height ?? 400}px`);
-  let closeable = $derived(codeviewConfig?.closeable ?? true);
+  let closeable = $derived(codeviewConfig?.closeable ?? false);
   let resizable = $derived(codeviewConfig?.resizable ?? true);
 </script>
 
