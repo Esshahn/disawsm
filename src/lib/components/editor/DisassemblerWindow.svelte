@@ -143,12 +143,16 @@
                   {/if}
                   <div class="code-line">
                     <span class="code-addr">{toHex(line.address, 4)}</span>
-                    <span
-                      class="code-bytes"
-                      data-tooltip={getTooltipText(line)}
-                    >
-                      {formatBytes(line.bytes)}
-                    </span>
+                    {#if !line.isData}
+                      <span
+                        class="code-bytes"
+                        data-tooltip={getTooltipText(line)}
+                      >
+                        {formatBytes(line.bytes)}
+                      </span>
+                    {:else}
+                      <span class="code-bytes code-bytes-empty"></span>
+                    {/if}
                     <span class="code-instruction">
                       {line.instruction}
                     </span>
@@ -272,8 +276,16 @@
     cursor: help;
   }
 
+  .code-bytes-empty {
+    cursor: default;
+  }
+
   .code-bytes:hover {
     color: #aaaaaa;
+  }
+
+  .code-bytes-empty:hover {
+    color: #888888;
   }
 
   /* Tooltip for bytes - only create on hover */

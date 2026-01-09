@@ -241,10 +241,11 @@ export function convertToProgram(
       const dataBytes: string[] = [byte];
       const allBytes: number[] = [hexToNumber(byte)];
       const dataAddress = byteData.addr;
+      const MAX_BYTES_PER_LINE = 8; // Limit to prevent line wrapping in UI
 
       // Look ahead to group consecutive data bytes (but stop at labels/destinations)
       let j = i + 1;
-      while (j < end) {
+      while (j < end && dataBytes.length < MAX_BYTES_PER_LINE) {
         const nextByte = byteArray[j];
         // Stop if next byte is a destination (has a label) or is code
         if (nextByte.dest || nextByte.code) {
