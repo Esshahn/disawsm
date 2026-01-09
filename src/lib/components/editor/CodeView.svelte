@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { disassemble, type DisassembledLine } from '$lib/services/disassembler';
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
   import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
@@ -32,18 +31,25 @@
     return bytes.map(b => toHex(b, 2)).join(' ');
   }
 
-  // Load disassembly on mount only
-  onMount(async () => {
-    try {
-      isLoading = true;
-      error = null;
-      const lines = await disassemble(bytes, startAddress);
-      disassembledLines = lines;
-    } catch (e) {
-      error = e instanceof Error ? e.message : 'Unknown error';
-    } finally {
-      isLoading = false;
+  // Re-run disassembly whenever bytes or startAddress changes
+  $effect(() => {
+    async function loadDisassembly() {
+      try {
+        isLoading = true;
+        error = null;
+        scrollToLineIndex = undefined; // Reset scroll position
+        hoveredLineIndex = null; // Clear hover state
+        const lines = await disassemble(bytes, startAddress);
+        disassembledLines = lines;
+      } catch (e) {
+        error = e instanceof Error ? e.message : 'Unknown error';
+        disassembledLines = [];
+      } finally {
+        isLoading = false;
+      }
     }
+
+    loadDisassembly();
   });
 
   function handleJump(targetAddress: number) {
