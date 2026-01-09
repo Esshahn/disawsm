@@ -32,6 +32,7 @@ export interface AppConfig {
   window_editor: WindowConfig;
   window_codeview: WindowConfig;
   window_info: WindowConfig;
+  window_checkpoints: WindowConfig;
 }
 
 /**
@@ -56,6 +57,13 @@ export interface UserConfig {
     isOpen?: boolean;
   };
     window_info?: {
+    left?: number;
+    top?: number;
+    width?: number;
+    height?: number;
+    isOpen?: boolean;
+  };
+    window_checkpoints?: {
     left?: number;
     top?: number;
     width?: number;

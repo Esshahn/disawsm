@@ -31,6 +31,16 @@ export function get_config() {
       closeable: false,
       isOpen: true,
       resizable: false
+    },
+    window_checkpoints: {
+      top: 50,
+      left: 700,
+      width: 500,
+      height: 400,
+      autoOpen: true,
+      closeable: false,
+      isOpen: true,
+      resizable: false
     }
   };
 
