@@ -68,7 +68,6 @@
 
   .editor-header {
     padding: 12px 16px;
-    background: rgba(0, 0, 0, 0.2);
     border-bottom: 1px solid #2a2a2a;
   }
 

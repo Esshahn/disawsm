@@ -163,7 +163,6 @@
   .hex-viewer {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
-    background: #1a1a1a;
     color: #ffffff;
     padding: 12px;
     height: 100%;

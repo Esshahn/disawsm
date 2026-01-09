@@ -56,7 +56,6 @@
     font-size: 16px;
   }
 
-
   .code-viewer-container {
     flex: 1;
     overflow: hidden;
