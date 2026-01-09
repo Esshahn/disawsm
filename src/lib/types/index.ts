@@ -33,6 +33,7 @@ export interface AppConfig {
   window_codeview: WindowConfig;
   window_info: WindowConfig;
   window_entrypoints: WindowConfig;
+  window_disassembler: WindowConfig;
 }
 
 /**
@@ -64,6 +65,13 @@ export interface UserConfig {
     isOpen?: boolean;
   };
     window_entrypoints?: {
+    left?: number;
+    top?: number;
+    width?: number;
+    height?: number;
+    isOpen?: boolean;
+  };
+    window_disassembler?: {
     left?: number;
     top?: number;
     width?: number;

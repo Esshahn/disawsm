@@ -5,11 +5,13 @@
   import CodeViewWindow from '$lib/components/editor/CodeViewWindow.svelte';
   import InfoWindow from '$lib/components/editor/InfoWindow.svelte';
   import EntrypointsWindow from '$lib/components/editor/EntrypointsWindow.svelte';
+  import DisassemblerWindow from '$lib/components/editor/DisassemblerWindow.svelte';
   import StatusBar from '$lib/components/ui/StatusBar.svelte';
   import About from '$lib/components/dialogs/About.svelte';
   import Storage from '$lib/services/storage';
   import FileLoader from '$lib/services/fileLoader';
-  import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance } from '$lib/stores/app';
+  import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance, loadPRGFile } from '$lib/stores/app';
+  import { entrypoints } from '$lib/stores/entrypoints';
   import { get_config } from '$lib/config';
 
   // Initialize immediately (not in onMount)
@@ -40,8 +42,7 @@
   async function handleLoadPRG() {
     const file = await fileLoader.selectAndLoadPRG();
     if (file) {
-      loadedFile.set(file);
-      assemblyOutput.set(null); // Clear previous assembly
+      loadPRGFile(file);
     }
   }
 
@@ -62,6 +63,7 @@
       if (confirmed) {
         loadedFile.set(null);
         assemblyOutput.set(null);
+        entrypoints.clear();
       }
     }
   }
@@ -97,6 +99,9 @@
     {/if}
     {#if $loadedFile && $config?.window_entrypoints?.isOpen}
       <EntrypointsWindow />
+    {/if}
+    {#if $loadedFile && $config?.window_disassembler?.isOpen}
+      <DisassemblerWindow />
     {/if}
   </div>
 

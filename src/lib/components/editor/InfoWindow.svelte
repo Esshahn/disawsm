@@ -1,6 +1,6 @@
 <script lang="ts">
   import Window from '$lib/components/ui/Window.svelte';
-  import { loadedFile, config, getFileLoaderInstance } from '$lib/stores/app';
+  import { loadedFile, config, getFileLoaderInstance, loadPRGFile } from '$lib/stores/app';
   import { toHex } from '$lib/utils/format';
 
   // Reactive declarations using $derived
@@ -44,7 +44,7 @@
 
     const loadedPRG = await fileLoader.loadPRGFromFile(file);
     if (loadedPRG) {
-      loadedFile.set(loadedPRG);
+      loadPRGFile(loadedPRG);
     }
   }
 
@@ -54,7 +54,7 @@
 
     const loadedPRG = await fileLoader.selectAndLoadPRG();
     if (loadedPRG) {
-      loadedFile.set(loadedPRG);
+      loadPRGFile(loadedPRG);
     }
   }
 
