@@ -113,13 +113,13 @@ export default class Storage {
           if (userWindow.isOpen !== undefined) this.config.window_info.isOpen = userWindow.isOpen;
         }
 
-        if (this.userConfig!.window_checkpoints) {
-          const userWindow = this.userConfig!.window_checkpoints;
-          if (userWindow.left !== undefined) this.config.window_info.left = userWindow.left;
-          if (userWindow.top !== undefined) this.config.window_info.top = userWindow.top;
-          if (userWindow.width !== undefined) this.config.window_info.width = userWindow.width;
-          if (userWindow.height !== undefined) this.config.window_info.height = userWindow.height;
-          if (userWindow.isOpen !== undefined) this.config.window_info.isOpen = userWindow.isOpen;
+        if (this.userConfig!.window_entrypoints) {
+          const userWindow = this.userConfig!.window_entrypoints;
+          if (userWindow.left !== undefined) this.config.window_entrypoints.left = userWindow.left;
+          if (userWindow.top !== undefined) this.config.window_entrypoints.top = userWindow.top;
+          if (userWindow.width !== undefined) this.config.window_entrypoints.width = userWindow.width;
+          if (userWindow.height !== undefined) this.config.window_entrypoints.height = userWindow.height;
+          if (userWindow.isOpen !== undefined) this.config.window_entrypoints.isOpen = userWindow.isOpen;
         }
 
         if (this.userConfig!.default_filename) {
@@ -190,6 +190,14 @@ export default class Storage {
       };
     }
 
+    // Deep merge for nested properties
+    if (updates.window_entrypoints) {
+      this.userConfig.window_entrypoints = {
+        ...this.userConfig.window_entrypoints,
+        ...updates.window_entrypoints
+      };
+    }
+
     if (updates.default_filename !== undefined) {
       this.userConfig.default_filename = updates.default_filename;
     }
@@ -224,6 +232,13 @@ export default class Storage {
         width: data.window_info.width,
         height: data.window_info.height,
         isOpen: data.window_info.isOpen
+      },
+      window_entrypoints: {
+        left: data.window_entrypoints.left,
+        top: data.window_entrypoints.top,
+        width: data.window_entrypoints.width,
+        height: data.window_entrypoints.height,
+        isOpen: data.window_entrypoints.isOpen
       }
     };
     this.writeUserConfig(userConfig);

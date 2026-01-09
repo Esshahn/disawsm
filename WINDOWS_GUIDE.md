@@ -160,7 +160,7 @@ Then create your content component (`MyView.svelte`) separately.
 ## Common Mistakes
 
 1. **Forgetting storage.ts**: This has 3 places that need updating
-2. **Wrong property names**: Using `window_info` instead of `window_checkpoints` in storage merge blocks
+2. **Wrong property names**: Using `window_info` instead of `window_entrypoints` in storage merge blocks
 3. **Missing UserConfig**: Forgetting to add the optional interface in UserConfig
 4. **Copy-paste errors**: Make sure all references use your new window name consistently
 

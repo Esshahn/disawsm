@@ -32,7 +32,7 @@ export function get_config() {
       isOpen: true,
       resizable: false
     },
-    window_checkpoints: {
+    window_entrypoints: {
       top: 50,
       left: 700,
       width: 500,
