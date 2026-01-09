@@ -30,6 +30,7 @@ export interface AppConfig {
   version: string;
   default_filename: string;
   window_editor: WindowConfig;
+  window_codeview: WindowConfig;
 }
 
 /**
@@ -40,6 +41,13 @@ export interface UserConfig {
   version: string;
   default_filename?: string;
   window_editor?: {
+    left?: number;
+    top?: number;
+    width?: number;
+    height?: number;
+    isOpen?: boolean;
+  };
+  window_codeview?: {
     left?: number;
     top?: number;
     width?: number;

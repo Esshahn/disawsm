@@ -95,6 +95,15 @@ export default class Storage {
           if (userWindow.isOpen !== undefined) this.config.window_editor.isOpen = userWindow.isOpen;
         }
 
+        if (this.userConfig!.window_codeview) {
+          const userWindow = this.userConfig!.window_codeview;
+          if (userWindow.left !== undefined) this.config.window_codeview.left = userWindow.left;
+          if (userWindow.top !== undefined) this.config.window_codeview.top = userWindow.top;
+          if (userWindow.width !== undefined) this.config.window_codeview.width = userWindow.width;
+          if (userWindow.height !== undefined) this.config.window_codeview.height = userWindow.height;
+          if (userWindow.isOpen !== undefined) this.config.window_codeview.isOpen = userWindow.isOpen;
+        }
+
         if (this.userConfig!.default_filename) {
           this.config.default_filename = this.userConfig!.default_filename;
         }
