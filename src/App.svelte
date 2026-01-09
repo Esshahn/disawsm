@@ -4,6 +4,7 @@
   import EditorWindow from '$lib/components/editor/EditorWindow.svelte';
   import CodeViewWindow from '$lib/components/editor/CodeViewWindow.svelte';
   import InfoWindow from '$lib/components/editor/InfoWindow.svelte';
+  import EntrypointsWindow from '$lib/components/editor/EntrypointsWindow.svelte';
   import StatusBar from '$lib/components/ui/StatusBar.svelte';
   import About from '$lib/components/dialogs/About.svelte';
   import Storage from '$lib/services/storage';
@@ -90,6 +91,9 @@
     {/if}
     {#if $config?.window_info?.isOpen}
       <InfoWindow />
+    {/if}
+        {#if $config?.window_entrypoints?.isOpen}
+      <EntrypointsWindow />
     {/if}
   </div>
 

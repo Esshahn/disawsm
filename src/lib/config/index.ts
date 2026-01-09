@@ -1,6 +1,6 @@
 export function get_config() {
   const config = {
-    version: "26.01.09.3",  // Bumped version for jump-to-address feature
+    version: "26.01.09.5",  // Fixed: PETSCII column alignment on incomplete last lines
     default_filename: "mycode",
     window_editor: {
       top: 50,
@@ -27,6 +27,16 @@ export function get_config() {
       left: 700,
       width: 400,
       height: 500,
+      autoOpen: true,
+      closeable: false,
+      isOpen: true,
+      resizable: false
+    },
+    window_entrypoints: {
+      top: 50,
+      left: 700,
+      width: 500,
+      height: 400,
       autoOpen: true,
       closeable: false,
       isOpen: true,

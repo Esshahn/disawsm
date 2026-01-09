@@ -77,6 +77,17 @@
 
   let hexLines = $derived(formatHexDump());
 
+  // Reset state when bytes or startAddress changes
+  $effect(() => {
+    // Access bytes and startAddress to track them
+    bytes;
+    startAddress;
+
+    // Reset interactive state
+    hoveredByteIndex = null;
+    scrollToLineIndex = undefined;
+  });
+
   function handleJump(targetAddress: number) {
     // Check if address is within range
     const endAddress = startAddress + bytes.length - 1;
@@ -131,6 +142,15 @@
               onmouseleave={() => hoveredByteIndex = null}
             >
               {toHex(hexByte.value, 2)}
+            </span>
+          {/each}
+          <!-- Fill remaining space with empty placeholders to keep PETSCII column aligned -->
+          {#each Array(bytesPerLine - line.hexBytes.length) as _, idx}
+            <span
+              class="hex-byte hex-byte-empty"
+              class:gap-after-8={(line.hexBytes.length + idx + 1) % 8 === 0 && (line.hexBytes.length + idx) < bytesPerLine - 1}
+            >
+              &nbsp;&nbsp;
             </span>
           {/each}
         </span>
@@ -233,7 +253,7 @@
     margin-right: 0.5ch;
   }
 
-  .hex-byte:hover {
+  .hex-byte:not(.hex-byte-empty):hover {
     outline: 2px solid rgb(242, 0, 226);
     outline-offset: -2px;
   }
@@ -243,8 +263,15 @@
     outline-offset: -2px;
   }
 
+  /* Empty hex byte placeholder - no interaction */
+  .hex-byte-empty {
+    color: transparent;
+    cursor: default;
+    pointer-events: none;
+  }
+
   /* Modern tooltip for hex bytes - only create on hover */
-  .hex-byte:hover::after {
+  .hex-byte:not(.hex-byte-empty):hover::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: calc(100% + 8px);
@@ -263,7 +290,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   }
 
-  .hex-byte:hover::before {
+  .hex-byte:not(.hex-byte-empty):hover::before {
     content: '';
     position: absolute;
     bottom: calc(100% + 2px);
