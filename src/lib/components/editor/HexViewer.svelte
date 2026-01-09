@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { loadPetsciiCharset, getPetsciiCharPosition } from '$lib/services/petsciiCharset';
+  import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
 
   let {
     bytes,
@@ -15,6 +16,9 @@
   let spriteSheetUrl = $state<string | null>(null);
   let charsetLoaded = $state(false);
   let hoveredByteIndex = $state<number | null>(null); // Track which byte is being hovered (global index)
+
+  // Line height in pixels - measured from actual rendered content
+  const LINE_HEIGHT = 21;
 
   function getTooltipText(value: number, address: number): string {
     const hexAddr = toHex(address, 4);
@@ -81,8 +85,13 @@
     <span class="hex-header-hex">Hex Dump</span>
     <span class="hex-header-petscii">PETSCII</span>
   </div>
-  <div class="hex-content">
-    {#each hexLines as line}
+
+  <VirtualScroller
+    items={hexLines}
+    itemHeight={LINE_HEIGHT}
+    containerHeight="calc(100% - 40px)"
+  >
+    {#snippet children(line, idx)}
       <div class="hex-line">
         <span class="hex-addr">{line.address}</span>
         <span class="hex-bytes-container">
@@ -120,8 +129,8 @@
           {/if}
         </span>
       </div>
-    {/each}
-  </div>
+    {/snippet}
+  </VirtualScroller>
 </div>
 
 <style>
@@ -131,8 +140,9 @@
     background: #1a1a1a;
     color: #ffffff;
     padding: 12px;
-    overflow: auto;
     height: 100%;
+    display: flex;
+    flex-direction: column;
     contain: layout style paint;
   }
 
@@ -141,9 +151,9 @@
     gap: 16px;
     padding-bottom: 8px;
     border-bottom: 1px solid #333;
-    margin-bottom: 8px;
     color: #00c698;
     font-weight: 600;
+    flex-shrink: 0;
   }
 
   .hex-header-addr {
@@ -159,12 +169,8 @@
     flex-shrink: 0;
   }
 
-  .hex-content {
-    line-height: 160%;
-    will-change: scroll-position;
-  }
-
   .hex-line {
+    line-height: 160%;
     display: flex;
     gap: 16px;
     contain: layout style;

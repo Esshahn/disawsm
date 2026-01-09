@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { disassemble, type DisassembledLine } from '$lib/services/disassembler';
+  import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
 
   let {
     bytes,
@@ -14,6 +15,9 @@
   let disassembledLines = $state<DisassembledLine[]>([]);
   let isLoading = $state(true);
   let error = $state<string | null>(null);
+
+  // Line height in pixels - measured from actual rendered content
+  const LINE_HEIGHT = 21;
 
   function toHex(num: number, digits: number): string {
     return num.toString(16).padStart(digits, '0').toLowerCase();
@@ -50,13 +54,18 @@
     <span class="code-header-bytes">Bytes</span>
     <span class="code-header-instruction">Instruction</span>
   </div>
-  <div class="code-content">
-    {#if isLoading}
-      <div class="loading">Loading disassembly...</div>
-    {:else if error}
-      <div class="loading">Error: {error}</div>
-    {:else}
-      {#each disassembledLines as line, idx}
+
+  {#if isLoading}
+    <div class="loading">Loading disassembly...</div>
+  {:else if error}
+    <div class="loading">Error: {error}</div>
+  {:else}
+    <VirtualScroller
+      items={disassembledLines}
+      itemHeight={LINE_HEIGHT}
+      containerHeight="calc(100% - 40px)"
+    >
+      {#snippet children(line, idx)}
         <div
           class="code-line"
           class:highlighted={hoveredLineIndex === idx}
@@ -72,9 +81,9 @@
           </span>
           <span class="code-instruction">{line.instruction}</span>
         </div>
-      {/each}
-    {/if}
-  </div>
+      {/snippet}
+    </VirtualScroller>
+  {/if}
 </div>
 
 <style>
@@ -84,8 +93,9 @@
     background: #1a1a1a;
     color: #ffffff;
     padding: 12px;
-    overflow: auto;
     height: 100%;
+    display: flex;
+    flex-direction: column;
     contain: layout style paint;
   }
 
@@ -94,13 +104,9 @@
     gap: 16px;
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(0, 198, 152, 0.3);
-    margin-bottom: 8px;
     font-weight: bold;
     color: #00c698;
-    position: sticky;
-    top: 0;
-    background: #1a1a1a;
-    z-index: 10;
+    flex-shrink: 0;
   }
 
   .code-header-addr {
@@ -117,12 +123,8 @@
     flex: 1;
   }
 
-  .code-content {
-    line-height: 160%;
-    will-change: scroll-position;
-  }
-
   .code-line {
+    line-height: 160%;
     display: flex;
     gap: 16px;
     contain: layout style;
