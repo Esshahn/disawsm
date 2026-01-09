@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import { disassemble, type DisassembledLine } from '$lib/services/disassembler';
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
-  import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
   import { toHex } from '$lib/utils/format';
 
   let {
@@ -74,20 +73,18 @@
 </script>
 
 <div class="code-viewer">
-
+  <div class="code-header">
+    <span class="code-header-addr">Addr</span>
+    <span class="code-header-bytes">Bytes</span>
+    <span class="code-header-instruction">Instruction</span>
+  </div>
 
   {#if isLoading}
     <div class="loading">Loading disassembly...</div>
   {:else if error}
     <div class="loading">Error: {error}</div>
   {:else}
-    <JumpToAddress onjump={handleJump} />
-
-      <div class="code-header">
-    <span class="code-header-addr">Addr</span>
-    <span class="code-header-bytes">Bytes</span>
-    <span class="code-header-instruction">Instruction</span>
-  </div>
+    
 
     <VirtualScroller
       items={disassembledLines}
@@ -120,6 +117,7 @@
   .code-viewer {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
+    background: #1a1a1a;
     color: #ffffff;
     padding: 12px;
     height: 100%;

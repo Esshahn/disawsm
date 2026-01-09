@@ -1,6 +1,6 @@
 export function get_config() {
   const config = {
-    version: "26.01.09.2",  // Bumped version for z-index fixes
+    version: "26.01.09.3",  // Bumped version for jump-to-address feature
     default_filename: "mycode",
     window_editor: {
       top: 50,
@@ -14,13 +14,23 @@ export function get_config() {
     },
     window_codeview: {
       top: 50,
-      left: 1030,
+      left: 800,
       width: 600,
       height: 600,
       autoOpen: true,
-      closeable: true,
+      closeable: false,
       isOpen: true,
       resizable: true
+    },
+    window_info: {
+      top: 50,
+      left: 700,
+      width: 400,
+      height: 500,
+      autoOpen: true,
+      closeable: false,
+      isOpen: true,
+      resizable: false
     }
   };
 

@@ -6,13 +6,15 @@
     itemHeight,
     containerHeight,
     overscan = 3,
-    children
+    children,
+    scrollToIndex = undefined
   }: {
     items: T[];
     itemHeight: number;
     containerHeight: string;
     overscan?: number;
     children: Snippet<[T, number]>;
+    scrollToIndex?: number | undefined;
   } = $props();
 
   let scrollTop = $state(0);
@@ -43,6 +45,14 @@
   function handleScroll(event: Event) {
     scrollTop = (event.target as HTMLDivElement).scrollTop;
   }
+
+  // Watch for scrollToIndex changes and scroll to that item
+  $effect(() => {
+    if (scrollToIndex !== undefined && viewportElement) {
+      const scrollPosition = scrollToIndex * itemHeight;
+      viewportElement.scrollTop = scrollPosition;
+    }
+  });
 </script>
 
 <div

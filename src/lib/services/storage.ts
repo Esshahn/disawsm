@@ -104,6 +104,15 @@ export default class Storage {
           if (userWindow.isOpen !== undefined) this.config.window_codeview.isOpen = userWindow.isOpen;
         }
 
+        if (this.userConfig!.window_info) {
+          const userWindow = this.userConfig!.window_info;
+          if (userWindow.left !== undefined) this.config.window_info.left = userWindow.left;
+          if (userWindow.top !== undefined) this.config.window_info.top = userWindow.top;
+          if (userWindow.width !== undefined) this.config.window_info.width = userWindow.width;
+          if (userWindow.height !== undefined) this.config.window_info.height = userWindow.height;
+          if (userWindow.isOpen !== undefined) this.config.window_info.isOpen = userWindow.isOpen;
+        }
+
         if (this.userConfig!.default_filename) {
           this.config.default_filename = this.userConfig!.default_filename;
         }
@@ -156,6 +165,22 @@ export default class Storage {
       };
     }
 
+    // Deep merge for nested properties
+    if (updates.window_codeview) {
+      this.userConfig.window_codeview = {
+        ...this.userConfig.window_codeview,
+        ...updates.window_codeview
+      };
+    }
+
+    // Deep merge for nested properties
+    if (updates.window_info) {
+      this.userConfig.window_info = {
+        ...this.userConfig.window_info,
+        ...updates.window_info
+      };
+    }
+
     if (updates.default_filename !== undefined) {
       this.userConfig.default_filename = updates.default_filename;
     }
@@ -176,6 +201,20 @@ export default class Storage {
         width: data.window_editor.width,
         height: data.window_editor.height,
         isOpen: data.window_editor.isOpen
+      },
+      window_codeview: {
+        left: data.window_codeview.left,
+        top: data.window_codeview.top,
+        width: data.window_codeview.width,
+        height: data.window_codeview.height,
+        isOpen: data.window_codeview.isOpen
+      },
+      window_info: {
+        left: data.window_info.left,
+        top: data.window_info.top,
+        width: data.window_info.width,
+        height: data.window_info.height,
+        isOpen: data.window_info.isOpen
       }
     };
     this.writeUserConfig(userConfig);

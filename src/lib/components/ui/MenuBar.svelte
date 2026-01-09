@@ -17,7 +17,7 @@
 <div id="menubar">
   <ul>
     <li class="dropdown">
-      <a href="javascript:void(0)" class="dropbtn">DisAWSM</a>
+      <a href="javascript:void(0)" class="dropbtn">disawsm</a>
       <div class="dropdown-content">
         <a onclick={onshowAbout}>About</a>
       </div>
