@@ -1,6 +1,6 @@
 export function get_config() {
   const config = {
-    version: "26.01.09.1",  // Bumped version for code view window
+    version: "26.01.09.2",  // Bumped version for z-index fixes
     default_filename: "mycode",
     window_editor: {
       top: 50,

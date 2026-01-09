@@ -1,5 +1,6 @@
 <script lang="ts">
   import { updateWindowConfig } from '$lib/stores/app';
+  import { getNextZIndex } from '$lib/stores/windowManager';
 
   let {
     title = 'Window',
@@ -38,7 +39,7 @@
   let currentTop = $state(top);
   let currentWidth = $state(width);
   let currentHeight = $state(height);
-  let zIndex = $state(100);
+  let zIndex = $state(1000);
 
   // Update position when props change (e.g., from localStorage)
   $effect(() => {
@@ -48,13 +49,17 @@
     currentHeight = height;
   });
 
+  function bringToFront() {
+    zIndex = getNextZIndex();
+  }
+
   function handleTitleMouseDown(e: MouseEvent) {
     isDragging = true;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
     windowStartX = currentLeft;
     windowStartY = currentTop;
-    zIndex = Date.now(); // Bring to front
+    bringToFront();
     e.preventDefault();
   }
 
@@ -110,9 +115,13 @@
       ? parseInt(currentHeight) || 400
       : currentHeight;
 
-    zIndex = Date.now(); // Bring to front
+    bringToFront();
     e.preventDefault();
     e.stopPropagation();
+  }
+
+  function handleWindowClick() {
+    bringToFront();
   }
 
   function handleClose() {
@@ -130,6 +139,7 @@
   bind:this={windowElement}
   class="dialog-wrapper"
   style="left: {currentLeft}px; top: {currentTop}px; width: {currentWidth}; height: {currentHeight}; z-index: {zIndex};"
+  onclick={handleWindowClick}
 >
   <div class="dialog-titlebar" onmousedown={handleTitleMouseDown}>
     <span class="dialog-title">{title}</span>
