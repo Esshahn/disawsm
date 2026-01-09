@@ -1,6 +1,6 @@
 export function get_config() {
   const config = {
-    version: "26.01.09.5",  // Fixed: PETSCII column alignment on incomplete last lines
+    version: "26.01.09.6",  // Added: Disassembler window with entrypoint-based analysis
     default_filename: "mycode",
     window_editor: {
       top: 50,
@@ -41,6 +41,16 @@ export function get_config() {
       closeable: false,
       isOpen: true,
       resizable: false
+    },
+    window_disassembler: {
+      top: 50,
+      left: 1200,
+      width: 600,
+      height: 600,
+      autoOpen: true,
+      closeable: false,
+      isOpen: true,
+      resizable: true
     }
   };
 

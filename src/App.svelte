@@ -5,6 +5,7 @@
   import CodeViewWindow from '$lib/components/editor/CodeViewWindow.svelte';
   import InfoWindow from '$lib/components/editor/InfoWindow.svelte';
   import EntrypointsWindow from '$lib/components/editor/EntrypointsWindow.svelte';
+  import DisassemblerWindow from '$lib/components/editor/DisassemblerWindow.svelte';
   import StatusBar from '$lib/components/ui/StatusBar.svelte';
   import About from '$lib/components/dialogs/About.svelte';
   import Storage from '$lib/services/storage';
@@ -97,6 +98,9 @@
     {/if}
     {#if $loadedFile && $config?.window_entrypoints?.isOpen}
       <EntrypointsWindow />
+    {/if}
+    {#if $loadedFile && $config?.window_disassembler?.isOpen}
+      <DisassemblerWindow />
     {/if}
   </div>
 
