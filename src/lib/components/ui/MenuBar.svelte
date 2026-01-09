@@ -1,17 +1,33 @@
 <script lang="ts">
-  import { saveDisabled } from '$lib/stores/app';
+  import { saveDisabled, config, loadedFile } from '$lib/stores/app';
 
   let {
     onloadPRG,
     onsaveAssembly,
     onclear,
-    onshowAbout
+    onshowAbout,
+    ontoggleWindow
   }: {
     onloadPRG?: () => void;
     onsaveAssembly?: () => void;
     onclear?: () => void;
     onshowAbout?: () => void;
+    ontoggleWindow?: (windowKey: string) => void;
   } = $props();
+
+  // Helper to check if a window is actually visible
+  function isWindowVisible(windowKey: string): boolean {
+    const windowConfig = $config?.[windowKey as keyof typeof $config] as { isOpen?: boolean };
+    if (!windowConfig?.isOpen) return false;
+
+    // These windows require a loaded file to be visible
+    const requiresFile = ['window_editor', 'window_codeview', 'window_entrypoints', 'window_disassembler'];
+    if (requiresFile.includes(windowKey)) {
+      return !!$loadedFile;
+    }
+
+    return true;
+  }
 </script>
 
 <div id="menubar">
@@ -43,6 +59,27 @@
     <li class="dropdown">
       <a href="javascript:void(0)" class="dropbtn">View</a>
       <div class="dropdown-content">
+        <a onclick={() => ontoggleWindow?.('window_info')}>
+          <span class="checkmark">{#if isWindowVisible('window_info')}✓{/if}</span>
+          Info
+        </a>
+        <a onclick={() => ontoggleWindow?.('window_editor')}>
+          <span class="checkmark">{#if isWindowVisible('window_editor')}✓{/if}</span>
+          Hex Editor
+        </a>
+        <a onclick={() => ontoggleWindow?.('window_codeview')}>
+          <span class="checkmark">{#if isWindowVisible('window_codeview')}✓{/if}</span>
+          Code View
+        </a>
+        <a onclick={() => ontoggleWindow?.('window_entrypoints')}>
+          <span class="checkmark">{#if isWindowVisible('window_entrypoints')}✓{/if}</span>
+          Entrypoints
+        </a>
+        <a onclick={() => ontoggleWindow?.('window_disassembler')}>
+          <span class="checkmark">{#if isWindowVisible('window_disassembler')}✓{/if}</span>
+          Disassembler
+        </a>
+        <hr />
         <a id="menubar-fullscreen">
           Toggle Fullscreen<span class="hotkey">Ctrl+F</span>
         </a>
@@ -64,6 +101,11 @@
 </div>
 
 <style>
-  /* Uses existing CSS from stylesheet.css */
-  /* No additional styles needed - menubar styles already defined */
+  .checkmark {
+    display: inline-block;
+    width: 20px;
+    color: #ffffff;
+    font-weight: bold;
+    text-align: center;
+  }
 </style>

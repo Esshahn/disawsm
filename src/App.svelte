@@ -10,7 +10,7 @@
   import About from '$lib/components/dialogs/About.svelte';
   import Storage from '$lib/services/storage';
   import FileLoader from '$lib/services/fileLoader';
-  import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance, loadPRGFile } from '$lib/stores/app';
+  import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance, loadPRGFile, updateWindowConfig } from '$lib/stores/app';
   import { entrypoints } from '$lib/stores/entrypoints';
   import { get_config } from '$lib/config';
 
@@ -77,6 +77,13 @@
     allowKeyboardShortcuts = true;
     showAbout = false;
   }
+
+  function handleToggleWindow(windowKey: string) {
+    const currentState = $config?.[windowKey as keyof typeof $config] as { isOpen?: boolean };
+    if (currentState && 'isOpen' in currentState) {
+      updateWindowConfig(windowKey, { isOpen: !currentState.isOpen });
+    }
+  }
 </script>
 
 <div id="container">
@@ -85,6 +92,7 @@
     onsaveAssembly={handleSaveAssembly}
     onclear={handleClear}
     onshowAbout={handleShowAbout}
+    ontoggleWindow={handleToggleWindow}
   />
 
   <div id="app">

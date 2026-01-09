@@ -8,7 +8,7 @@ export function get_config() {
       width: 800,
       height: 600,
       autoOpen: true,
-      closeable: false,
+      closeable: true,
       isOpen: true,
       resizable: true
     },
@@ -18,7 +18,7 @@ export function get_config() {
       width: 600,
       height: 600,
       autoOpen: true,
-      closeable: false,
+      closeable: true,
       isOpen: true,
       resizable: true
     },
@@ -28,7 +28,7 @@ export function get_config() {
       width: 300,
       height: 300,
       autoOpen: true,
-      closeable: false,
+      closeable: true,
       isOpen: true,
       resizable: false
     },
@@ -38,7 +38,7 @@ export function get_config() {
       width: 500,
       height: 400,
       autoOpen: true,
-      closeable: false,
+      closeable: true,
       isOpen: true,
       resizable: false
     },
@@ -48,7 +48,7 @@ export function get_config() {
       width: 600,
       height: 600,
       autoOpen: true,
-      closeable: false,
+      closeable: true,
       isOpen: true,
       resizable: true
     }
