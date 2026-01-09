@@ -65,11 +65,11 @@
         </a>
         <a onclick={() => ontoggleWindow?.('window_editor')}>
           <span class="checkmark">{#if isWindowVisible('window_editor')}✓{/if}</span>
-          Hex Editor
+          Data Viewer
         </a>
         <a onclick={() => ontoggleWindow?.('window_codeview')}>
           <span class="checkmark">{#if isWindowVisible('window_codeview')}✓{/if}</span>
-          Code View
+          Code Viewer
         </a>
         <a onclick={() => ontoggleWindow?.('window_entrypoints')}>
           <span class="checkmark">{#if isWindowVisible('window_entrypoints')}✓{/if}</span>
