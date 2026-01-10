@@ -56,31 +56,46 @@
   let closeable = $derived(monitorConfig?.closeable ?? true);
   let resizable = $derived(monitorConfig?.resizable ?? true);
 
-  async function showDisassembly(startAddr: number) {
+  async function showDisassembly(startAddr: number, endAddr?: number) {
     if (!$loadedFile) return;
 
     // Calculate byte offset from start address
     const byteOffset = startAddr - $loadedFile.startAddress;
-    const endAddress = $loadedFile.startAddress + $loadedFile.bytes.length - 1;
+    const fileEndAddress = $loadedFile.startAddress + $loadedFile.bytes.length - 1;
 
     if (byteOffset < 0 || byteOffset >= $loadedFile.bytes.length) {
       history.push({
         type: 'error',
-        message: `${toHex(startAddr, 4)} is not within ${toHex($loadedFile.startAddress, 4)}-${toHex(endAddress, 4)}`
+        message: `${toHex(startAddr, 4)} is not within ${toHex($loadedFile.startAddress, 4)}-${toHex(fileEndAddress, 4)}`
       });
       return;
     }
 
-    // Extract a slice of bytes starting from the target address
-    // We'll take enough bytes to get ~20 instructions (approximately 60 bytes should be enough)
-    const sliceLength = Math.min(60, $loadedFile.bytes.length - byteOffset);
+    // Determine how many bytes to disassemble
+    let sliceLength: number;
+    if (endAddr !== undefined) {
+      // Range specified: disassemble from startAddr to endAddr
+      const endOffset = endAddr - $loadedFile.startAddress;
+      if (endOffset < byteOffset || endOffset >= $loadedFile.bytes.length) {
+        history.push({
+          type: 'error',
+          message: `${toHex(endAddr, 4)} is not within ${toHex($loadedFile.startAddress, 4)}-${toHex(fileEndAddress, 4)}`
+        });
+        return;
+      }
+      sliceLength = Math.min(endOffset - byteOffset + 1, $loadedFile.bytes.length - byteOffset);
+    } else {
+      // No range: show ~20 instructions
+      sliceLength = Math.min(60, $loadedFile.bytes.length - byteOffset);
+    }
+
     const bytesSlice = $loadedFile.bytes.slice(byteOffset, byteOffset + sliceLength);
 
     // Disassemble the slice
     const lines = await disassemble(bytesSlice, startAddr);
 
-    // Take only the first N lines
-    const displayLines = lines.slice(0, LINES_TO_SHOW);
+    // If range specified, show all lines; otherwise limit to N lines
+    const displayLines = endAddr !== undefined ? lines : lines.slice(0, LINES_TO_SHOW);
 
     // Add to history
     history.push({
@@ -98,32 +113,52 @@
     history = history;
   }
 
-  function showMemory(startAddr: number) {
+  function showMemory(startAddr: number, endAddr?: number) {
     if (!$loadedFile) return;
 
     // Calculate byte offset from start address
     const byteOffset = startAddr - $loadedFile.startAddress;
-    const endAddress = $loadedFile.startAddress + $loadedFile.bytes.length - 1;
+    const fileEndAddress = $loadedFile.startAddress + $loadedFile.bytes.length - 1;
 
     if (byteOffset < 0 || byteOffset >= $loadedFile.bytes.length) {
       history.push({
         type: 'error',
-        message: `${toHex(startAddr, 4)} is not within ${toHex($loadedFile.startAddress, 4)}-${toHex(endAddress, 4)}`
+        message: `${toHex(startAddr, 4)} is not within ${toHex($loadedFile.startAddress, 4)}-${toHex(fileEndAddress, 4)}`
       });
       return;
     }
 
-    // Create N lines of data
-    const lines: {address: number, hexBytes: HexByte[]}[] = [];
+    // Determine how many bytes to show
+    let totalBytes: number;
+    if (endAddr !== undefined) {
+      // Range specified
+      const endOffset = endAddr - $loadedFile.startAddress;
+      if (endOffset < byteOffset || endOffset >= $loadedFile.bytes.length) {
+        history.push({
+          type: 'error',
+          message: `${toHex(endAddr, 4)} is not within ${toHex($loadedFile.startAddress, 4)}-${toHex(fileEndAddress, 4)}`
+        });
+        return;
+      }
+      totalBytes = endOffset - byteOffset + 1;
+    } else {
+      // No range: show N lines
+      totalBytes = Math.min(LINES_TO_SHOW * BYTES_PER_LINE, $loadedFile.bytes.length - byteOffset);
+    }
 
-    for (let i = 0; i < LINES_TO_SHOW; i++) {
+    // Create data lines
+    const lines: {address: number, hexBytes: HexByte[]}[] = [];
+    const numLines = Math.ceil(totalBytes / BYTES_PER_LINE);
+
+    for (let i = 0; i < numLines; i++) {
       const lineOffset = byteOffset + (i * BYTES_PER_LINE);
       if (lineOffset >= $loadedFile.bytes.length) break;
 
       const addr = startAddr + (i * BYTES_PER_LINE);
       const hexBytes: HexByte[] = [];
 
-      for (let j = 0; j < BYTES_PER_LINE; j++) {
+      const bytesInLine = Math.min(BYTES_PER_LINE, totalBytes - (i * BYTES_PER_LINE));
+      for (let j = 0; j < bytesInLine; j++) {
         const idx = lineOffset + j;
         if (idx < $loadedFile.bytes.length) {
           hexBytes.push({
@@ -173,24 +208,53 @@
     const lowerCmd = trimmed.toLowerCase();
     const parts = lowerCmd.split(/\s+/);
     const command = parts[0];
-    const addressArg = parts[1];
+    const arg1 = parts[1];
+    const arg2 = parts[2];
 
     if (command === 'd') {
       // Disassemble command
-      const addr = addressArg
-        ? parseAddress(addressArg)
-        : lastAddress ?? $loadedFile.startAddress;
-
-      if (addr !== null) {
+      if (arg1 === 'all') {
+        // d all - show entire file
+        showDisassembly($loadedFile.startAddress, $loadedFile.startAddress + $loadedFile.bytes.length - 1);
+      } else if (arg1 && arg2) {
+        // d START END - show range
+        const startAddr = parseAddress(arg1);
+        const endAddr = parseAddress(arg2);
+        if (startAddr !== null && endAddr !== null) {
+          showDisassembly(startAddr, endAddr);
+        }
+      } else if (arg1) {
+        // d ADDRESS - show from address
+        const addr = parseAddress(arg1);
+        if (addr !== null) {
+          showDisassembly(addr);
+        }
+      } else {
+        // d - continue from last address
+        const addr = lastAddress ?? $loadedFile.startAddress;
         showDisassembly(addr);
       }
     } else if (command === 'm') {
       // Memory/data command
-      const addr = addressArg
-        ? parseAddress(addressArg)
-        : lastAddress ?? $loadedFile.startAddress;
-
-      if (addr !== null) {
+      if (arg1 === 'all') {
+        // m all - show entire file
+        showMemory($loadedFile.startAddress, $loadedFile.startAddress + $loadedFile.bytes.length - 1);
+      } else if (arg1 && arg2) {
+        // m START END - show range
+        const startAddr = parseAddress(arg1);
+        const endAddr = parseAddress(arg2);
+        if (startAddr !== null && endAddr !== null) {
+          showMemory(startAddr, endAddr);
+        }
+      } else if (arg1) {
+        // m ADDRESS - show from address
+        const addr = parseAddress(arg1);
+        if (addr !== null) {
+          showMemory(addr);
+        }
+      } else {
+        // m - continue from last address
+        const addr = lastAddress ?? $loadedFile.startAddress;
         showMemory(addr);
       }
     }
