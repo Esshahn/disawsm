@@ -86,22 +86,13 @@ export default class Storage {
         // ONLY merge user-adjustable properties (position, size, isOpen)
         // NOT functional properties (closeable, resizable, autoOpen)
 
-        if (this.userConfig!.window_editor) {
-          const userWindow = this.userConfig!.window_editor;
-          if (userWindow.left !== undefined) this.config.window_editor.left = userWindow.left;
-          if (userWindow.top !== undefined) this.config.window_editor.top = userWindow.top;
-          if (userWindow.width !== undefined) this.config.window_editor.width = userWindow.width;
-          if (userWindow.height !== undefined) this.config.window_editor.height = userWindow.height;
-          if (userWindow.isOpen !== undefined) this.config.window_editor.isOpen = userWindow.isOpen;
-        }
-
-        if (this.userConfig!.window_codeview) {
-          const userWindow = this.userConfig!.window_codeview;
-          if (userWindow.left !== undefined) this.config.window_codeview.left = userWindow.left;
-          if (userWindow.top !== undefined) this.config.window_codeview.top = userWindow.top;
-          if (userWindow.width !== undefined) this.config.window_codeview.width = userWindow.width;
-          if (userWindow.height !== undefined) this.config.window_codeview.height = userWindow.height;
-          if (userWindow.isOpen !== undefined) this.config.window_codeview.isOpen = userWindow.isOpen;
+        if (this.userConfig!.window_monitor) {
+          const userWindow = this.userConfig!.window_monitor;
+          if (userWindow.left !== undefined) this.config.window_monitor.left = userWindow.left;
+          if (userWindow.top !== undefined) this.config.window_monitor.top = userWindow.top;
+          if (userWindow.width !== undefined) this.config.window_monitor.width = userWindow.width;
+          if (userWindow.height !== undefined) this.config.window_monitor.height = userWindow.height;
+          if (userWindow.isOpen !== undefined) this.config.window_monitor.isOpen = userWindow.isOpen;
         }
 
         if (this.userConfig!.window_info) {
@@ -176,18 +167,10 @@ export default class Storage {
     }
 
     // Deep merge for nested properties
-    if (updates.window_editor) {
-      this.userConfig.window_editor = {
-        ...this.userConfig.window_editor,
-        ...updates.window_editor
-      };
-    }
-
-    // Deep merge for nested properties
-    if (updates.window_codeview) {
-      this.userConfig.window_codeview = {
-        ...this.userConfig.window_codeview,
-        ...updates.window_codeview
+    if (updates.window_monitor) {
+      this.userConfig.window_monitor = {
+        ...this.userConfig.window_monitor,
+        ...updates.window_monitor
       };
     }
 
@@ -229,19 +212,12 @@ export default class Storage {
     const userConfig: UserConfig = {
       version: data.version,
       default_filename: data.default_filename,
-      window_editor: {
-        left: data.window_editor.left,
-        top: data.window_editor.top,
-        width: data.window_editor.width,
-        height: data.window_editor.height,
-        isOpen: data.window_editor.isOpen
-      },
-      window_codeview: {
-        left: data.window_codeview.left,
-        top: data.window_codeview.top,
-        width: data.window_codeview.width,
-        height: data.window_codeview.height,
-        isOpen: data.window_codeview.isOpen
+      window_monitor: {
+        left: data.window_monitor.left,
+        top: data.window_monitor.top,
+        width: data.window_monitor.width,
+        height: data.window_monitor.height,
+        isOpen: data.window_monitor.isOpen
       },
       window_info: {
         left: data.window_info.left,

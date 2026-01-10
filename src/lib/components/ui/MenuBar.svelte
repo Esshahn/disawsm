@@ -21,7 +21,7 @@
     if (!windowConfig?.isOpen) return false;
 
     // These windows require a loaded file to be visible
-    const requiresFile = ['window_editor', 'window_codeview', 'window_entrypoints', 'window_disassembler'];
+    const requiresFile = ['window_monitor', 'window_entrypoints', 'window_disassembler'];
     if (requiresFile.includes(windowKey)) {
       return !!$loadedFile;
     }
@@ -63,13 +63,9 @@
           <span class="checkmark">{#if isWindowVisible('window_info')}✓{/if}</span>
           Info
         </a>
-        <a onclick={() => ontoggleWindow?.('window_editor')}>
-          <span class="checkmark">{#if isWindowVisible('window_editor')}✓{/if}</span>
-          Data Viewer
-        </a>
-        <a onclick={() => ontoggleWindow?.('window_codeview')}>
-          <span class="checkmark">{#if isWindowVisible('window_codeview')}✓{/if}</span>
-          Code Viewer
+        <a onclick={() => ontoggleWindow?.('window_monitor')}>
+          <span class="checkmark">{#if isWindowVisible('window_monitor')}✓{/if}</span>
+          Monitor
         </a>
         <a onclick={() => ontoggleWindow?.('window_entrypoints')}>
           <span class="checkmark">{#if isWindowVisible('window_entrypoints')}✓{/if}</span>

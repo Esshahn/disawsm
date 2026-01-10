@@ -1,8 +1,8 @@
 export function get_config() {
   const config = {
-    version: "26.01.09.6",  // Added: Disassembler window with entrypoint-based analysis
+    version: "26.01.10",  // Added: Monitor window (unified Data/Code view)
     default_filename: "mycode",
-    window_editor: {
+    window_monitor: {
       top: 50,
       left: 210,
       width: 800,
@@ -12,17 +12,7 @@ export function get_config() {
       isOpen: true,
       resizable: true
     },
-    window_codeview: {
-      top: 50,
-      left: 800,
-      width: 600,
-      height: 600,
-      autoOpen: true,
-      closeable: true,
-      isOpen: true,
-      resizable: true
-    },
-    window_info: {
+    window_info: { 
       top: 50,
       left: 50,
       width: 300,

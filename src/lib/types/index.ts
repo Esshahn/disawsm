@@ -29,8 +29,7 @@ export interface WindowConfig {
 export interface AppConfig {
   version: string;
   default_filename: string;
-  window_editor: WindowConfig;
-  window_codeview: WindowConfig;
+  window_monitor: WindowConfig;
   window_info: WindowConfig;
   window_entrypoints: WindowConfig;
   window_disassembler: WindowConfig;
@@ -43,35 +42,28 @@ export interface AppConfig {
 export interface UserConfig {
   version: string;
   default_filename?: string;
-  window_editor?: {
+  window_monitor?: {
     left?: number;
     top?: number;
     width?: number;
     height?: number;
     isOpen?: boolean;
   };
-  window_codeview?: {
+  window_info?: {
     left?: number;
     top?: number;
     width?: number;
     height?: number;
     isOpen?: boolean;
   };
-    window_info?: {
+  window_entrypoints?: {
     left?: number;
     top?: number;
     width?: number;
     height?: number;
     isOpen?: boolean;
   };
-    window_entrypoints?: {
-    left?: number;
-    top?: number;
-    width?: number;
-    height?: number;
-    isOpen?: boolean;
-  };
-    window_disassembler?: {
+  window_disassembler?: {
     left?: number;
     top?: number;
     width?: number;
