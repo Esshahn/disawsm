@@ -3,7 +3,6 @@
   import { loadedFile, config, getFileLoaderInstance, loadPRGFile } from '$lib/stores/app';
   import { toHex } from '$lib/utils/format';
 
-  // Reactive declarations using $derived
   let infoConfig = $derived($config?.window_info);
   let left = $derived(infoConfig?.left ?? 950);
   let top = $derived(infoConfig?.top ?? 50);
@@ -33,7 +32,6 @@
 
     const file = files[0];
 
-    // Check if it's a PRG file
     if (!file.name.toLowerCase().endsWith('.prg') && !file.name.toLowerCase().endsWith('.bin')) {
       alert('Please drop a .prg or .bin file');
       return;
@@ -67,46 +65,56 @@
 </script>
 
 {#if infoConfig}
-<Window
-  title="Info"
-  {left}
-  {top}
-  {width}
-  {height}
-  {closeable}
-  {resizable}
-  windowKey="window_info"
->
-  {#if $loadedFile}
-    <div class="info-content">
-      <div class="info-header">
+  <Window
+    title="Info"
+    {left}
+    {top}
+    {width}
+    {height}
+    {closeable}
+    {resizable}
+    windowKey="window_info"
+  >
+    {#if $loadedFile}
+      <div class="info-content">
         <h2>{$loadedFile.name}</h2>
+
         <div class="file-info">
-          <p>Start: ${toHex($loadedFile.startAddress, 4)}</p>
-          <p>End: ${toHex($loadedFile.startAddress + $loadedFile.bytes.length - 1, 4)}</p>
-          <p>Size: {$loadedFile.bytes.length} bytes</p>
+          <span class="label">Start</span>
+          <span class="value">
+            ${toHex($loadedFile.startAddress, 4)}
+          </span>
+
+          <span class="label">End</span>
+          <span class="value">
+            ${toHex($loadedFile.startAddress + $loadedFile.bytes.length - 1, 4)}
+          </span>
+
+          <span class="label">Size</span>
+          <span class="value">
+            {$loadedFile.bytes.length} bytes
+          </span>
         </div>
       </div>
-    </div>
-  {:else}
-    <div class="info-content" style="padding: 20px;">
-      <div
-        class="drop-zone"
-        class:dragging={isDragging}
-        role="button"
-        tabindex="0"
-        ondragover={handleDragOver}
-        ondragleave={handleDragLeave}
-        ondrop={handleDrop}
-        onclick={handleClick}
-        onkeypress={handleKeyPress}
-      >
-        <div class="drop-icon">📁</div>
-        <div class="drop-text">Drop PRG file here or click to browse</div>
+    {:else}
+      <div class="info-content">
+        <div
+          class="drop-zone"
+          class:dragging={isDragging}
+          role="button"
+          tabindex="0"
+          ondragover={handleDragOver}
+          ondragleave={handleDragLeave}
+          ondrop={handleDrop}
+          onclick={handleClick}
+          onkeypress={handleKeyPress}
+        >
+          <div class="drop-icon">📁</div>
+          <div class="drop-text">Drop PRG file here or click to browse</div>
+        </div>
       </div>
-    </div>
-  {/if}
-</Window>
+    {/if}
+  </Window>
 {/if}
 
 <style>
@@ -115,31 +123,35 @@
     font-family: 'Quicksand', sans-serif;
     display: flex;
     flex-direction: column;
-  }
-
-  .info-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid #2a2a2a;
+    padding: 20px;
+    align-items: flex-start;
   }
 
   h2 {
     color: #00c698;
-    margin: 0 0 8px 0;
+    margin: 0 0 12px 0;
     font-size: 16px;
+    text-align: left;
   }
 
   .file-info {
-    display: flex;
-    gap: 20px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 16px;
+    row-gap: 6px;
+
     font-size: 12px;
-    color: #aaaaaa;
     font-family: 'Courier New', monospace;
+    color: #aaaaaa;
   }
 
+  .label {
+    color: #888888;
+    min-width: 60px;
+  }
 
-  p {
-    margin: 8px;
-    line-height: 160%;
+  .value {
+    color: #e0e0e0;
   }
 
   .drop-zone {

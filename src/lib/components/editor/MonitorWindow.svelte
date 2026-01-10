@@ -9,8 +9,8 @@
   // Command line state
   let commandInput = $state('');
   let lastAddress = $state<number | null>(null);
-  let lastCommand = $state<'d' | 'm' | null>(null);
-  let bytesPerLine = $state(16);
+  const BYTES_PER_LINE = 16;
+  const LINES_TO_SHOW = 20;
 
   // PETSCII charset
   let spriteSheetUrl = $state<string | null>(null);
@@ -67,8 +67,8 @@
     // Disassemble the slice
     const lines = await disassemble(bytesSlice, startAddr);
 
-    // Take only the first 20 lines
-    const displayLines = lines.slice(0, 20);
+    // Take only the first N lines
+    const displayLines = lines.slice(0, LINES_TO_SHOW);
 
     // Add to history
     history.push({
@@ -95,18 +95,17 @@
       return;
     }
 
-    // Create 20 lines of data
+    // Create N lines of data
     const lines: {address: number, hexBytes: HexByte[]}[] = [];
-    const totalLines = 20;
 
-    for (let i = 0; i < totalLines; i++) {
-      const lineOffset = byteOffset + (i * bytesPerLine);
+    for (let i = 0; i < LINES_TO_SHOW; i++) {
+      const lineOffset = byteOffset + (i * BYTES_PER_LINE);
       if (lineOffset >= $loadedFile.bytes.length) break;
 
-      const addr = startAddr + (i * bytesPerLine);
+      const addr = startAddr + (i * BYTES_PER_LINE);
       const hexBytes: HexByte[] = [];
 
-      for (let j = 0; j < bytesPerLine; j++) {
+      for (let j = 0; j < BYTES_PER_LINE; j++) {
         const idx = lineOffset + j;
         if (idx < $loadedFile.bytes.length) {
           hexBytes.push({
