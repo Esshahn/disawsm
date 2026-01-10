@@ -37,6 +37,12 @@
   } | {
     type: 'data';
     lines: {address: number, hexBytes: HexByte[]}[];
+  } | {
+    type: 'command';
+    text: string;
+  } | {
+    type: 'error';
+    message: string;
   };
 
   let history = $state<HistoryEntry[]>([]);
@@ -55,7 +61,13 @@
 
     // Calculate byte offset from start address
     const byteOffset = startAddr - $loadedFile.startAddress;
+    const endAddress = $loadedFile.startAddress + $loadedFile.bytes.length - 1;
+
     if (byteOffset < 0 || byteOffset >= $loadedFile.bytes.length) {
+      history.push({
+        type: 'error',
+        message: `${toHex(startAddr, 4)} is not within ${toHex($loadedFile.startAddress, 4)}-${toHex(endAddress, 4)}`
+      });
       return;
     }
 
@@ -91,7 +103,13 @@
 
     // Calculate byte offset from start address
     const byteOffset = startAddr - $loadedFile.startAddress;
+    const endAddress = $loadedFile.startAddress + $loadedFile.bytes.length - 1;
+
     if (byteOffset < 0 || byteOffset >= $loadedFile.bytes.length) {
+      history.push({
+        type: 'error',
+        message: `${toHex(startAddr, 4)} is not within ${toHex($loadedFile.startAddress, 4)}-${toHex(endAddress, 4)}`
+      });
       return;
     }
 
@@ -143,10 +161,17 @@
   function executeCommand(cmd: string) {
     if (!$loadedFile) return;
 
-    const trimmed = cmd.trim().toLowerCase();
-    const parts = trimmed.split(/\s+/);
-    if (parts.length === 0) return;
+    const trimmed = cmd.trim();
+    if (!trimmed) return;
 
+    // Add command to history
+    history.push({
+      type: 'command',
+      text: trimmed
+    });
+
+    const lowerCmd = trimmed.toLowerCase();
+    const parts = lowerCmd.split(/\s+/);
     const command = parts[0];
     const addressArg = parts[1];
 
@@ -269,6 +294,17 @@
                   </span>
                 </div>
               {/each}
+            </div>
+          {:else if entry.type === 'command'}
+            <!-- Command echo -->
+            <div class="command-echo">
+              <span class="command-prompt">></span>
+              <span class="command-text">{entry.text}</span>
+            </div>
+          {:else if entry.type === 'error'}
+            <!-- Error message -->
+            <div class="error-message">
+              {entry.message}
             </div>
           {/if}
         {/each}
@@ -400,6 +436,29 @@
   /* Empty PETSCII placeholder - no display */
   .petscii-empty {
     cursor: default;
+  }
+
+  /* Command echo in history */
+  .command-echo {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+    color: #00c698;
+  }
+
+  .command-prompt {
+    color: #00c698;
+    font-weight: bold;
+  }
+
+  .command-text {
+    color: #00c698;
+  }
+
+  /* Error message */
+  .error-message {
+    color: #ff6b6b;
+    margin: 8px 0;
   }
 
   /* Command line */
