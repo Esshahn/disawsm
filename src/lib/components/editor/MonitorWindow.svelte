@@ -424,11 +424,12 @@
     flex: 1;
     background: transparent;
     border: none;
-    color: #ffffff;
+    color: #00c698;
     font-size: 13px;
     outline: none;
     padding: 4px;
     caret-color: #00c698;
+    font-family: 'Courier New', Courier, monospace;
   }
 
   .command-input::placeholder {
