@@ -1,8 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import MenuBar from '$lib/components/ui/MenuBar.svelte';
-  import EditorWindow from '$lib/components/editor/EditorWindow.svelte';
-  import CodeViewWindow from '$lib/components/editor/CodeViewWindow.svelte';
+  import MonitorWindow from '$lib/components/editor/MonitorWindow.svelte';
   import InfoWindow from '$lib/components/editor/InfoWindow.svelte';
   import EntrypointsWindow from '$lib/components/editor/EntrypointsWindow.svelte';
   import DisassemblerWindow from '$lib/components/editor/DisassemblerWindow.svelte';
@@ -96,11 +95,8 @@
   />
 
   <div id="app">
-    {#if $loadedFile && $config?.window_editor?.isOpen}
-      <EditorWindow />
-    {/if}
-    {#if $loadedFile && $config?.window_codeview?.isOpen}
-      <CodeViewWindow />
+    {#if $loadedFile && $config?.window_monitor?.isOpen}
+      <MonitorWindow />
     {/if}
     {#if $config?.window_info?.isOpen}
       <InfoWindow />

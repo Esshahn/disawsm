@@ -65,8 +65,6 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
-    border-bottom: 1px solid #333;
     position: relative;
   }
 

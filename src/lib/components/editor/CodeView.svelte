@@ -1,22 +1,22 @@
 <script lang="ts">
   import { disassemble, type DisassembledLine } from '$lib/services/disassembler';
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
-  import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
   import { toHex } from '$lib/utils/format';
 
   let {
     bytes,
-    startAddress
+    startAddress,
+    scrollToLineIndex = undefined
   }: {
     bytes: Uint8Array;
     startAddress: number;
+    scrollToLineIndex?: number | undefined;
   } = $props();
 
   let hoveredLineIndex = $state<number | null>(null);
   let disassembledLines = $state<DisassembledLine[]>([]);
   let isLoading = $state(true);
   let error = $state<string | null>(null);
-  let scrollToLineIndex = $state<number | undefined>(undefined);
 
   // Line height in pixels - measured from actual rendered content
   const LINE_HEIGHT = 21;
@@ -37,7 +37,6 @@
       try {
         isLoading = true;
         error = null;
-        scrollToLineIndex = undefined; // Reset scroll position
         hoveredLineIndex = null; // Clear hover state
         const lines = await disassemble(bytes, startAddress);
         disassembledLines = lines;
@@ -51,43 +50,14 @@
 
     loadDisassembly();
   });
-
-  function handleJump(targetAddress: number) {
-    // Find the line with this address
-    const lineIndex = disassembledLines.findIndex(line => line.address === targetAddress);
-
-    if (lineIndex === -1) {
-      // Address not found - find closest address
-      const closestIndex = disassembledLines.findIndex(line => line.address > targetAddress);
-
-      if (closestIndex === -1) {
-        // Address is beyond last instruction
-        console.warn(`Address $${toHex(targetAddress, 4)} not found in disassembled code`);
-        return;
-      }
-
-      // Jump to closest line
-      scrollToLineIndex = Math.max(0, closestIndex - 1);
-    } else {
-      scrollToLineIndex = lineIndex;
-    }
-
-    // Reset after a brief moment to allow future jumps to same line
-    setTimeout(() => {
-      scrollToLineIndex = undefined;
-    }, 100);
-  }
 </script>
 
 <div class="code-viewer">
-
-
   {#if isLoading}
     <div class="loading">Loading disassembly...</div>
   {:else if error}
     <div class="loading">Error: {error}</div>
   {:else}
-    <JumpToAddress onjump={handleJump} />
 
       <div class="code-header">
     <span class="code-header-addr">Addr</span>
@@ -98,7 +68,7 @@
     <VirtualScroller
       items={disassembledLines}
       itemHeight={LINE_HEIGHT}
-      containerHeight="calc(100% - 90px)"
+      containerHeight="calc(100% - 40px)"
       scrollToIndex={scrollToLineIndex}
     >
       {#snippet children(line, idx)}
