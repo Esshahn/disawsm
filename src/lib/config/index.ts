@@ -12,7 +12,7 @@ export function get_config() {
       isOpen: true,
       resizable: true
     },
-    window_info: {
+    window_info: { 
       top: 50,
       left: 50,
       width: 300,

@@ -134,59 +134,39 @@
     history = history;
   }
 
+  function parseAddress(addressStr: string): number | null {
+    const cleanAddr = addressStr.replace(/^(0x|\$)/, '');
+    const addr = parseInt(cleanAddr, 16);
+    return isNaN(addr) ? null : addr;
+  }
+
   function executeCommand(cmd: string) {
     if (!$loadedFile) return;
 
     const trimmed = cmd.trim().toLowerCase();
     const parts = trimmed.split(/\s+/);
-
     if (parts.length === 0) return;
 
     const command = parts[0];
+    const addressArg = parts[1];
 
     if (command === 'd') {
       // Disassemble command
-      if (parts[1]) {
-        // d ADDRESS - jump to specific address
-        const cleanAddr = parts[1].replace(/^(0x|\$)/, '');
-        const addr = parseInt(cleanAddr, 16);
+      const addr = addressArg
+        ? parseAddress(addressArg)
+        : lastAddress ?? $loadedFile.startAddress;
 
-        if (!isNaN(addr)) {
-          lastCommand = 'd';
-          showDisassembly(addr);
-        }
-      } else {
-        // d - continue from last address
-        if (lastAddress !== null) {
-          lastCommand = 'd';
-          showDisassembly(lastAddress);
-        } else {
-          // First time, start from beginning
-          lastCommand = 'd';
-          showDisassembly($loadedFile.startAddress);
-        }
+      if (addr !== null) {
+        showDisassembly(addr);
       }
     } else if (command === 'm') {
       // Memory/data command
-      if (parts[1]) {
-        // m ADDRESS - jump to specific address
-        const cleanAddr = parts[1].replace(/^(0x|\$)/, '');
-        const addr = parseInt(cleanAddr, 16);
+      const addr = addressArg
+        ? parseAddress(addressArg)
+        : lastAddress ?? $loadedFile.startAddress;
 
-        if (!isNaN(addr)) {
-          lastCommand = 'm';
-          showMemory(addr);
-        }
-      } else {
-        // m - continue from last address
-        if (lastAddress !== null) {
-          lastCommand = 'm';
-          showMemory(lastAddress);
-        } else {
-          // First time, start from beginning
-          lastCommand = 'm';
-          showMemory($loadedFile.startAddress);
-        }
+      if (addr !== null) {
+        showMemory(addr);
       }
     }
   }
@@ -236,7 +216,7 @@
     <div class="monitor-content">
       <!-- Display area with history -->
       <div class="display-area" bind:this={displayAreaElement}>
-        {#each history as entry, idx}
+        {#each history as entry}
           {#if entry.type === 'code'}
             <!-- Code view -->
             <div class="code-display">
@@ -264,10 +244,10 @@
                       </span>
                     {/each}
                     <!-- Fill remaining space with empty placeholders to keep PETSCII column aligned -->
-                    {#each Array(bytesPerLine - line.hexBytes.length) as _, idx}
+                    {#each Array(BYTES_PER_LINE - line.hexBytes.length) as _, idx}
                       <span
                         class="hex-byte hex-byte-empty"
-                        class:gap-after-8={(line.hexBytes.length + idx + 1) % 8 === 0 && (line.hexBytes.length + idx) < bytesPerLine - 1}
+                        class:gap-after-8={(line.hexBytes.length + idx + 1) % 8 === 0 && (line.hexBytes.length + idx) < BYTES_PER_LINE - 1}
                       >
                         &nbsp;&nbsp;
                       </span>
@@ -282,7 +262,7 @@
                         ></span>
                       {/each}
                       <!-- Fill remaining space with empty placeholders -->
-                      {#each Array(bytesPerLine - line.hexBytes.length) as _}
+                      {#each Array(BYTES_PER_LINE - line.hexBytes.length) as _}
                         <span class="petscii-char petscii-empty"></span>
                       {/each}
                     {/if}
@@ -316,9 +296,16 @@
 {/if}
 
 <style>
+  /* Override the global body/div font rule for monitor content */
+  .monitor-content,
+  .monitor-content div,
+  .monitor-content p,
+  .monitor-content span {
+    font-family: 'Courier New', monospace;
+  }
+
   .monitor-content {
     color: #ffffff;
-    font-family: 'Courier New', monospace;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -332,34 +319,29 @@
     background: #0a0a0a;
   }
 
-  /* Separator between history entries */
-  .with-separator {
-    margin-top: 24px;
-    padding-top: 24px;
-    border-top: 1px solid #2a2a2a;
-  }
-
   /* Code display */
-  .code-display {
-    font-family: 'Courier New', monospace;
+  .code-display,
+  .data-display {
     font-size: 13px;
   }
 
-  .code-line {
+  .code-line,
+  .data-line {
     display: flex;
     gap: 16px;
     line-height: 160%;
   }
 
-  .code-line:hover {
+  .code-line:hover,
+  .data-line:hover {
     background: rgba(0, 198, 152, 0.1);
   }
 
-  .code-addr {
+  .code-addr,
+  .data-addr {
     color: #00c698;
     width: 45px;
     flex-shrink: 0;
-    font-family: 'Courier New', monospace;
   }
 
   .code-bytes {
@@ -374,39 +356,15 @@
   }
 
   /* Data display */
-  .data-display {
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-  }
-
-  .data-line {
-    display: flex;
-    gap: 16px;
-    line-height: 160%;
-  }
-
-  .data-line:hover {
-    background: rgba(0, 198, 152, 0.1);
-  }
-
-  .data-addr {
-    color: #00c698;
-    width: 45px;
-    flex-shrink: 0;
-    font-family: 'Courier New', monospace;
-  }
-
   .data-hex {
     display: flex;
     flex-shrink: 0;
     gap: 0.5ch;
-    font-family: 'Courier New', monospace;
     font-variant-numeric: tabular-nums;
   }
 
   .hex-byte {
     color: #ffffff;
-    font-family: 'Courier New', monospace;
   }
 
   .hex-byte.gap-after-8 {
@@ -424,7 +382,6 @@
     display: flex;
     gap: 1px;
     flex-shrink: 0;
-    font-family: 'Courier New', monospace;
     align-items: center;
   }
 
@@ -454,11 +411,11 @@
     background: #1a1a1a;
     border-top: 1px solid #2a2a2a;
     flex-shrink: 0;
+    font-family: 'Courier New', monospace;
   }
 
   .prompt {
     color: #00c698;
-    font-family: 'Courier New', monospace;
     font-size: 14px;
     font-weight: bold;
   }
@@ -468,7 +425,6 @@
     background: transparent;
     border: none;
     color: #ffffff;
-    font-family: 'Courier New', monospace;
     font-size: 13px;
     outline: none;
     padding: 4px;
