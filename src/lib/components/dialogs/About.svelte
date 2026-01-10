@@ -24,7 +24,7 @@
 <div class="modal-overlay" onclick={handleClose}>
   <div class="dialog-wrapper about-dialog" onclick={(e: MouseEvent) => e.stopPropagation()}>
     <div class="dialog-titlebar" style="cursor: default;">
-      <span class="dialog-title">About DisAWSM</span>
+      <span class="dialog-title">About disawsm</span>
       <button class="window-close-button" onclick={handleClose}>×</button>
     </div>
 
