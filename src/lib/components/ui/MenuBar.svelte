@@ -85,7 +85,7 @@
     <li class="dropdown">
       <a href="javascript:void(0)" class="dropbtn">Help</a>
       <div class="dropdown-content">
-        <a href="https://github.com/Esshahn/spritemate" target="_blank">
+        <a href="https://github.com/Esshahn/disawsm" target="_blank">
           README on github<span class="hotkey"></span>
         </a>
         <a href="http://www.awsm.de" target="_blank">
