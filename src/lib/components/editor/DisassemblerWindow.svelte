@@ -1,8 +1,9 @@
 <script lang="ts">
   import Window from '$lib/components/ui/Window.svelte';
-  import { loadedFile, config } from '$lib/stores/app';
+  import { loadedFile, config, assemblyOutput } from '$lib/stores/app';
   import { entrypoints } from '$lib/stores/entrypoints';
   import { disassembleWithEntrypoints, type DisassembledLine } from '$lib/services/enhancedDisassembler';
+  import { formatAsAssembly } from '$lib/services/assemblyExporter';
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
   import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
   import { toHex } from '$lib/utils/format';
@@ -57,6 +58,15 @@
           $entrypoints
         );
         disassembledLines = lines;
+
+        // Update assembly output for export
+        try {
+          const asmText = formatAsAssembly(lines, $loadedFile.startAddress, showComments, $loadedFile.name);
+          assemblyOutput.set(asmText);
+        } catch (exportError) {
+          console.error('Failed to generate assembly output:', exportError);
+          // Don't block disassembly if export fails
+        }
       } catch (e) {
         error = e instanceof Error ? e.message : 'Unknown error';
         disassembledLines = [];

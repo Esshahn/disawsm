@@ -12,6 +12,7 @@
   import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance, loadPRGFile, updateWindowConfig } from '$lib/stores/app';
   import { entrypoints } from '$lib/stores/entrypoints';
   import { get_config } from '$lib/config';
+  import { downloadAssembly } from '$lib/services/assemblyExporter';
 
   // Initialize immediately (not in onMount)
   let fileLoader = new FileLoader();
@@ -46,13 +47,18 @@
   }
 
   function handleSaveAssembly() {
-    const asm = assemblyOutput;
-    if (!asm) {
-      alert('No assembly output to save. Please disassemble a file first.');
+    const asm = $assemblyOutput;
+    const file = $loadedFile;
+
+    if (!asm || !file) {
+      alert('No assembly output to save. Please load and disassemble a file first.');
       return;
     }
-    // TODO: Implement file saving in Phase 5
-    alert('Save assembly feature coming in Phase 5');
+
+    // Generate filename from original PRG name, replacing .prg with .asm
+    const filename = file.name.replace(/\.prg$/i, '.asm');
+
+    downloadAssembly(asm, filename);
   }
 
   function handleClear() {
