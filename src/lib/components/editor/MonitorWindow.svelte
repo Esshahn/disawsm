@@ -43,6 +43,8 @@
   } | {
     type: 'error';
     message: string;
+  } | {
+    type: 'help';
   };
 
   let history = $state<HistoryEntry[]>([]);
@@ -257,6 +259,9 @@
         const addr = lastAddress ?? $loadedFile.startAddress;
         showMemory(addr);
       }
+    } else if (command === 'h' || command === 'help') {
+      // Help command
+      history.push({ type: 'help' });
     }
   }
 
@@ -270,10 +275,10 @@
   // Reference to display area for auto-scrolling
   let displayAreaElement = $state<HTMLDivElement | undefined>(undefined);
 
-  // Initialize with disassembly from start address when file loads
+  // Initialize with help text when monitor first opens
   $effect(() => {
     if ($loadedFile && history.length === 0) {
-      showDisassembly($loadedFile.startAddress);
+      history.push({ type: 'help' });
     }
   });
 
@@ -369,6 +374,20 @@
             <!-- Error message -->
             <div class="error-message">
               {entry.message}
+            </div>
+          {:else if entry.type === 'help'}
+            <!-- Help text -->
+            <div class="help-text">
+              <div class="help-title">Monitor Commands:</div>
+              <div class="help-command"><span class="help-cmd">d</span> - continue disassembly from last address</div>
+              <div class="help-command"><span class="help-cmd">d [ADDR]</span> - disassemble from address</div>
+              <div class="help-command"><span class="help-cmd">d [START] [END]</span> - disassemble range</div>
+              <div class="help-command"><span class="help-cmd">d all</span> - disassemble entire file</div>
+              <div class="help-command"><span class="help-cmd">m</span> - continue memory view from last address</div>
+              <div class="help-command"><span class="help-cmd">m [ADDR]</span> - show memory from address</div>
+              <div class="help-command"><span class="help-cmd">m [START] [END]</span> - show memory range</div>
+              <div class="help-command"><span class="help-cmd">m all</span> - show entire file memory</div>
+              <div class="help-command"><span class="help-cmd">h / help</span> - show this help</div>
             </div>
           {/if}
         {/each}
@@ -523,6 +542,28 @@
   .error-message {
     color: #ff6b6b;
     margin: 8px 0;
+  }
+
+  /* Help text */
+  .help-text {
+    margin: 12px 0;
+    color: #888888;
+  }
+
+  .help-title {
+    color: #00c698;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+
+  .help-command {
+    margin: 4px 0;
+    line-height: 140%;
+  }
+
+  .help-cmd {
+    color: #ffffff;
+    font-weight: bold;
   }
 
   /* Command line */
