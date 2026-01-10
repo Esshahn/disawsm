@@ -45,6 +45,9 @@
     message: string;
   } | {
     type: 'help';
+  } | {
+    type: 'search-results';
+    addresses: number[];
   };
 
   let history = $state<HistoryEntry[]>([]);
@@ -195,6 +198,43 @@
     return isNaN(addr) ? null : addr;
   }
 
+  function huntBytes(startAddr: number, endAddr: number, searchBytes: number[]) {
+    if (!$loadedFile || searchBytes.length === 0) return;
+
+    const startOffset = startAddr - $loadedFile.startAddress;
+    const endOffset = endAddr - $loadedFile.startAddress;
+
+    if (startOffset < 0 || endOffset >= $loadedFile.bytes.length || startOffset > endOffset) {
+      const fileEndAddress = $loadedFile.startAddress + $loadedFile.bytes.length - 1;
+      history.push({
+        type: 'error',
+        message: `Invalid range: ${toHex(startAddr, 4)}-${toHex(endAddr, 4)} (file: ${toHex($loadedFile.startAddress, 4)}-${toHex(fileEndAddress, 4)})`
+      });
+      return;
+    }
+
+    const matches: number[] = [];
+
+    // Search for the byte sequence
+    for (let i = startOffset; i <= endOffset - searchBytes.length + 1; i++) {
+      let found = true;
+      for (let j = 0; j < searchBytes.length; j++) {
+        if ($loadedFile.bytes[i + j] !== searchBytes[j]) {
+          found = false;
+          break;
+        }
+      }
+      if (found) {
+        matches.push($loadedFile.startAddress + i);
+      }
+    }
+
+    history.push({
+      type: 'search-results',
+      addresses: matches
+    });
+  }
+
   function executeCommand(cmd: string) {
     if (!$loadedFile) return;
 
@@ -259,6 +299,77 @@
         const addr = lastAddress ?? $loadedFile.startAddress;
         showMemory(addr);
       }
+    } else if (command === 'f' || command === 'find') {
+      // Find/search command
+      // Parse arguments: f [start] [end] byte1 [byte2 ...]
+      // Addresses must be 4 hex digits, bytes are 1-2 hex digits
+      const args = parts.slice(1);
+
+      if (args.length === 0) {
+        history.push({
+          type: 'error',
+          message: 'Find requires at least one byte to search for'
+        });
+        return;
+      }
+
+      const searchBytes: number[] = [];
+      let startAddr = $loadedFile.startAddress;
+      let endAddr = $loadedFile.startAddress + $loadedFile.bytes.length - 1;
+      let argIndex = 0;
+
+      // Check if first two args are 4-digit addresses
+      if (args.length >= 3) {
+        const firstClean = args[0].replace(/^(0x|\$)/, '');
+        const secondClean = args[1].replace(/^(0x|\$)/, '');
+
+        // Addresses must be exactly 4 hex digits (or have 0x/$ prefix + 4 digits)
+        if (firstClean.length === 4 && secondClean.length === 4) {
+          const firstAddr = parseAddress(args[0]);
+          const secondAddr = parseAddress(args[1]);
+
+          if (firstAddr !== null && secondAddr !== null) {
+            // First two args are start and end addresses
+            startAddr = firstAddr;
+            endAddr = secondAddr;
+            argIndex = 2;
+          }
+        }
+      }
+
+      // Parse remaining args as bytes (1-2 hex digits)
+      for (let i = argIndex; i < args.length; i++) {
+        const cleanByte = args[i].replace(/^(0x|\$)/, '');
+
+        // Bytes must be 1-2 hex digits
+        if (cleanByte.length > 2) {
+          history.push({
+            type: 'error',
+            message: `Invalid byte value: ${args[i]} (bytes must be 1-2 hex digits, addresses must be 4 digits)`
+          });
+          return;
+        }
+
+        const byte = parseInt(cleanByte, 16);
+        if (isNaN(byte) || byte < 0 || byte > 255) {
+          history.push({
+            type: 'error',
+            message: `Invalid byte value: ${args[i]}`
+          });
+          return;
+        }
+        searchBytes.push(byte);
+      }
+
+      if (searchBytes.length === 0) {
+        history.push({
+          type: 'error',
+          message: 'Find requires at least one byte to search for'
+        });
+        return;
+      }
+
+      huntBytes(startAddr, endAddr, searchBytes);
     } else if (command === 'h' || command === 'help') {
       // Help command
       history.push({ type: 'help' });
@@ -380,14 +491,27 @@
             <div class="help-text">
               <div class="help-title">Monitor Commands:</div>
               <div class="help-command"><span class="help-cmd">d</span> - continue disassembly from last address</div>
-              <div class="help-command"><span class="help-cmd">d [ADDR]</span> - disassemble from address</div>
-              <div class="help-command"><span class="help-cmd">d [START] [END]</span> - disassemble range</div>
+              <div class="help-command"><span class="help-cmd">d [ADDR]</span> - disassemble from address <span class="help-example">ex: d c000</span></div>
+              <div class="help-command"><span class="help-cmd">d [START] [END]</span> - disassemble range <span class="help-example">ex: d c000 c100</span></div>
               <div class="help-command"><span class="help-cmd">d all</span> - disassemble entire file</div>
               <div class="help-command"><span class="help-cmd">m</span> - continue memory view from last address</div>
-              <div class="help-command"><span class="help-cmd">m [ADDR]</span> - show memory from address</div>
-              <div class="help-command"><span class="help-cmd">m [START] [END]</span> - show memory range</div>
+              <div class="help-command"><span class="help-cmd">m [ADDR]</span> - show memory from address <span class="help-example">ex: m 1000</span></div>
+              <div class="help-command"><span class="help-cmd">m [START] [END]</span> - show memory range <span class="help-example">ex: m 1000 10ff</span></div>
               <div class="help-command"><span class="help-cmd">m all</span> - show entire file memory</div>
-              <div class="help-command"><span class="help-cmd">h / help</span> - show this help</div>
+              <div class="help-command"><span class="help-cmd">f [BYTES]</span> - search entire file for byte sequence <span class="help-example">ex: f a9 00</span></div>
+              <div class="help-command"><span class="help-cmd">f [START] [END] [BYTES]</span> - search range for byte sequence <span class="help-example">ex: f 1000 1fff 8d 14 03</span></div>
+              <div class="help-command"><span class="help-cmd">h</span> - show this help</div>
+            </div>
+          {:else if entry.type === 'search-results'}
+            <!-- Search results -->
+            <div class="search-results">
+              {#if entry.addresses.length === 0}
+                <div class="search-no-results">No matches found</div>
+              {:else}
+                {#each entry.addresses as addr}
+                  <div class="search-result">{toHex(addr, 4)}</div>
+                {/each}
+              {/if}
             </div>
           {/if}
         {/each}
@@ -564,6 +688,28 @@
   .help-cmd {
     color: #ffffff;
     font-weight: bold;
+  }
+
+  .help-example {
+    color: #666666;
+    font-style: italic;
+    margin-left: 8px;
+  }
+
+  /* Search results */
+  .search-results {
+    margin: 12px 0;
+  }
+
+  .search-result {
+    color: #00c698;
+    margin: 2px 0;
+    line-height: 140%;
+  }
+
+  .search-no-results {
+    color: #888888;
+    font-style: italic;
   }
 
   /* Command line */
