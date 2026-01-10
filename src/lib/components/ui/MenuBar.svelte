@@ -43,13 +43,13 @@
       <a href="javascript:void(0)" class="dropbtn">File</a>
       <div class="dropdown-content">
         <a onclick={onloadPRG}>
-          Load PRG...<span class="hotkey">Ctrl+O</span>
+          Load PRG<span class="hotkey">Ctrl+O</span>
         </a>
         <a
           onclick={onsaveAssembly}
           class:disabled={$saveDisabled}
         >
-          Save Assembly...<span class="hotkey">Ctrl+S</span>
+          Save Assembly (*.asm)<span class="hotkey">Ctrl+S</span>
         </a>
         <hr />
         <a onclick={onclear}>Clear</a>
