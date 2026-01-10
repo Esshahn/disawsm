@@ -8,12 +8,12 @@
     bytes,
     startAddress,
     bytesPerLine = 16,
-    scrollToLineIndex = undefined
+    scrollToAddress = undefined
   }: {
     bytes: Uint8Array;
     startAddress: number;
     bytesPerLine?: number;
-    scrollToLineIndex?: number | undefined;
+    scrollToAddress?: number | undefined;
   } = $props();
 
   let spriteSheetUrl = $state<string | null>(null);
@@ -76,6 +76,20 @@
   }
 
   let hexLines = $derived(formatHexDump());
+
+  // Convert scrollToAddress to line index
+  let scrollToLineIndex = $derived.by(() => {
+    if (scrollToAddress === undefined) return undefined;
+
+    // Calculate byte offset from start address
+    const byteOffset = scrollToAddress - startAddress;
+    if (byteOffset < 0 || byteOffset >= bytes.length) {
+      return undefined; // Address out of range
+    }
+
+    // Calculate which line contains this byte
+    return Math.floor(byteOffset / bytesPerLine);
+  });
 
   // Reset state when bytes or startAddress changes
   $effect(() => {

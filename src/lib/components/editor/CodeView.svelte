@@ -6,11 +6,11 @@
   let {
     bytes,
     startAddress,
-    scrollToLineIndex = undefined
+    scrollToAddress = undefined
   }: {
     bytes: Uint8Array;
     startAddress: number;
-    scrollToLineIndex?: number | undefined;
+    scrollToAddress?: number | undefined;
   } = $props();
 
   let hoveredLineIndex = $state<number | null>(null);
@@ -49,6 +49,25 @@
     }
 
     loadDisassembly();
+  });
+
+  // Convert scrollToAddress to line index by finding which line contains that address
+  let scrollToLineIndex = $derived.by(() => {
+    if (scrollToAddress === undefined || disassembledLines.length === 0) {
+      return undefined;
+    }
+
+    // Find the line that contains or is closest to the target address
+    for (let i = 0; i < disassembledLines.length; i++) {
+      const line = disassembledLines[i];
+      // Check if this instruction starts at or after the target address
+      if (line.address >= scrollToAddress) {
+        return i;
+      }
+    }
+
+    // If address is beyond all instructions, scroll to the last line
+    return disassembledLines.length - 1;
   });
 </script>
 
