@@ -6,12 +6,14 @@
     onsaveAssembly,
     onclear,
     onshowAbout,
+    onshowSettings,
     ontoggleWindow
   }: {
     onloadPRG?: () => void;
     onsaveAssembly?: () => void;
     onclear?: () => void;
     onshowAbout?: () => void;
+    onshowSettings?: () => void;
     ontoggleWindow?: (windowKey: string) => void;
   } = $props();
 
@@ -36,6 +38,7 @@
       <a href="javascript:void(0)" class="dropbtn">disawsm</a>
       <div class="dropdown-content">
         <a onclick={onshowAbout}>About</a>
+        <a onclick={onshowSettings}>Settings</a>
       </div>
     </li>
 
