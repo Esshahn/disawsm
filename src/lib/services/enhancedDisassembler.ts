@@ -104,15 +104,21 @@ function addrInProgram(addr: number, startAddr: number, endAddr: number): boolea
   return addr >= startAddr && addr < endAddr;
 }
 
-function getAbsFromRelative(byte: string, addr: number): number {
-  const intByte = hexToNumber(byte);
+/**
+ * Calculate absolute address from relative branch offset
+ * @param offset - The offset byte (signed -128 to +127)
+ * @param pcAfterBranch - Program counter AFTER the 2-byte branch instruction
+ * @returns Absolute target address
+ */
+function getAbsFromRelative(offset: string, pcAfterBranch: number): number {
+  const offsetValue = hexToNumber(offset);
 
-  if (intByte > 127) {
-    // subtract (255 - highbyte) from current address
-    return addr - (255 - intByte);
+  if (offsetValue > 127) {
+    // Negative offset: treat as signed byte (two's complement)
+    return pcAfterBranch - (256 - offsetValue);
   } else {
-    // add highbyte to current address
-    return addr + intByte + 1;
+    // Positive offset
+    return pcAfterBranch + offsetValue;
   }
 }
 
@@ -176,8 +182,6 @@ export function analyze(
     'f9', 'fd', 'fe'
   ];
 
-  let isCode = false;
-  let isData = true;
   const end = bytesTable.length;
 
   // Add all entrypoints before analyzing
@@ -198,56 +202,71 @@ export function analyze(
     }
   }
 
+  // State machine: are we currently processing code?
+  let inCodeSection = false;
+
   let i = 0;
   while (i < end) {
     const byte = bytesTable[i].byte;
     const opcode = opcodes[byte as keyof typeof opcodes];
 
+    // Check if current byte switches our mode
+    if (bytesTable[i].code) {
+      inCodeSection = true;
+    } else if (bytesTable[i].data) {
+      inCodeSection = false;
+    }
+
+    // If no valid opcode, skip this byte
+    // If we're in code section, this should exit code mode
     if (!opcode) {
+      if (inCodeSection) {
+        inCodeSection = false;
+      }
       i++;
       continue;
     }
 
-    if (bytesTable[i].data) {
-      isData = true;
-    }
-
-    if (bytesTable[i].code) {
-      isCode = true;
-    }
-
-    if (isCode) {
+    if (inCodeSection) {
+      // Mark the opcode byte as code
       bytesTable[i].code = true;
 
       const instructionLength = getInstructionLength(opcode.ins);
 
-      if (defaultToDataAfter.includes(byte)) {
-        isCode = false;
+      // Mark all operand bytes as code too
+      for (let j = 1; j <= instructionLength && i + j < end; j++) {
+        bytesTable[i + j].code = true;
       }
 
-      let destinationAddress = 0;
+      if (defaultToDataAfter.includes(byte)) {
+        inCodeSection = false;
+      }
+
+      let destinationAddress: number | null = null;
 
       if ('rel' in opcode && i + 1 < end) {
-        destinationAddress = getAbsFromRelative(bytesTable[i + 1].byte, startAddr + i + 1);
+        destinationAddress = getAbsFromRelative(bytesTable[i + 1].byte, startAddr + i + 2);
       }
 
       if (instructionLength === 2 && i + 2 < end) {
         destinationAddress = bytesToAddr(bytesTable[i + 2].byte, bytesTable[i + 1].byte);
       }
 
-      if (absBranchMnemonics.includes(byte) || 'rel' in opcode) {
-        if (addrInProgram(destinationAddress, startAddr, startAddr + end)) {
-          const tablePos = destinationAddress - startAddr;
-          bytesTable[tablePos].code = true;
-          bytesTable[tablePos].dest = true;
+      if (destinationAddress !== null) {
+        if (absBranchMnemonics.includes(byte) || 'rel' in opcode) {
+          if (addrInProgram(destinationAddress, startAddr, startAddr + end)) {
+            const tablePos = destinationAddress - startAddr;
+            bytesTable[tablePos].code = true;
+            bytesTable[tablePos].dest = true;
+          }
         }
-      }
 
-      if (absAddressMnemonics.includes(byte)) {
-        if (addrInProgram(destinationAddress, startAddr, startAddr + end)) {
-          const tablePos = destinationAddress - startAddr;
-          bytesTable[tablePos].data = true;
-          bytesTable[tablePos].dest = true;
+        if (absAddressMnemonics.includes(byte)) {
+          if (addrInProgram(destinationAddress, startAddr, startAddr + end)) {
+            const tablePos = destinationAddress - startAddr;
+            bytesTable[tablePos].data = true;
+            bytesTable[tablePos].dest = true;
+          }
         }
       }
 
@@ -359,7 +378,7 @@ export function convertToProgram(
         instructionBytes.push(hexToNumber(highByte));
 
         if ('rel' in opcode) {
-          const address = numberToHexWord(getAbsFromRelative(highByte, startAddr + i));
+          const address = numberToHexWord(getAbsFromRelative(highByte, startAddr + i + 1));
           instruction = instruction.replace('$hh', labelPrefix + address);
         } else {
           instruction = instruction.replace('hh', numberToHexByte(hexToNumber(highByte)));
