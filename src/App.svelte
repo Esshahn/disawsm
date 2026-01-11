@@ -15,6 +15,7 @@
   import { get_config } from '$lib/config';
   import { downloadAssembly } from '$lib/services/assemblyExporter';
   import { saveProject, loadProject } from '$lib/services/projectFile';
+  import { saveSession, loadSession, clearSession } from '$lib/services/sessionStorage';
 
   // Initialize immediately (not in onMount)
   let fileLoader = new FileLoader();
@@ -36,9 +37,39 @@
     // Register fileLoader instance for drag and drop
     setFileLoaderInstance(fileLoader);
 
+    // Restore saved session if it exists
+    const session = loadSession();
+    if (session) {
+      loadPRGFile({
+        name: session.name,
+        startAddress: session.startAddress,
+        bytes: session.bytes
+      });
+
+      // Restore entrypoints
+      entrypoints.clear();
+      for (const ep of session.entrypoints) {
+        entrypoints.add(ep.address, ep.type);
+      }
+    }
+
     // Show about dialog if version updated
     if (storage.is_updated_version()) {
       showAbout = true;
+    }
+  });
+
+  // Auto-save session whenever loadedFile or entrypoints change
+  $effect(() => {
+    const file = $loadedFile;
+    const eps = $entrypoints;
+
+    if (file) {
+      // Auto-save current session to localStorage
+      saveSession(file.name, file.startAddress, file.bytes, eps);
+    } else {
+      // Clear session when no file is loaded
+      clearSession();
     }
   });
 
