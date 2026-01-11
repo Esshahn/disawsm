@@ -5,6 +5,9 @@
  */
 
 import type { Entrypoint } from '$lib/stores/entrypoints';
+import type { AssemblerSyntax } from '$lib/types';
+import { get } from 'svelte/store';
+import { settings } from '$lib/stores/settings';
 
 // Load opcodes dynamically to avoid Vite build issues
 let opcodes: Record<string, { ins: string; ill?: number; rel?: number }> = {};
@@ -13,6 +16,10 @@ let opcodesLoaded = false;
 // Load C64 address mapping for comments
 let c64Mapping: Map<number, string> = new Map();
 let mappingLoaded = false;
+
+// Load syntax definitions
+let syntaxDefinitions: Record<string, AssemblerSyntax> = {};
+let syntaxLoaded = false;
 
 async function loadOpcodes() {
   if (opcodesLoaded) return;
@@ -35,6 +42,25 @@ async function loadC64Mapping() {
   }
 
   mappingLoaded = true;
+}
+
+async function loadSyntax() {
+  if (syntaxLoaded) return;
+
+  const response = await fetch('/json/syntax.json');
+  const data = await response.json();
+  syntaxDefinitions = data.syntaxes;
+  syntaxLoaded = true;
+}
+
+function getSyntax(): AssemblerSyntax {
+  const syntaxKey = get(settings).assemblerSyntax;
+  return syntaxDefinitions[syntaxKey] || syntaxDefinitions['acme'] || {
+    name: 'ACME',
+    commentPrefix: ';',
+    labelSuffix: '',
+    pseudoOpcodePrefix: '!'
+  };
 }
 
 function getC64Comment(address: number): string | undefined {
@@ -241,7 +267,8 @@ function createDataLine(
   byteArray: DisassembledByte[],
   startIndex: number,
   label: string | undefined,
-  end: number
+  end: number,
+  pseudoOpcodePrefix: string
 ): { line: DisassembledLine; nextIndex: number } {
   const MAX_BYTES_PER_LINE = 8; // Limit to prevent line wrapping in UI
   const dataBytes: string[] = [byteArray[startIndex].byte];
@@ -262,7 +289,7 @@ function createDataLine(
     line: {
       address: dataAddress,
       label,
-      instruction: '!byte $' + dataBytes.join(', $'),
+      instruction: pseudoOpcodePrefix + 'byte $' + dataBytes.join(', $'),
       bytes: allBytes,
       isData: true
     },
@@ -287,10 +314,11 @@ function extractAbsoluteAddress(instruction: string): number | null {
  */
 export function convertToProgram(
   byteArray: DisassembledByte[],
-  startAddr: number
+  startAddr: number,
+  pseudoOpcodePrefix: string = '!'
 ): DisassembledLine[] {
   const program: DisassembledLine[] = [];
-  const labelPrefix = 'l';
+  const labelPrefix = get(settings).labelPrefix;
   const end = byteArray.length;
   const endAddr = startAddr + end;
 
@@ -302,7 +330,7 @@ export function convertToProgram(
 
     // DATA - Group consecutive data bytes or handle invalid opcodes
     if (!byteData.code || byteData.data) {
-      const { line, nextIndex } = createDataLine(byteArray, i, label, end);
+      const { line, nextIndex } = createDataLine(byteArray, i, label, end, pseudoOpcodePrefix);
       program.push(line);
       i = nextIndex;
       continue;
@@ -314,7 +342,7 @@ export function convertToProgram(
 
       // Invalid opcode - treat as data
       if (!opcode) {
-        const { line, nextIndex } = createDataLine(byteArray, i, label, end);
+        const { line, nextIndex } = createDataLine(byteArray, i, label, end, pseudoOpcodePrefix);
         program.push(line);
         i = nextIndex;
         continue;
@@ -385,15 +413,19 @@ export async function disassembleWithEntrypoints(
   startAddress: number,
   entrypoints: Entrypoint[]
 ): Promise<DisassembledLine[]> {
-  // Load opcodes and C64 mapping
+  // Load opcodes, C64 mapping, and syntax
   await loadOpcodes();
   await loadC64Mapping();
+  await loadSyntax();
+
+  // Get current syntax settings
+  const syntax = getSyntax();
 
   // Analyze bytes to determine code/data regions
   const byteArray = analyze(startAddress, bytes, entrypoints);
 
-  // Convert to assembly program
-  const program = convertToProgram(byteArray, startAddress);
+  // Convert to assembly program with syntax-specific pseudo-opcode prefix
+  const program = convertToProgram(byteArray, startAddress, syntax.pseudoOpcodePrefix);
 
   return program;
 }

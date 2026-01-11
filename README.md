@@ -23,7 +23,7 @@ The **Monitor** window shows a hexadecimal view of your loaded binary:
 - Browse through the memory contents
 - Identify code sections vs data sections
 - Look for patterns, strings, or known data structures
-- Click on any address to jump to that location in the disassembler
+- enter 'h' or 'help' in the command line for a list of available commands
 
 ### 3. Set Entrypoints
 
@@ -34,7 +34,7 @@ The **Monitor** window shows a hexadecimal view of your loaded binary:
 - Add additional entry points for interrupt handlers, subroutines, or other code sections
 - The disassembler will follow code flow from these points to distinguish code from data
 
-**Why use entrypoints?** Without them, the disassembler treats everything as code, which produces incorrect results when it encounters data tables, text strings, or graphics. Entrypoints help the tool understand the program structure.
+**Why use entrypoints?** Without them, the disassembler treats everything as data, they help you to define known sections of code or data.
 
 ### 4. View the Disassembly
 
@@ -43,7 +43,6 @@ The **Disassembler** window shows the generated assembly code:
 - Code is disassembled starting from your defined entrypoints
 - Labels are automatically generated for branches and jumps
 - Data sections are preserved as byte definitions
-- Navigate by clicking addresses or using jump commands
 
 ### 5. Save the Assembly
 

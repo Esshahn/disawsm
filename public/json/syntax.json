@@ -1,0 +1,16 @@
+{
+  "syntaxes": {
+    "acme": {
+      "name": "ACME",
+      "commentPrefix": ";",
+      "labelSuffix": "",
+      "pseudoOpcodePrefix":"!"
+    },
+    "kickass": {
+      "name": "Kick Assembler",
+      "commentPrefix": "//",
+      "labelSuffix": ":",
+      "pseudoOpcodePrefix":"."
+    }
+  }
+}
