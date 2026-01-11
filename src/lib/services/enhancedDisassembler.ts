@@ -1,7 +1,6 @@
 /**
  * Enhanced Disassembler
  * Converts 6502 machine code into assembly with entrypoint support
- * Based on disass.py logic
  */
 
 import type { Entrypoint } from '$lib/stores/entrypoints';
@@ -9,21 +8,17 @@ import type { AssemblerSyntax } from '$lib/types';
 import { get } from 'svelte/store';
 import { settings } from '$lib/stores/settings';
 
-// Load opcodes dynamically to avoid Vite build issues
 let opcodes: Record<string, { ins: string; ill?: number; rel?: number }> = {};
 let opcodesLoaded = false;
 
-// Load C64 address mapping for comments
 let c64Mapping: Map<number, string> = new Map();
 let mappingLoaded = false;
 
-// Load syntax definitions
 let syntaxDefinitions: Record<string, AssemblerSyntax> = {};
 let syntaxLoaded = false;
 
 async function loadOpcodes() {
   if (opcodesLoaded) return;
-
   const response = await fetch('/json/opcodes.json');
   opcodes = await response.json();
   opcodesLoaded = true;
@@ -31,22 +26,16 @@ async function loadOpcodes() {
 
 async function loadC64Mapping() {
   if (mappingLoaded) return;
-
   const response = await fetch('/json/c64-mapping.json');
   const data = await response.json();
-
-  // Convert to Map for O(1) lookup
   for (const entry of data.mapping) {
-    const addr = parseInt(entry.addr, 16);
-    c64Mapping.set(addr, entry.comm);
+    c64Mapping.set(parseInt(entry.addr, 16), entry.comm);
   }
-
   mappingLoaded = true;
 }
 
 async function loadSyntax() {
   if (syntaxLoaded) return;
-
   const response = await fetch('/json/syntax.json');
   const data = await response.json();
   syntaxDefinitions = data.syntaxes;
@@ -55,12 +44,7 @@ async function loadSyntax() {
 
 function getSyntax(): AssemblerSyntax {
   const syntaxKey = get(settings).assemblerSyntax;
-  return syntaxDefinitions[syntaxKey] || syntaxDefinitions['acme'] || {
-    name: 'ACME',
-    commentPrefix: ';',
-    labelSuffix: '',
-    pseudoOpcodePrefix: '!'
-  };
+  return syntaxDefinitions[syntaxKey] || syntaxDefinitions['acme'];
 }
 
 function getC64Comment(address: number): string | undefined {
@@ -69,10 +53,10 @@ function getC64Comment(address: number): string | undefined {
 
 export interface DisassembledByte {
   addr: number;
-  byte: string;  // hex string
-  dest: boolean;  // is it a destination of a jump/branch?
-  code: boolean;  // is it code?
-  data: boolean;  // is it data?
+  byte: string;
+  dest: boolean;
+  code: boolean;
+  data: boolean;
 }
 
 export interface DisassembledLine {
@@ -81,408 +65,269 @@ export interface DisassembledLine {
   instruction: string;
   comment?: string;
   bytes: number[];
-  isData?: boolean;  // true if this is a data section (.byte)
+  isData?: boolean;
 }
 
-/**
- * Hex conversion utilities
- * Handles conversion between numbers and hex strings for 6502 assembly
- */
 const Hex = {
-  /** Convert number to 2-digit hex string (e.g., 255 → "ff") */
-  toByte: (num: number): string => num.toString(16).padStart(2, '0'),
-
-  /** Convert number to 4-digit hex string (e.g., 4096 → "1000") */
-  toWord: (num: number): string => num.toString(16).padStart(4, '0'),
-
-  /** Convert hex string to number (e.g., "ff" → 255) */
-  toNumber: (hex: string): number => parseInt(hex, 16),
-
-  /** Convert little-endian bytes to 16-bit address (e.g., "00", "10" → 4096) */
-  bytesToAddress: (highByte: string, lowByte: string): number =>
-    (parseInt(highByte, 16) << 8) + parseInt(lowByte, 16)
+  toByte: (n: number) => n.toString(16).padStart(2, '0'),
+  toWord: (n: number) => n.toString(16).padStart(4, '0'),
+  toNumber: (h: string) => parseInt(h, 16),
+  bytesToAddress: (hh: string, ll: string) =>
+    (parseInt(hh, 16) << 8) | parseInt(ll, 16)
 };
 
-// Legacy function names for backward compatibility
-function numberToHexByte(num: number): string {
-  return Hex.toByte(num);
+function addrInProgram(addr: number, start: number, end: number) {
+  return addr >= start && addr < end;
 }
 
-function numberToHexWord(num: number): string {
-  return Hex.toWord(num);
+function getAbsFromRelative(offset: string, pcAfter: number): number {
+  const v = Hex.toNumber(offset);
+  return v > 127 ? pcAfter - (256 - v) : pcAfter + v;
 }
 
-function hexToNumber(hex: string): number {
-  return Hex.toNumber(hex);
+function getInstructionLength(ins: string): number {
+  let len = 0;
+  if (ins.includes('hh')) len++;
+  if (ins.includes('ll')) len++;
+  return len;
 }
 
-function bytesToAddr(hh: string, ll: string): number {
-  return Hex.bytesToAddress(hh, ll);
-}
+const FLOW_TERMINATORS = new Set(['4c', '60', '40']); // JMP, RTS, RTI
 
-function addrInProgram(addr: number, startAddr: number, endAddr: number): boolean {
-  return addr >= startAddr && addr < endAddr;
-}
-
-/**
- * Calculate absolute address from relative branch offset
- * @param offset - The offset byte (signed -128 to +127)
- * @param pcAfterBranch - Program counter AFTER the 2-byte branch instruction
- * @returns Absolute target address
- */
-function getAbsFromRelative(offset: string, pcAfterBranch: number): number {
-  const offsetValue = hexToNumber(offset);
-
-  if (offsetValue > 127) {
-    // Negative offset: treat as signed byte (two's complement)
-    return pcAfterBranch - (256 - offsetValue);
-  } else {
-    // Positive offset
-    return pcAfterBranch + offsetValue;
-  }
-}
-
-function getInstructionLength(opcode: string): number {
-  let length = 0;
-  if (opcode.includes('hh')) length += 1;
-  if (opcode.includes('ll')) length += 1;
-  return length;
-}
-
-// Opcode Categories for Analysis
-// These categorize 6502 opcodes by their behavior to help distinguish code from data
-
-/** Opcodes that terminate code flow (no fall-through to next instruction) */
-const FLOW_TERMINATORS = new Set([
-  '4c', // JMP absolute
-  '60', // RTS
-  '40'  // RTI
-]);
-
-/** Opcodes that branch/jump to code locations */
-const CODE_BRANCH_OPS = new Set([
-  '4c', // JMP absolute
-  '20'  // JSR absolute
-]);
-
-/**
- * Opcodes with absolute addressing that likely access data (not code)
- * Includes: ORA, ASL, AND, BIT, EOR, LSR, ADC, ROR, STA, STY, STX,
- * LDA, LDY, LDX, CMP, CPY, CPX, DEC, INC, SBC
- */
-const DATA_ACCESS_OPS = new Set([
-  '0d', '0e', // ORA abs, ASL abs
-  '19', '1d', '1e', // ORA abs,Y / ORA abs,X / ASL abs,X
-  '2d', '2e', // AND abs, ROL abs
-  '39', '3d', '3e', // AND abs,Y / AND abs,X / ROL abs,X
-  '4d', '4e', // EOR abs, LSR abs
-  '59', '5d', '5e', // EOR abs,Y / EOR abs,X / LSR abs,X
-  '6d', '6e', // ADC abs, ROR abs
-  '79', '7d', '7e', // ADC abs,Y / ADC abs,X / ROR abs,X
-  '8c', '8d', '8e', // STY abs, STA abs, STX abs
-  '99', '9d', // STA abs,Y / STA abs,X
-  'ac', 'ad', 'ae', // LDY abs, LDA abs, LDX abs
-  'b9', 'bc', 'bd', 'be', // LDA abs,Y / LDY abs,X / LDA abs,X / LDX abs,Y
-  'cc', 'cd', 'ce', // CPY abs, CMP abs, DEC abs
-  'd9', 'dd', 'de', // CMP abs,Y / CMP abs,X / DEC abs,X
-  'ec', 'ee', 'ed', // CPX abs, INC abs, SBC abs
-  'f9', 'fd', 'fe'  // SBC abs,Y / SBC abs,X / INC abs,X
-]);
-
-function generateByteArray(startAddr: number, bytes: Uint8Array): DisassembledByte[] {
-  const bytesTable: DisassembledByte[] = [];
-  const end = bytes.length;
-
-  for (let pc = 0; pc < end; pc++) {
-    bytesTable.push({
-      addr: startAddr + pc,
-      byte: numberToHexByte(bytes[pc]),
-      dest: false,
-      code: false,
-      data: false
-    });
-  }
-
-  return bytesTable;
+function generateByteArray(start: number, bytes: Uint8Array): DisassembledByte[] {
+  return Array.from(bytes, (b, i) => ({
+    addr: start + i,
+    byte: Hex.toByte(b),
+    dest: false,
+    code: false,
+    data: false
+  }));
 }
 
 /**
- * Analyze bytes and mark code/data sections based on opcodes and entrypoints
- *
- * This is the core analysis algorithm that distinguishes between code and data.
- * It works in two phases:
- * 1. Mark all user-defined entrypoints as code or data
- * 2. Follow control flow from code sections, marking reachable bytes as code
- *
- * Algorithm:
- * - Starts assuming all bytes are data (conservative approach)
- * - Entrypoints "seed" the analysis by explicitly marking addresses
- * - For code sections: follows jumps/branches to discover more code
- * - For data sections: marks load/store targets as data
- * - Terminates code sections at JMP/RTS/RTI instructions
- *
- * @param startAddr - Starting address of the program in memory
- * @param bytes - Raw bytes to disassemble
- * @param entrypoints - User-defined code/data entry points
- * @returns Array of analyzed bytes with code/data/dest flags set
+ * ANALYSIS (FIXED)
+ * - Full reset on every run
+ * - Data entrypoints block code propagation
+ * - Code never flows through data
  */
 export function analyze(
   startAddr: number,
   bytes: Uint8Array,
   entrypoints: Entrypoint[]
 ): DisassembledByte[] {
-  const bytesTable = generateByteArray(startAddr, bytes);
-  const byteCount = bytesTable.length;
-  const endAddr = startAddr + byteCount;
+  const table = generateByteArray(startAddr, bytes);
+  const endAddr = startAddr + table.length;
 
-  // Phase 1: Mark all user-defined entrypoints
-  if (entrypoints && entrypoints.length > 0) {
-    for (const entrypoint of entrypoints) {
-      const index = entrypoint.address - startAddr;
-      if (index >= 0 && index < byteCount) {
-        bytesTable[index].dest = true;
+  // 🔴 HARD RESET (critical fix)
+  for (const b of table) {
+    b.code = false;
+    b.data = false;
+    b.dest = false;
+  }
 
-        if (entrypoint.type === 'code') {
-          bytesTable[index].code = true;
-          bytesTable[index].data = false;
-        } else {
-          bytesTable[index].data = true;
-          bytesTable[index].code = false;
-        }
-      }
+  const worklist: number[] = [];
+  const visited = new Set<number>();
+
+  // Seed entrypoints
+  for (const ep of entrypoints || []) {
+    const idx = ep.address - startAddr;
+    if (idx < 0 || idx >= table.length) continue;
+
+    table[idx].dest = true;
+
+    if (ep.type === 'code') {
+      table[idx].code = true;
+      worklist.push(idx);
+    } else {
+      table[idx].data = true;
     }
   }
 
-  // Phase 2: Propagate code/data markings by following control flow
-  // State machine: are we currently processing code?
-  let inCodeSection = false;
+  while (worklist.length > 0) {
+    const pc = worklist.pop()!;
+    if (visited.has(pc)) continue;
+    visited.add(pc);
 
-  let i = 0;
-  while (i < byteCount) {
-    const byteHex = bytesTable[i].byte;
-    const opcode = opcodes[byteHex as keyof typeof opcodes];
+    const byte = table[pc];
 
-    // Check if current byte switches our mode
-    if (bytesTable[i].code) {
-      inCodeSection = true;
-    } else if (bytesTable[i].data) {
-      inCodeSection = false;
+    // 🚫 Data blocks code
+    if (byte.data) continue;
+
+    const opcode = opcodes[byte.byte];
+    if (!opcode || opcode.ill) continue;
+
+    byte.code = true;
+
+    const len = getInstructionLength(opcode.ins);
+
+    // Mark operand bytes as code unless already data
+    for (let i = 1; i <= len; i++) {
+      if (pc + i < table.length && !table[pc + i].data) {
+        table[pc + i].code = true;
+      }
     }
 
-    // If no valid opcode, skip this byte
-    // If we're in code section, this should exit code mode
-    if (!opcode) {
-      if (inCodeSection) {
-        inCodeSection = false;
+    let targetAddr: number | null = null;
+
+    if ('rel' in opcode && pc + 1 < table.length) {
+      targetAddr = getAbsFromRelative(
+        table[pc + 1].byte,
+        startAddr + pc + 2
+      );
+    } else if (len === 2 && pc + 2 < table.length) {
+      targetAddr = Hex.bytesToAddress(
+        table[pc + 2].byte,
+        table[pc + 1].byte
+      );
+    }
+
+    // Branch / jump target
+    if (targetAddr !== null && addrInProgram(targetAddr, startAddr, endAddr)) {
+      const ti = targetAddr - startAddr;
+      if (!table[ti].data) {
+        table[ti].dest = true;
+        table[ti].code = true;
+        worklist.push(ti);
       }
-      i++;
+    }
+
+    const next = pc + len + 1;
+
+    // JSR: follow fall-through
+    if (byte.byte === '20') {
+      if (next < table.length && !table[next].data) {
+        worklist.push(next);
+      }
       continue;
     }
 
-    if (inCodeSection) {
-      // Mark the opcode byte as code
-      bytesTable[i].code = true;
-
-      const instructionLength = getInstructionLength(opcode.ins);
-
-      // Mark all operand bytes as code too
-      for (let j = 1; j <= instructionLength && i + j < byteCount; j++) {
-        bytesTable[i + j].code = true;
+    // Normal fall-through
+    if (!FLOW_TERMINATORS.has(byte.byte)) {
+      if (next < table.length && !table[next].data) {
+        worklist.push(next);
       }
-
-      // Check if this instruction terminates code flow
-      if (FLOW_TERMINATORS.has(byteHex)) {
-        inCodeSection = false;
-      }
-
-      let targetAddress: number | null = null;
-
-      // Calculate target address for branch/jump instructions
-      if ('rel' in opcode && i + 1 < byteCount) {
-        targetAddress = getAbsFromRelative(bytesTable[i + 1].byte, startAddr + i + 2);
-      }
-
-      if (instructionLength === 2 && i + 2 < byteCount) {
-        targetAddress = bytesToAddr(bytesTable[i + 2].byte, bytesTable[i + 1].byte);
-      }
-
-      // Mark target bytes based on instruction type
-      if (targetAddress !== null) {
-        // Branches and jumps point to code
-        if (CODE_BRANCH_OPS.has(byteHex) || 'rel' in opcode) {
-          if (addrInProgram(targetAddress, startAddr, endAddr)) {
-            const targetIndex = targetAddress - startAddr;
-            bytesTable[targetIndex].code = true;
-            bytesTable[targetIndex].dest = true;
-          }
-        }
-
-        // Load/store operations point to data
-        if (DATA_ACCESS_OPS.has(byteHex)) {
-          if (addrInProgram(targetAddress, startAddr, endAddr)) {
-            const targetIndex = targetAddress - startAddr;
-            bytesTable[targetIndex].data = true;
-            bytesTable[targetIndex].dest = true;
-          }
-        }
-      }
-
-      i += instructionLength;
     }
-
-    i++;
   }
 
-  return bytesTable;
+  return table;
 }
 
-/**
- * Helper: Create a grouped data line from consecutive bytes
- */
+/* ---------------- CONVERSION PASS (UNCHANGED) ---------------- */
+
 function createDataLine(
   byteArray: DisassembledByte[],
   startIndex: number,
   label: string | undefined,
   end: number,
-  pseudoOpcodePrefix: string
-): { line: DisassembledLine; nextIndex: number } {
-  const MAX_BYTES_PER_LINE = 8; // Limit to prevent line wrapping in UI
-  const dataBytes: string[] = [byteArray[startIndex].byte];
-  const allBytes: number[] = [hexToNumber(byteArray[startIndex].byte)];
-  const dataAddress = byteArray[startIndex].addr;
+  pseudo: string
+) {
+  const bytes: string[] = [];
+  const nums: number[] = [];
+  let i = startIndex;
 
-  // Look ahead to group consecutive data bytes (but stop at labels/destinations)
-  let j = startIndex + 1;
-  while (j < end && dataBytes.length < MAX_BYTES_PER_LINE) {
-    const nextByte = byteArray[j];
-    if (nextByte.dest || nextByte.code) break;
-    dataBytes.push(nextByte.byte);
-    allBytes.push(hexToNumber(nextByte.byte));
-    j++;
+  while (i < end && bytes.length < 8) {
+    const b = byteArray[i];
+    if (i !== startIndex && (b.dest || b.code)) break;
+    bytes.push(b.byte);
+    nums.push(Hex.toNumber(b.byte));
+    i++;
   }
 
   return {
     line: {
-      address: dataAddress,
+      address: byteArray[startIndex].addr,
       label,
-      instruction: pseudoOpcodePrefix + 'byte $' + dataBytes.join(', $'),
-      bytes: allBytes,
+      instruction: `${pseudo}byte $${bytes.join(', $')}`,
+      bytes: nums,
       isData: true
     },
-    nextIndex: j
+    nextIndex: i
   };
 }
 
-/**
- * Extract absolute address from instruction if present
- */
-function extractAbsoluteAddress(instruction: string): number | null {
-  // Match $xxxx pattern (4-digit hex address)
-  const match = instruction.match(/\$([0-9a-f]{4})/i);
-  if (match) {
-    return parseInt(match[1], 16);
-  }
-  return null;
+function extractAbsoluteAddress(instr: string): number | null {
+  const m = instr.match(/\$([0-9a-f]{4})/i);
+  return m ? parseInt(m[1], 16) : null;
 }
 
-/**
- * Convert analyzed bytes to assembly program
- *
- * Takes the output from analyze() and generates human-readable assembly code.
- * - Code bytes become instructions (LDA, STA, JMP, etc.)
- * - Data bytes become .byte directives
- * - Branch/jump destinations get labels (e.g., L1000)
- * - Known C64 addresses get comments (e.g., $D020 ; BORDER COLOR)
- *
- * @param byteArray - Analyzed bytes from analyze() function
- * @param startAddr - Starting address of the program
- * @param pseudoOpcodePrefix - Prefix for assembler directives (e.g., '!' for ACME)
- * @returns Array of disassembled lines ready for display
- */
 export function convertToProgram(
   byteArray: DisassembledByte[],
   startAddr: number,
-  pseudoOpcodePrefix: string = '!'
+  pseudoOpcodePrefix = '!'
 ): DisassembledLine[] {
   const program: DisassembledLine[] = [];
   const labelPrefix = get(settings).labelPrefix;
-  const end = byteArray.length;
-  const endAddr = startAddr + end;
+  const endAddr = startAddr + byteArray.length;
 
   let i = 0;
-  while (i < end) {
-    const byteData = byteArray[i];
-    const byte = byteData.byte;
-    const label = byteData.dest ? labelPrefix + numberToHexWord(byteData.addr) : undefined;
+  while (i < byteArray.length) {
+    const b = byteArray[i];
+    const label = b.dest ? labelPrefix + Hex.toWord(b.addr) : undefined;
 
-    // DATA - Group consecutive data bytes or handle invalid opcodes
-    if (!byteData.code || byteData.data) {
-      const { line, nextIndex } = createDataLine(byteArray, i, label, end, pseudoOpcodePrefix);
+    if (!b.code || b.data) {
+      const { line, nextIndex } = createDataLine(
+        byteArray,
+        i,
+        label,
+        byteArray.length,
+        pseudoOpcodePrefix
+      );
       program.push(line);
       i = nextIndex;
       continue;
     }
 
-    // CODE - Process as instruction
-    const opcode = opcodes[byte as keyof typeof opcodes];
-
-    // Invalid opcode - treat as data
+    const opcode = opcodes[b.byte];
     if (!opcode) {
-      const { line, nextIndex } = createDataLine(byteArray, i, label, end, pseudoOpcodePrefix);
+      const { line, nextIndex } = createDataLine(
+        byteArray,
+        i,
+        label,
+        byteArray.length,
+        pseudoOpcodePrefix
+      );
       program.push(line);
       i = nextIndex;
       continue;
     }
 
-    // Decode instruction
-    let instruction = opcode.ins;
-    const length = getInstructionLength(instruction);
-    const instructionBytes: number[] = [hexToNumber(byte)];
+    let instr = opcode.ins;
+    const len = getInstructionLength(instr);
+    const bytes = [Hex.toNumber(b.byte)];
 
-    // TWO BYTE INSTRUCTION
-    if (length === 1 && i + 1 < end) {
-      i++;
-      const highByte = byteArray[i].byte;
-      instructionBytes.push(hexToNumber(highByte));
-
-      if ('rel' in opcode) {
-        const address = numberToHexWord(getAbsFromRelative(highByte, startAddr + i + 1));
-        instruction = instruction.replace('$hh', labelPrefix + address);
-      } else {
-        instruction = instruction.replace('hh', numberToHexByte(hexToNumber(highByte)));
-      }
+    if (len === 1 && i + 1 < byteArray.length) {
+      const op = byteArray[++i].byte;
+      bytes.push(Hex.toNumber(op));
+      instr =
+        'rel' in opcode
+          ? instr.replace(
+              '$hh',
+              labelPrefix +
+                Hex.toWord(getAbsFromRelative(op, startAddr + i + 1))
+            )
+          : instr.replace('hh', op);
     }
 
-    // THREE BYTE INSTRUCTION
-    if (length === 2 && i + 2 < end) {
-      i++;
-      const lowByte = byteArray[i].byte;
-      instructionBytes.push(hexToNumber(lowByte));
-      i++;
-      const highByte = byteArray[i].byte;
-      instructionBytes.push(hexToNumber(highByte));
-      instruction = instruction.replace('hh', highByte).replace('ll', lowByte);
-      const addr = bytesToAddr(highByte, lowByte);
-
-      // Turn absolute address into label if it's within the program
+    if (len === 2 && i + 2 < byteArray.length) {
+      const ll = byteArray[++i].byte;
+      const hh = byteArray[++i].byte;
+      bytes.push(Hex.toNumber(ll), Hex.toNumber(hh));
+      const addr = Hex.bytesToAddress(hh, ll);
+      instr = instr.replace('hh', hh).replace('ll', ll);
       if (addrInProgram(addr, startAddr, endAddr)) {
-        instruction = instruction.replace('$', labelPrefix);
+        instr = instr.replace('$', labelPrefix);
       }
     }
 
-    // Extract C64 comment if instruction references a known address
-    let comment: string | undefined;
-    const absAddr = extractAbsoluteAddress(instruction);
-    if (absAddr !== null) {
-      comment = getC64Comment(absAddr);
-    }
+    const abs = extractAbsoluteAddress(instr);
+    const comment = abs !== null ? getC64Comment(abs) : undefined;
 
     program.push({
-      address: byteData.addr,
+      address: b.addr,
       label,
-      instruction,
+      instruction: instr,
       comment,
-      bytes: instructionBytes
+      bytes
     });
 
     i++;
@@ -491,27 +336,16 @@ export function convertToProgram(
   return program;
 }
 
-/**
- * Main disassemble function
- */
 export async function disassembleWithEntrypoints(
   bytes: Uint8Array,
   startAddress: number,
   entrypoints: Entrypoint[]
 ): Promise<DisassembledLine[]> {
-  // Load opcodes, C64 mapping, and syntax
   await loadOpcodes();
   await loadC64Mapping();
   await loadSyntax();
 
-  // Get current syntax settings
   const syntax = getSyntax();
-
-  // Analyze bytes to determine code/data regions
-  const byteArray = analyze(startAddress, bytes, entrypoints);
-
-  // Convert to assembly program with syntax-specific pseudo-opcode prefix
-  const program = convertToProgram(byteArray, startAddress, syntax.pseudoOpcodePrefix);
-
-  return program;
+  const analyzed = analyze(startAddress, bytes, entrypoints);
+  return convertToProgram(analyzed, startAddress, syntax.pseudoOpcodePrefix);
 }
