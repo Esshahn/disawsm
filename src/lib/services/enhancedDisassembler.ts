@@ -84,20 +84,40 @@ export interface DisassembledLine {
   isData?: boolean;  // true if this is a data section (.byte)
 }
 
+/**
+ * Hex conversion utilities
+ * Handles conversion between numbers and hex strings for 6502 assembly
+ */
+const Hex = {
+  /** Convert number to 2-digit hex string (e.g., 255 → "ff") */
+  toByte: (num: number): string => num.toString(16).padStart(2, '0'),
+
+  /** Convert number to 4-digit hex string (e.g., 4096 → "1000") */
+  toWord: (num: number): string => num.toString(16).padStart(4, '0'),
+
+  /** Convert hex string to number (e.g., "ff" → 255) */
+  toNumber: (hex: string): number => parseInt(hex, 16),
+
+  /** Convert little-endian bytes to 16-bit address (e.g., "00", "10" → 4096) */
+  bytesToAddress: (highByte: string, lowByte: string): number =>
+    (parseInt(highByte, 16) << 8) + parseInt(lowByte, 16)
+};
+
+// Legacy function names for backward compatibility
 function numberToHexByte(num: number): string {
-  return num.toString(16).padStart(2, '0');
+  return Hex.toByte(num);
 }
 
 function numberToHexWord(num: number): string {
-  return num.toString(16).padStart(4, '0');
+  return Hex.toWord(num);
 }
 
 function hexToNumber(hex: string): number {
-  return parseInt(hex, 16);
+  return Hex.toNumber(hex);
 }
 
 function bytesToAddr(hh: string, ll: string): number {
-  return (parseInt(hh, 16) << 8) + parseInt(ll, 16);
+  return Hex.bytesToAddress(hh, ll);
 }
 
 function addrInProgram(addr: number, startAddr: number, endAddr: number): boolean {
@@ -129,6 +149,46 @@ function getInstructionLength(opcode: string): number {
   return length;
 }
 
+// Opcode Categories for Analysis
+// These categorize 6502 opcodes by their behavior to help distinguish code from data
+
+/** Opcodes that terminate code flow (no fall-through to next instruction) */
+const FLOW_TERMINATORS = new Set([
+  '4c', // JMP absolute
+  '60', // RTS
+  '40'  // RTI
+]);
+
+/** Opcodes that branch/jump to code locations */
+const CODE_BRANCH_OPS = new Set([
+  '4c', // JMP absolute
+  '20'  // JSR absolute
+]);
+
+/**
+ * Opcodes with absolute addressing that likely access data (not code)
+ * Includes: ORA, ASL, AND, BIT, EOR, LSR, ADC, ROR, STA, STY, STX,
+ * LDA, LDY, LDX, CMP, CPY, CPX, DEC, INC, SBC
+ */
+const DATA_ACCESS_OPS = new Set([
+  '0d', '0e', // ORA abs, ASL abs
+  '19', '1d', '1e', // ORA abs,Y / ORA abs,X / ASL abs,X
+  '2d', '2e', // AND abs, ROL abs
+  '39', '3d', '3e', // AND abs,Y / AND abs,X / ROL abs,X
+  '4d', '4e', // EOR abs, LSR abs
+  '59', '5d', '5e', // EOR abs,Y / EOR abs,X / LSR abs,X
+  '6d', '6e', // ADC abs, ROR abs
+  '79', '7d', '7e', // ADC abs,Y / ADC abs,X / ROR abs,X
+  '8c', '8d', '8e', // STY abs, STA abs, STX abs
+  '99', '9d', // STA abs,Y / STA abs,X
+  'ac', 'ad', 'ae', // LDY abs, LDA abs, LDX abs
+  'b9', 'bc', 'bd', 'be', // LDA abs,Y / LDY abs,X / LDA abs,X / LDX abs,Y
+  'cc', 'cd', 'ce', // CPY abs, CMP abs, DEC abs
+  'd9', 'dd', 'de', // CMP abs,Y / CMP abs,X / DEC abs,X
+  'ec', 'ee', 'ed', // CPX abs, INC abs, SBC abs
+  'f9', 'fd', 'fe'  // SBC abs,Y / SBC abs,X / INC abs,X
+]);
+
 function generateByteArray(startAddr: number, bytes: Uint8Array): DisassembledByte[] {
   const bytesTable: DisassembledByte[] = [];
   const end = bytes.length;
@@ -148,6 +208,23 @@ function generateByteArray(startAddr: number, bytes: Uint8Array): DisassembledBy
 
 /**
  * Analyze bytes and mark code/data sections based on opcodes and entrypoints
+ *
+ * This is the core analysis algorithm that distinguishes between code and data.
+ * It works in two phases:
+ * 1. Mark all user-defined entrypoints as code or data
+ * 2. Follow control flow from code sections, marking reachable bytes as code
+ *
+ * Algorithm:
+ * - Starts assuming all bytes are data (conservative approach)
+ * - Entrypoints "seed" the analysis by explicitly marking addresses
+ * - For code sections: follows jumps/branches to discover more code
+ * - For data sections: marks load/store targets as data
+ * - Terminates code sections at JMP/RTS/RTI instructions
+ *
+ * @param startAddr - Starting address of the program in memory
+ * @param bytes - Raw bytes to disassemble
+ * @param entrypoints - User-defined code/data entry points
+ * @returns Array of analyzed bytes with code/data/dest flags set
  */
 export function analyze(
   startAddr: number,
@@ -155,60 +232,35 @@ export function analyze(
   entrypoints: Entrypoint[]
 ): DisassembledByte[] {
   const bytesTable = generateByteArray(startAddr, bytes);
+  const byteCount = bytesTable.length;
+  const endAddr = startAddr + byteCount;
 
-  // JMP RTS RTI - used to default back to data for following instructions
-  const defaultToDataAfter = ['4c', '60', '40'];
-
-  // JMP JSR - used to identify code sections
-  const absBranchMnemonics = ['4c', '20'];
-
-  // LDA STA - used to identify data sections
-  const absAddressMnemonics = [
-    '0d', '0e',
-    '19', '1d', '1e',
-    '2d', '2e',
-    '39', '3d', '3e',
-    '4d', '4e',
-    '59', '5d', '5e',
-    '6d', '6e',
-    '79', '7d', '7e',
-    '8c', '8d', '8e',
-    '99', '9d',
-    'ac', 'ad', 'ae',
-    'b9', 'bc', 'bd', 'be',
-    'cc', 'cd', 'ce',
-    'd9', 'dd', 'de',
-    'ec', 'ee', 'ed',
-    'f9', 'fd', 'fe'
-  ];
-
-  const end = bytesTable.length;
-
-  // Add all entrypoints before analyzing
+  // Phase 1: Mark all user-defined entrypoints
   if (entrypoints && entrypoints.length > 0) {
     for (const entrypoint of entrypoints) {
-      const tablePos = entrypoint.address - startAddr;
-      if (tablePos >= 0 && tablePos < end) {
-        bytesTable[tablePos].dest = true;
+      const index = entrypoint.address - startAddr;
+      if (index >= 0 && index < byteCount) {
+        bytesTable[index].dest = true;
 
         if (entrypoint.type === 'code') {
-          bytesTable[tablePos].code = true;
-          bytesTable[tablePos].data = false;
+          bytesTable[index].code = true;
+          bytesTable[index].data = false;
         } else {
-          bytesTable[tablePos].data = true;
-          bytesTable[tablePos].code = false;
+          bytesTable[index].data = true;
+          bytesTable[index].code = false;
         }
       }
     }
   }
 
+  // Phase 2: Propagate code/data markings by following control flow
   // State machine: are we currently processing code?
   let inCodeSection = false;
 
   let i = 0;
-  while (i < end) {
-    const byte = bytesTable[i].byte;
-    const opcode = opcodes[byte as keyof typeof opcodes];
+  while (i < byteCount) {
+    const byteHex = bytesTable[i].byte;
+    const opcode = opcodes[byteHex as keyof typeof opcodes];
 
     // Check if current byte switches our mode
     if (bytesTable[i].code) {
@@ -234,38 +286,43 @@ export function analyze(
       const instructionLength = getInstructionLength(opcode.ins);
 
       // Mark all operand bytes as code too
-      for (let j = 1; j <= instructionLength && i + j < end; j++) {
+      for (let j = 1; j <= instructionLength && i + j < byteCount; j++) {
         bytesTable[i + j].code = true;
       }
 
-      if (defaultToDataAfter.includes(byte)) {
+      // Check if this instruction terminates code flow
+      if (FLOW_TERMINATORS.has(byteHex)) {
         inCodeSection = false;
       }
 
-      let destinationAddress: number | null = null;
+      let targetAddress: number | null = null;
 
-      if ('rel' in opcode && i + 1 < end) {
-        destinationAddress = getAbsFromRelative(bytesTable[i + 1].byte, startAddr + i + 2);
+      // Calculate target address for branch/jump instructions
+      if ('rel' in opcode && i + 1 < byteCount) {
+        targetAddress = getAbsFromRelative(bytesTable[i + 1].byte, startAddr + i + 2);
       }
 
-      if (instructionLength === 2 && i + 2 < end) {
-        destinationAddress = bytesToAddr(bytesTable[i + 2].byte, bytesTable[i + 1].byte);
+      if (instructionLength === 2 && i + 2 < byteCount) {
+        targetAddress = bytesToAddr(bytesTable[i + 2].byte, bytesTable[i + 1].byte);
       }
 
-      if (destinationAddress !== null) {
-        if (absBranchMnemonics.includes(byte) || 'rel' in opcode) {
-          if (addrInProgram(destinationAddress, startAddr, startAddr + end)) {
-            const tablePos = destinationAddress - startAddr;
-            bytesTable[tablePos].code = true;
-            bytesTable[tablePos].dest = true;
+      // Mark target bytes based on instruction type
+      if (targetAddress !== null) {
+        // Branches and jumps point to code
+        if (CODE_BRANCH_OPS.has(byteHex) || 'rel' in opcode) {
+          if (addrInProgram(targetAddress, startAddr, endAddr)) {
+            const targetIndex = targetAddress - startAddr;
+            bytesTable[targetIndex].code = true;
+            bytesTable[targetIndex].dest = true;
           }
         }
 
-        if (absAddressMnemonics.includes(byte)) {
-          if (addrInProgram(destinationAddress, startAddr, startAddr + end)) {
-            const tablePos = destinationAddress - startAddr;
-            bytesTable[tablePos].data = true;
-            bytesTable[tablePos].dest = true;
+        // Load/store operations point to data
+        if (DATA_ACCESS_OPS.has(byteHex)) {
+          if (addrInProgram(targetAddress, startAddr, endAddr)) {
+            const targetIndex = targetAddress - startAddr;
+            bytesTable[targetIndex].data = true;
+            bytesTable[targetIndex].dest = true;
           }
         }
       }
@@ -330,6 +387,17 @@ function extractAbsoluteAddress(instruction: string): number | null {
 
 /**
  * Convert analyzed bytes to assembly program
+ *
+ * Takes the output from analyze() and generates human-readable assembly code.
+ * - Code bytes become instructions (LDA, STA, JMP, etc.)
+ * - Data bytes become .byte directives
+ * - Branch/jump destinations get labels (e.g., L1000)
+ * - Known C64 addresses get comments (e.g., $D020 ; BORDER COLOR)
+ *
+ * @param byteArray - Analyzed bytes from analyze() function
+ * @param startAddr - Starting address of the program
+ * @param pseudoOpcodePrefix - Prefix for assembler directives (e.g., '!' for ACME)
+ * @returns Array of disassembled lines ready for display
  */
 export function convertToProgram(
   byteArray: DisassembledByte[],
@@ -355,68 +423,67 @@ export function convertToProgram(
       continue;
     }
 
-    // CODE
-    if (byteData.code) {
-      const opcode = opcodes[byte as keyof typeof opcodes];
+    // CODE - Process as instruction
+    const opcode = opcodes[byte as keyof typeof opcodes];
 
-      // Invalid opcode - treat as data
-      if (!opcode) {
-        const { line, nextIndex } = createDataLine(byteArray, i, label, end, pseudoOpcodePrefix);
-        program.push(line);
-        i = nextIndex;
-        continue;
-      }
-
-      let instruction = opcode.ins;
-      const length = getInstructionLength(instruction);
-      const instructionBytes: number[] = [hexToNumber(byte)];
-
-      // TWO BYTE INSTRUCTION
-      if (length === 1 && i + 1 < end) {
-        i++;
-        const highByte = byteArray[i].byte;
-        instructionBytes.push(hexToNumber(highByte));
-
-        if ('rel' in opcode) {
-          const address = numberToHexWord(getAbsFromRelative(highByte, startAddr + i + 1));
-          instruction = instruction.replace('$hh', labelPrefix + address);
-        } else {
-          instruction = instruction.replace('hh', numberToHexByte(hexToNumber(highByte)));
-        }
-      }
-
-      // THREE BYTE INSTRUCTION
-      if (length === 2 && i + 2 < end) {
-        i++;
-        const lowByte = byteArray[i].byte;
-        instructionBytes.push(hexToNumber(lowByte));
-        i++;
-        const highByte = byteArray[i].byte;
-        instructionBytes.push(hexToNumber(highByte));
-        instruction = instruction.replace('hh', highByte).replace('ll', lowByte);
-        const addr = bytesToAddr(highByte, lowByte);
-
-        // Turn absolute address into label if it's within the program
-        if (addrInProgram(addr, startAddr, endAddr)) {
-          instruction = instruction.replace('$', labelPrefix);
-        }
-      }
-
-      // Extract C64 comment if instruction references a known address
-      let comment: string | undefined;
-      const absAddr = extractAbsoluteAddress(instruction);
-      if (absAddr !== null) {
-        comment = getC64Comment(absAddr);
-      }
-
-      program.push({
-        address: byteData.addr,
-        label,
-        instruction,
-        comment,
-        bytes: instructionBytes
-      });
+    // Invalid opcode - treat as data
+    if (!opcode) {
+      const { line, nextIndex } = createDataLine(byteArray, i, label, end, pseudoOpcodePrefix);
+      program.push(line);
+      i = nextIndex;
+      continue;
     }
+
+    // Decode instruction
+    let instruction = opcode.ins;
+    const length = getInstructionLength(instruction);
+    const instructionBytes: number[] = [hexToNumber(byte)];
+
+    // TWO BYTE INSTRUCTION
+    if (length === 1 && i + 1 < end) {
+      i++;
+      const highByte = byteArray[i].byte;
+      instructionBytes.push(hexToNumber(highByte));
+
+      if ('rel' in opcode) {
+        const address = numberToHexWord(getAbsFromRelative(highByte, startAddr + i + 1));
+        instruction = instruction.replace('$hh', labelPrefix + address);
+      } else {
+        instruction = instruction.replace('hh', numberToHexByte(hexToNumber(highByte)));
+      }
+    }
+
+    // THREE BYTE INSTRUCTION
+    if (length === 2 && i + 2 < end) {
+      i++;
+      const lowByte = byteArray[i].byte;
+      instructionBytes.push(hexToNumber(lowByte));
+      i++;
+      const highByte = byteArray[i].byte;
+      instructionBytes.push(hexToNumber(highByte));
+      instruction = instruction.replace('hh', highByte).replace('ll', lowByte);
+      const addr = bytesToAddr(highByte, lowByte);
+
+      // Turn absolute address into label if it's within the program
+      if (addrInProgram(addr, startAddr, endAddr)) {
+        instruction = instruction.replace('$', labelPrefix);
+      }
+    }
+
+    // Extract C64 comment if instruction references a known address
+    let comment: string | undefined;
+    const absAddr = extractAbsoluteAddress(instruction);
+    if (absAddr !== null) {
+      comment = getC64Comment(absAddr);
+    }
+
+    program.push({
+      address: byteData.addr,
+      label,
+      instruction,
+      comment,
+      bytes: instructionBytes
+    });
 
     i++;
   }
