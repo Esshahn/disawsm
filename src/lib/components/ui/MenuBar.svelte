@@ -3,14 +3,18 @@
 
   let {
     onloadPRG,
+    onloadProject,
     onsaveAssembly,
+    onsaveProject,
     onclear,
     onshowAbout,
     onshowSettings,
     ontoggleWindow
   }: {
     onloadPRG?: () => void;
+    onloadProject?: () => void;
     onsaveAssembly?: () => void;
+    onsaveProject?: () => void;
     onclear?: () => void;
     onshowAbout?: () => void;
     onshowSettings?: () => void;
@@ -48,11 +52,21 @@
         <a onclick={onloadPRG}>
           Load PRG<span class="hotkey">Ctrl+O</span>
         </a>
+        <a onclick={onloadProject}>
+          Load Project (*.dis)
+        </a>
+        <hr />
         <a
           onclick={onsaveAssembly}
           class:disabled={$saveDisabled}
         >
           Save Assembly (*.asm)<span class="hotkey">Ctrl+S</span>
+        </a>
+        <a
+          onclick={onsaveProject}
+          class:disabled={$saveDisabled}
+        >
+          Save Project (*.dis)
         </a>
         <hr />
         <a onclick={onclear}>Clear</a>

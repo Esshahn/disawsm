@@ -90,3 +90,18 @@ export interface AssemblerSyntax {
   labelSuffix: string;
   pseudoOpcodePrefix: string;
 }
+
+/**
+ * Project file format (.dis)
+ * Stores binary data and entrypoints for a disassembly session
+ */
+export interface ProjectFile {
+  version: string;
+  name: string;
+  startAddress: number;
+  bytes: number[]; // Stored as array for JSON serialization
+  entrypoints: Array<{
+    address: number;
+    type: 'code' | 'data';
+  }>;
+}
