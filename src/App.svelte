@@ -7,6 +7,7 @@
   import DisassemblerWindow from '$lib/components/editor/DisassemblerWindow.svelte';
   import StatusBar from '$lib/components/ui/StatusBar.svelte';
   import About from '$lib/components/dialogs/About.svelte';
+  import Settings from '$lib/components/dialogs/Settings.svelte';
   import Storage from '$lib/services/storage';
   import FileLoader from '$lib/services/fileLoader';
   import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance, loadPRGFile, updateWindowConfig } from '$lib/stores/app';
@@ -18,6 +19,7 @@
   let fileLoader = new FileLoader();
   let storage: Storage;
   let showAbout = $state(false);
+  let showSettings = $state(false);
   let allowKeyboardShortcuts = $state(true);
 
   onMount(() => {
@@ -83,6 +85,16 @@
     showAbout = false;
   }
 
+  function handleShowSettings() {
+    allowKeyboardShortcuts = false;
+    showSettings = true;
+  }
+
+  function handleCloseSettings() {
+    allowKeyboardShortcuts = true;
+    showSettings = false;
+  }
+
   function handleToggleWindow(windowKey: string) {
     const currentState = $config?.[windowKey as keyof typeof $config] as { isOpen?: boolean };
     if (currentState && 'isOpen' in currentState) {
@@ -97,6 +109,7 @@
     onsaveAssembly={handleSaveAssembly}
     onclear={handleClear}
     onshowAbout={handleShowAbout}
+    onshowSettings={handleShowSettings}
     ontoggleWindow={handleToggleWindow}
   />
 
@@ -119,6 +132,10 @@
 
   {#if showAbout}
     <About onclose={handleCloseAbout} />
+  {/if}
+
+  {#if showSettings}
+    <Settings onclose={handleCloseSettings} />
   {/if}
 
   <div id="custom-tooltip"></div>

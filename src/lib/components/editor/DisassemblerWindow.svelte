@@ -2,11 +2,30 @@
   import Window from '$lib/components/ui/Window.svelte';
   import { loadedFile, config, assemblyOutput } from '$lib/stores/app';
   import { entrypoints } from '$lib/stores/entrypoints';
+  import { settings } from '$lib/stores/settings';
+  import type { AssemblerSyntax } from '$lib/types';
   import { disassembleWithEntrypoints, type DisassembledLine } from '$lib/services/enhancedDisassembler';
   import { formatAsAssembly } from '$lib/services/assemblyExporter';
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
   import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
   import { toHex } from '$lib/utils/format';
+
+  // Load syntax definitions
+  let syntaxDefinitions: Record<string, AssemblerSyntax> = {};
+  let syntaxLoaded = false;
+
+  async function loadSyntax() {
+    if (syntaxLoaded) return;
+    const response = await fetch('/json/syntax.json');
+    const data = await response.json();
+    syntaxDefinitions = data.syntaxes;
+    syntaxLoaded = true;
+  }
+
+  function getCurrentSyntax(): AssemblerSyntax {
+    const syntaxKey = $settings.assemblerSyntax;
+    return syntaxDefinitions[syntaxKey] || syntaxDefinitions['acme'] || { name: 'ACME', commentPrefix: ';', labelSuffix: '', pseudoOpcodePrefix: '!' };
+  }
 
   // Reactive declarations using $derived
   let disassemblerConfig = $derived($config?.window_disassembler);
@@ -23,6 +42,7 @@
   let error = $state<string | null>(null);
   let scrollToLineIndex = $state<number | undefined>(undefined);
   let showComments = $state(true);
+  let currentSyntax = $state<AssemblerSyntax>({ name: 'ACME', commentPrefix: ';', labelSuffix: '', pseudoOpcodePrefix: '!' });
 
   // Line height in pixels - measured from actual rendered content
   const LINE_HEIGHT = 21;
@@ -37,10 +57,18 @@
     return bytes.map(b => toHex(b, 2)).join(' ');
   }
 
-  // Re-run disassembly whenever bytes, startAddress, or entrypoints change
+  // Re-run disassembly whenever bytes, startAddress, entrypoints, or settings change
   $effect(() => {
+    // CRITICAL: Capture reactive dependencies synchronously before async operations
+    // Svelte's reactivity can't track dependencies accessed only inside async functions
+    const currentFile = $loadedFile;
+    const currentEntrypoints = $entrypoints;
+    // Trigger re-run on settings changes (settings are read inside disassembler)
+    $settings.labelPrefix;
+    $settings.assemblerSyntax;
+
     async function loadDisassembly() {
-      if (!$loadedFile) {
+      if (!currentFile) {
         disassembledLines = [];
         return;
       }
@@ -51,17 +79,22 @@
         scrollToLineIndex = undefined; // Reset scroll position
         hoveredLineIndex = null; // Clear hover state
 
-        // Use enhanced disassembler with entrypoints
+        // Load syntax definitions
+        await loadSyntax();
+
+        // Update current syntax for display
+        currentSyntax = getCurrentSyntax();
+
         const lines = await disassembleWithEntrypoints(
-          $loadedFile.bytes,
-          $loadedFile.startAddress,
-          $entrypoints
+          currentFile.bytes,
+          currentFile.startAddress,
+          currentEntrypoints
         );
         disassembledLines = lines;
 
         // Update assembly output for export
         try {
-          const asmText = formatAsAssembly(lines, $loadedFile.startAddress, showComments, $loadedFile.name);
+          const asmText = await formatAsAssembly(lines, currentFile.startAddress, showComments, currentFile.name);
           assemblyOutput.set(asmText);
         } catch (exportError) {
           console.error('Failed to generate assembly output:', exportError);
@@ -155,7 +188,7 @@
                 >
                   {#if line.label}
                     <div class="code-label-line">
-                      <span class="code-label">{line.label}</span>
+                      <span class="code-label">{line.label}{currentSyntax.labelSuffix}</span>
                     </div>
                   {/if}
                   <div class="code-line">
@@ -173,7 +206,7 @@
                     <span class="code-instruction">
                       {line.instruction}
                       {#if showComments && line.comment}
-                        <span class="code-comment">; {line.comment}</span>
+                        <span class="code-comment">{currentSyntax.commentPrefix} {line.comment}</span>
                       {/if}
                     </span>
                   </div>

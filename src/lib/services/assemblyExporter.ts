@@ -4,17 +4,42 @@
  */
 
 import type { DisassembledLine } from '$lib/services/enhancedDisassembler';
+import type { AssemblerSyntax } from '$lib/types';
 import { toHex } from '$lib/utils/format';
+import { get } from 'svelte/store';
+import { settings } from '$lib/stores/settings';
+
+// Load syntax definitions
+let syntaxDefinitions: Record<string, AssemblerSyntax> = {};
+let syntaxLoaded = false;
+
+async function loadSyntax() {
+  if (syntaxLoaded) return;
+
+  const response = await fetch('/json/syntax.json');
+  const data = await response.json();
+  syntaxDefinitions = data.syntaxes;
+  syntaxLoaded = true;
+}
+
+function getSyntax(): AssemblerSyntax {
+  const syntaxKey = get(settings).assemblerSyntax;
+  return syntaxDefinitions[syntaxKey] || syntaxDefinitions['acme'];
+}
 
 /**
  * Format a disassembled program as assembly text
  */
-export function formatAsAssembly(
+export async function formatAsAssembly(
   lines: DisassembledLine[],
   startAddress: number,
   showComments: boolean = true,
   filename?: string
-): string {
+): Promise<string> {
+  // Load syntax definitions
+  await loadSyntax();
+  const syntax = getSyntax();
+
   const output: string[] = [];
 
   // Add comment header with filename and date
@@ -22,10 +47,11 @@ export function formatAsAssembly(
   const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD format
   const displayName = filename || 'unknown';
 
-  output.push(';==========================================================');
-  output.push(`; ${displayName}`);
-  output.push(`; disassembled with disawsm on ${dateStr}`);
-  output.push(';==========================================================');
+  const c = syntax.commentPrefix;
+  output.push(`${c}==========================================================`);
+  output.push(`${c} ${displayName}`);
+  output.push(`${c} disassembled with disawsm on ${dateStr}`);
+  output.push(`${c}==========================================================`);
   output.push('');
 
   // Add program start address directive
@@ -36,7 +62,7 @@ export function formatAsAssembly(
     // Add empty line before labels
     if (line.label) {
       output.push('');
-      output.push(line.label);
+      output.push(line.label + syntax.labelSuffix);
     }
 
     // Add instruction with proper indentation (12 spaces)
@@ -47,7 +73,7 @@ export function formatAsAssembly(
     if (showComments && line.comment) {
       // Pad instruction to align comments at column 40
       const paddedInstruction = instruction.padEnd(40, ' ');
-      output.push(paddedInstruction + '; ' + line.comment);
+      output.push(paddedInstruction + syntax.commentPrefix + ' ' + line.comment);
     } else {
       output.push(instruction);
     }

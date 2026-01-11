@@ -71,3 +71,22 @@ export interface UserConfig {
     isOpen?: boolean;
   };
 }
+
+/**
+ * User settings (persisted in localStorage)
+ * Application preferences and customization options
+ */
+export interface UserSettings {
+  labelPrefix: string;
+  assemblerSyntax: 'acme' | 'kickass';
+}
+
+/**
+ * Assembler syntax definition
+ */
+export interface AssemblerSyntax {
+  name: string;
+  commentPrefix: string;
+  labelSuffix: string;
+  pseudoOpcodePrefix: string;
+}
