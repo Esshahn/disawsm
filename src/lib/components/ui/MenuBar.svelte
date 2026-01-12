@@ -105,8 +105,18 @@
         <a href="https://github.com/Esshahn/disawsm" target="_blank">
           README on github<span class="hotkey"></span>
         </a>
+        <hr>
+        <a href="http://www.spritemate.com" target="_blank">
+          spritemate C64 sprite editor<span class="hotkey"></span>
+        </a>
+        <a href="https://mem64.awsm.de/" target="_blank">
+          C64 Memory Map<span class="hotkey"></span>
+        </a>
         <a href="http://www.awsm.de" target="_blank">
           www.awsm.de<span class="hotkey"></span>
+        </a>
+        <a href="https://csdb.dk/scener/?id=27239" target="_blank">
+          awsm on csdb.dk<span class="hotkey"></span>
         </a>
       </div>
     </li>
