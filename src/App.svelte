@@ -14,6 +14,7 @@
   import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance, loadPRGFile, updateWindowConfig } from '$lib/stores/app';
   import { entrypoints } from '$lib/stores/entrypoints';
   import { customLabels } from '$lib/stores/labels';
+  import { customComments } from '$lib/stores/comments';
   import { get_config } from '$lib/config';
   import { downloadAssembly } from '$lib/services/assemblyExporter';
   import { saveProject, loadProject } from '$lib/services/projectFile';
@@ -127,6 +128,12 @@
         for (const label of projectData.labels) {
           customLabels.setLabel(label.address, label.name);
         }
+
+        // Clear existing comments and load project comments
+        customComments.clear();
+        for (const comment of projectData.comments) {
+          customComments.setComment(comment.address, comment.comment);
+        }
       } catch (error) {
         alert('Failed to load project: ' + (error as Error).message);
       }
@@ -139,13 +146,14 @@
     const file = $loadedFile;
     const eps = $entrypoints;
     const labels = $customLabels;
+    const comments = $customComments;
 
     if (!file) {
       alert('No file loaded. Please load a PRG or project first.');
       return;
     }
 
-    saveProject(file.name, file.startAddress, file.bytes, eps, labels);
+    saveProject(file.name, file.startAddress, file.bytes, eps, labels, comments);
   }
 
   function handleClear() {
@@ -157,6 +165,7 @@
         assemblyOutput.set(null);
         entrypoints.clear();
         customLabels.clear();
+        customComments.clear();
       }
     }
   }

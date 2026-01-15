@@ -2,6 +2,7 @@
   import Window from '$lib/components/ui/Window.svelte';
   import { config, loadedFile } from '$lib/stores/app';
   import { customLabels } from '$lib/stores/labels';
+  import { customComments } from '$lib/stores/comments';
   import { entrypoints } from '$lib/stores/entrypoints';
   import { settings } from '$lib/stores/settings';
   import { disassembleWithEntrypoints } from '$lib/services/enhancedDisassembler';
@@ -35,7 +36,8 @@
           file.bytes,
           file.startAddress,
           $entrypoints,
-          $customLabels
+          $customLabels,
+          $customComments
         );
 
         const labelMap = new Map<number, string>();

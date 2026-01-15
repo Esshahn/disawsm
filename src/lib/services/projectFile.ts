@@ -6,8 +6,9 @@
 import type { ProjectFile } from '$lib/types';
 import type { Entrypoint } from '$lib/stores/entrypoints';
 import type { CustomLabel } from '$lib/stores/labels';
+import type { CustomComment } from '$lib/stores/comments';
 
-const PROJECT_VERSION = '1.1';
+const PROJECT_VERSION = '1.2';
 
 /**
  * Save current session as a .dis project file
@@ -17,7 +18,8 @@ export function saveProject(
   startAddress: number,
   bytes: Uint8Array,
   entrypoints: Entrypoint[],
-  customLabels: CustomLabel[] = []
+  customLabels: CustomLabel[] = [],
+  customComments: CustomComment[] = []
 ): void {
   const projectData: ProjectFile = {
     version: PROJECT_VERSION,
@@ -31,6 +33,10 @@ export function saveProject(
     labels: customLabels.map(label => ({
       address: label.address,
       name: label.name
+    })),
+    comments: customComments.map(comment => ({
+      address: comment.address,
+      comment: comment.comment
     }))
   };
 
@@ -61,6 +67,7 @@ export async function loadProject(file: File): Promise<{
   bytes: Uint8Array;
   entrypoints: Array<{ address: number; type: 'code' | 'data' }>;
   labels: Array<{ address: number; name: string }>;
+  comments: Array<{ address: number; comment: string }>;
 }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -84,7 +91,8 @@ export async function loadProject(file: File): Promise<{
           startAddress: projectData.startAddress,
           bytes,
           entrypoints: projectData.entrypoints || [],
-          labels: projectData.labels || []
+          labels: projectData.labels || [],
+          comments: projectData.comments || []
         });
       } catch (error) {
         reject(new Error('Failed to parse project file: ' + (error as Error).message));
