@@ -396,10 +396,14 @@ export function convertToProgram(
       const hh = byteArray[++i].byte;
       bytes.push(Hex.toNumber(ll), Hex.toNumber(hh));
       const addr = Hex.bytesToAddress(hh, ll);
-      instr = instr.replace('hh', hh).replace('ll', ll);
+
       if (addrInProgram(addr, startAddr, endAddr)) {
+        // Replace the entire $hhll pattern with the label name
         const labelName = getLabel(addr, customLabels, labelPrefix);
-        instr = instr.replace('$', labelName);
+        instr = instr.replace('$hhll', labelName);
+      } else {
+        // Not in program, just replace with hex values
+        instr = instr.replace('hh', hh).replace('ll', ll);
       }
     }
 

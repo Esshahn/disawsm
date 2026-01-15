@@ -22,6 +22,15 @@
     customLabels.setLabel(address, trimmed);
   }
 
+  function handleKeydown(event: KeyboardEvent, address: number, oldName: string) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const target = event.currentTarget as HTMLInputElement;
+      handleNameChange(address, oldName, target.value);
+      target.blur(); // Remove focus after saving
+    }
+  }
+
   // Update all labels when disassembly changes
   $effect(() => {
     const file = $loadedFile;
@@ -84,6 +93,7 @@
             class:custom={label.isCustom}
             value={label.name}
             onblur={(e) => handleNameChange(label.address, label.name, e.currentTarget.value)}
+            onkeydown={(e) => handleKeydown(e, label.address, label.name)}
             placeholder="Enter custom name"
           />
           {#if label.isCustom}
