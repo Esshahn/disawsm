@@ -1,7 +1,6 @@
 import { writable } from 'svelte/store';
 
 export interface CustomComment {
-  id: string;
   address: number;
   comment: string;
 }
@@ -55,8 +54,7 @@ function createCommentsStore() {
             c.address === address ? { ...c, comment: trimmed } : c
           );
         } else {
-          const id = `comment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          updated = [...comments, { id, address, comment: trimmed }].sort((a, b) => a.address - b.address);
+          updated = [...comments, { address, comment: trimmed }].sort((a, b) => a.address - b.address);
         }
 
         saveComments(updated);

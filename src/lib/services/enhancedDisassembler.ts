@@ -270,6 +270,27 @@ function getLabel(address: number, customLabels: CustomLabel[], labelPrefix: str
 }
 
 /**
+ * Extract absolute address from opcode and operand bytes
+ * Returns null if the instruction doesn't reference an absolute address
+ */
+function getAbsoluteAddressFromBytes(
+  byteArray: DisassembledByte[],
+  startIndex: number,
+  opcode: { ins: string; ill?: number; rel?: number }
+): number | null {
+  const len = getInstructionLength(opcode.ins);
+
+  if (len === 2 && startIndex + 2 < byteArray.length) {
+    // Two-byte absolute address
+    const ll = byteArray[startIndex + 1].byte;
+    const hh = byteArray[startIndex + 2].byte;
+    return Hex.bytesToAddress(hh, ll);
+  }
+
+  return null;
+}
+
+/**
  * Build a unified comments map from auto-generated C64 comments and custom comments
  * Custom comments override auto-generated ones at the same address
  */
@@ -280,39 +301,25 @@ function buildCommentsMap(
 ): Map<number, string> {
   const commentsMap = new Map<number, string>();
 
-  // First pass: Add all auto-generated C64 comments
-  for (const b of byteArray) {
+  // First pass: Add all auto-generated C64 comments for code instructions
+  for (let i = 0; i < byteArray.length; i++) {
+    const b = byteArray[i];
     if (!b.code || b.data) continue;
 
     const opcode = opcodes[b.byte];
     if (!opcode) continue;
 
-    // Find the index of this byte
-    const i = b.addr - startAddr;
-    const len = getInstructionLength(opcode.ins);
-
-    // Build instruction to extract absolute address
-    let instr = opcode.ins;
-    if (len === 1 && i + 1 < byteArray.length) {
-      const op = byteArray[i + 1].byte;
-      instr = instr.replace('hh', op);
-    }
-    if (len === 2 && i + 2 < byteArray.length) {
-      const ll = byteArray[i + 1].byte;
-      const hh = byteArray[i + 2].byte;
-      instr = instr.replace('hh', hh).replace('ll', ll);
-    }
-
-    const abs = extractAbsoluteAddress(instr);
-    if (abs !== null) {
-      const autoComment = getC64Comment(abs);
+    // Extract absolute address and check for C64 memory map comment
+    const absAddr = getAbsoluteAddressFromBytes(byteArray, i, opcode);
+    if (absAddr !== null) {
+      const autoComment = getC64Comment(absAddr);
       if (autoComment) {
         commentsMap.set(b.addr, autoComment);
       }
     }
   }
 
-  // Second pass: Override with custom comments
+  // Second pass: Add/override with custom comments (works for both code and data)
   for (const customComment of customComments) {
     commentsMap.set(customComment.address, customComment.comment);
   }

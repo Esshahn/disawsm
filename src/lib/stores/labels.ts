@@ -1,7 +1,6 @@
 import { writable } from 'svelte/store';
 
 export interface CustomLabel {
-  id: string;
   address: number;
   name: string;
 }
@@ -51,8 +50,7 @@ function createLabelsStore() {
             label.address === address ? { ...label, name } : label
           );
         } else {
-          const id = `label-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          updated = [...labels, { id, address, name }].sort((a, b) => a.address - b.address);
+          updated = [...labels, { address, name }].sort((a, b) => a.address - b.address);
         }
 
         saveLabels(updated);
