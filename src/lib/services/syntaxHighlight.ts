@@ -69,14 +69,39 @@ export function highlightInstruction(instruction: string, colors: SyntaxColors):
 function parseOperand(operand: string, colors: SyntaxColors): HighlightedToken[] {
   const tokens: HighlightedToken[] = [];
 
+  // Helper to add suffix (indexed addressing like ,x or ,y)
+  const addSuffix = (suffix: string) => {
+    const match = suffix.match(/^(,)([xy])/i);
+    if (match) {
+      tokens.push({ text: match[1], color: colors.register });
+      tokens.push({ text: match[2], color: colors.register });
+    } else if (suffix) {
+      tokens.push({ text: suffix, color: colors.register });
+    }
+  };
+
   // Immediate value: #$xx
   if (operand.startsWith('#$')) {
     const match = operand.match(/^(#\$[0-9a-f]+)(.*)/i);
     if (match) {
       tokens.push({ text: match[1], color: colors.immediate });
-      if (match[2]) {
-        tokens.push(...parseRemainder(match[2], colors));
-      }
+      addSuffix(match[2]);
+      return tokens;
+    }
+  }
+
+  // Indirect addressing: ($xx) or ($xxxx)
+  if (operand.startsWith('(')) {
+    const match = operand.match(/^\(([^)]+)\)(.*)/);
+    if (match) {
+      tokens.push({ text: '(', color: colors.register });
+      const inner = match[1];
+      tokens.push({
+        text: inner,
+        color: inner.startsWith('$') ? colors.address : colors.label
+      });
+      tokens.push({ text: ')', color: colors.register });
+      addSuffix(match[2]);
       return tokens;
     }
   }
@@ -86,9 +111,7 @@ function parseOperand(operand: string, colors: SyntaxColors): HighlightedToken[]
     const match = operand.match(/^([a-z_][a-z0-9_]*)(.*)/i);
     if (match) {
       tokens.push({ text: match[1], color: colors.label });
-      if (match[2]) {
-        tokens.push(...parseRemainder(match[2], colors));
-      }
+      addSuffix(match[2]);
       return tokens;
     }
   }
@@ -98,91 +121,41 @@ function parseOperand(operand: string, colors: SyntaxColors): HighlightedToken[]
     const match = operand.match(/^(\$[0-9a-f]+)(.*)/i);
     if (match) {
       tokens.push({ text: match[1], color: colors.address });
-      if (match[2]) {
-        tokens.push(...parseRemainder(match[2], colors));
-      }
+      addSuffix(match[2]);
       return tokens;
     }
   }
 
-  // Indirect addressing: ($xx) or ($xxxx)
-  if (operand.startsWith('(')) {
-    tokens.push({ text: '(', color: colors.register });
-
-    const innerMatch = operand.match(/^\(([^)]+)\)(.*)/);
-    if (innerMatch) {
-      const inner = innerMatch[1];
-      const remainder = innerMatch[2];
-
-      // Parse the inner part
-      if (inner.startsWith('$')) {
-        tokens.push({ text: inner, color: colors.address });
-      } else {
-        tokens.push({ text: inner, color: colors.label });
-      }
-
-      tokens.push({ text: ')', color: colors.register });
-
-      if (remainder) {
-        tokens.push(...parseRemainder(remainder, colors));
-      }
-
-      return tokens;
-    }
-  }
-
-  // Default: parse as remainder
-  return parseRemainder(operand, colors);
-}
-
-function parseRemainder(remainder: string, colors: SyntaxColors): HighlightedToken[] {
-  const tokens: HighlightedToken[] = [];
-
-  // Parse indexed addressing: ,x or ,y
-  const match = remainder.match(/^(,)([xy])/i);
-  if (match) {
-    tokens.push({ text: match[1], color: colors.register });
-    tokens.push({ text: match[2], color: colors.register });
-    return tokens;
-  }
-
-  // Default: return as register color (punctuation)
-  return [{ text: remainder, color: colors.register }];
+  // Fallback: treat entire operand as register/punctuation
+  return [{ text: operand, color: colors.register }];
 }
 
 /**
  * Parse a data line (e.g., "!byte $20, $30, $40")
  */
 export function highlightDataLine(instruction: string, colors: SyntaxColors): HighlightedToken[] {
-  const tokens: HighlightedToken[] = [];
-
-  // Pattern: pseudo-opcode followed by bytes
   const match = instruction.match(/^([!.][a-z]+)\s+(.+)$/i);
 
   if (!match) {
     return [{ text: instruction, color: colors.opcode }];
   }
 
-  const [, pseudoOp, bytesStr] = match;
+  const tokens: HighlightedToken[] = [
+    { text: match[1], color: colors.opcode },
+    { text: ' ', color: colors.opcode }
+  ];
 
-  // Pseudo-opcode
-  tokens.push({ text: pseudoOp, color: colors.opcode });
-  tokens.push({ text: ' ', color: colors.opcode });
-
-  // Parse bytes (e.g., "$20, $30, $40")
-  const bytes = bytesStr.split(',');
-  for (let i = 0; i < bytes.length; i++) {
-    const byte = bytes[i].trim();
-    if (byte.startsWith('$')) {
-      tokens.push({ text: byte, color: colors.address });
-    } else {
-      tokens.push({ text: byte, color: colors.opcode });
-    }
-
-    if (i < bytes.length - 1) {
+  // Split by comma and parse each byte
+  const parts = match[2].split(/,\s*/);
+  parts.forEach((part, i) => {
+    tokens.push({
+      text: part,
+      color: part.startsWith('$') ? colors.address : colors.opcode
+    });
+    if (i < parts.length - 1) {
       tokens.push({ text: ', ', color: colors.register });
     }
-  }
+  });
 
   return tokens;
 }
