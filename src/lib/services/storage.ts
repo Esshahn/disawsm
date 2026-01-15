@@ -122,6 +122,15 @@ export default class Storage {
           if (userWindow.isOpen !== undefined) this.config.window_disassembler.isOpen = userWindow.isOpen;
         }
 
+        if (this.userConfig!.window_labels) {
+          const userWindow = this.userConfig!.window_labels;
+          if (userWindow.left !== undefined) this.config.window_labels.left = userWindow.left;
+          if (userWindow.top !== undefined) this.config.window_labels.top = userWindow.top;
+          if (userWindow.width !== undefined) this.config.window_labels.width = userWindow.width;
+          if (userWindow.height !== undefined) this.config.window_labels.height = userWindow.height;
+          if (userWindow.isOpen !== undefined) this.config.window_labels.isOpen = userWindow.isOpen;
+        }
+
         if (this.userConfig!.default_filename) {
           this.config.default_filename = this.userConfig!.default_filename;
         }
@@ -198,6 +207,14 @@ export default class Storage {
       };
     }
 
+    // Deep merge for nested properties
+    if (updates.window_labels) {
+      this.userConfig.window_labels = {
+        ...this.userConfig.window_labels,
+        ...updates.window_labels
+      };
+    }
+
     if (updates.default_filename !== undefined) {
       this.userConfig.default_filename = updates.default_filename;
     }
@@ -239,6 +256,13 @@ export default class Storage {
         width: data.window_disassembler.width,
         height: data.window_disassembler.height,
         isOpen: data.window_disassembler.isOpen
+      },
+      window_labels: {
+        left: data.window_labels.left,
+        top: data.window_labels.top,
+        width: data.window_labels.width,
+        height: data.window_labels.height,
+        isOpen: data.window_labels.isOpen
       }
     };
     this.writeUserConfig(userConfig);
