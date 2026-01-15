@@ -3,6 +3,7 @@
   import { loadedFile, config, assemblyOutput } from '$lib/stores/app';
   import { entrypoints } from '$lib/stores/entrypoints';
   import { customLabels } from '$lib/stores/labels';
+  import { customComments } from '$lib/stores/comments';
   import { settings } from '$lib/stores/settings';
   import type { AssemblerSyntax } from '$lib/types';
   import { disassembleWithEntrypoints, type DisassembledLine } from '$lib/services/enhancedDisassembler';
@@ -10,6 +11,7 @@
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
   import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
   import { toHex } from '$lib/utils/format';
+  import { loadSyntaxColors, highlightInstruction, highlightDataLine, type SyntaxColors, type HighlightedToken } from '$lib/services/syntaxHighlight';
 
   // Load syntax definitions
   let syntaxDefinitions: Record<string, AssemblerSyntax> = {};
@@ -46,6 +48,10 @@
   let currentSyntax = $state<AssemblerSyntax>({ name: 'ACME', commentPrefix: ';', labelSuffix: '', pseudoOpcodePrefix: '!' });
   let editingLabelAddress = $state<number | null>(null);
   let editingLabelValue = $state('');
+  let editingCommentAddress = $state<number | null>(null);
+  let editingCommentValue = $state('');
+  let pendingCommentSave = $state<{ address: number; comment: string } | null>(null);
+  let syntaxColors = $state<SyntaxColors | null>(null);
 
   // Line height in pixels - measured from actual rendered content
   const LINE_HEIGHT = 21;
@@ -106,6 +112,51 @@
     }
   }
 
+  function handleCommentClick(address: number, currentComment: string | undefined) {
+    editingCommentAddress = address;
+    editingCommentValue = currentComment || '';
+  }
+
+  function handleCommentSave(address: number) {
+    const trimmed = editingCommentValue.trim();
+    customComments.setComment(address, trimmed);
+
+    // Track that we're waiting for this comment to appear in disassembledLines
+    pendingCommentSave = { address, comment: trimmed };
+  }
+
+  function handleCommentCancel() {
+    editingCommentAddress = null;
+    editingCommentValue = '';
+  }
+
+  function handleCommentKeydown(event: KeyboardEvent, address: number) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleCommentSave(address);
+    } else if (event.key === 'Escape') {
+      handleCommentCancel();
+    }
+  }
+
+  // Effect to clear editing state once the saved comment appears in disassembledLines
+  $effect(() => {
+    if (!pendingCommentSave) return;
+
+    const line = disassembledLines.find(l => l.address === pendingCommentSave.address);
+
+    // Check if the comment has been updated in the disassembled lines
+    if (line && (
+      (pendingCommentSave.comment && line.comment === pendingCommentSave.comment) ||
+      (!pendingCommentSave.comment && !line.comment)
+    )) {
+      // Comment has been saved and reflected in disassembledLines
+      editingCommentAddress = null;
+      editingCommentValue = '';
+      pendingCommentSave = null;
+    }
+  });
+
   // Re-run disassembly whenever bytes, startAddress, entrypoints, or settings change
   $effect(() => {
     // CRITICAL: Capture reactive dependencies synchronously before async operations
@@ -113,6 +164,7 @@
     const currentFile = $loadedFile;
     const currentEntrypoints = $entrypoints;
     const currentCustomLabels = $customLabels;
+    const currentCustomComments = $customComments;
     // Trigger re-run on settings changes (settings are read inside disassembler)
     $settings.labelPrefix;
     $settings.assemblerSyntax;
@@ -129,8 +181,9 @@
         scrollToLineIndex = undefined; // Reset scroll position
         hoveredLineIndex = null; // Clear hover state
 
-        // Load syntax definitions
+        // Load syntax definitions and colors
         await loadSyntax();
+        syntaxColors = await loadSyntaxColors();
 
         // Update current syntax for display
         currentSyntax = getCurrentSyntax();
@@ -139,7 +192,8 @@
           currentFile.bytes,
           currentFile.startAddress,
           currentEntrypoints,
-          currentCustomLabels
+          currentCustomLabels,
+          currentCustomComments
         );
         disassembledLines = lines;
 
@@ -270,10 +324,44 @@
                     {:else}
                       <span class="code-bytes code-bytes-empty"></span>
                     {/if}
-                    <span class="code-instruction">
-                      {line.instruction}
-                      {#if showComments && line.comment}
-                        <span class="code-comment">{currentSyntax.commentPrefix} {line.comment}</span>
+                    <span class="code-instruction-wrapper">
+                      <span class="code-instruction">
+                        {#if syntaxColors}
+                          {@const tokens = line.isData
+                            ? highlightDataLine(line.instruction, syntaxColors)
+                            : highlightInstruction(line.instruction, syntaxColors)}
+                          {#each tokens as token}
+                            <span style="color: {token.color}">{token.text}</span>
+                          {/each}
+                        {:else}
+                          {line.instruction}
+                        {/if}
+                      </span>
+                      {#if showComments}
+                        {#if editingCommentAddress === line.address}
+                          <input
+                            type="text"
+                            class="comment-edit-input"
+                            bind:value={editingCommentValue}
+                            onblur={() => handleCommentSave(line.address)}
+                            onkeydown={(e) => handleCommentKeydown(e, line.address)}
+                            placeholder="Add comment..."
+                            autofocus
+                          />
+                        {:else if line.comment}
+                          <span
+                            class="code-comment"
+                            onclick={() => handleCommentClick(line.address, line.comment)}
+                            title="Click to edit comment"
+                          >{currentSyntax.commentPrefix} {line.comment}</span>
+                        {:else}
+                          <!-- Clickable area that extends to end of line for adding comments -->
+                          <span
+                            class="code-comment-area"
+                            onclick={() => handleCommentClick(line.address, undefined)}
+                            title="Click to add comment"
+                          >&nbsp;</span>
+                        {/if}
                       {/if}
                     </span>
                   </div>
@@ -461,9 +549,16 @@
     z-index: 1000;
   }
 
-  .code-instruction {
+  .code-instruction-wrapper {
     color: #ffffff;
     flex: 1;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    align-items: center;
+  }
+
+  .code-instruction {
+    color: #ffffff;
     font-family: 'Courier New', Courier, monospace;
   }
 
@@ -471,6 +566,44 @@
     color: #888888;
     margin-left: 12px;
     font-style: italic;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  .code-comment:hover {
+    color: #aaa;
+  }
+
+  .code-comment-area {
+    margin-left: 12px;
+    flex: 1;
+    cursor: text;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .code-comment-area:hover {
+    opacity: 1;
+    background: rgba(136, 136, 136, 0.1);
+  }
+
+  .comment-edit-input {
+    background: #1a1a1a;
+    border: 2px solid #888;
+    color: #fff;
+    padding: 2px 6px;
+    margin-left: 8px;
+    border-radius: 3px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    font-style: italic;
+    outline: none;
+    min-width: 200px;
+  }
+
+  .comment-edit-input:focus {
+    border-color: #aaa;
+    background: #222;
   }
 
   .code-label {

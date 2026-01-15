@@ -5,6 +5,7 @@
 
 import type { Entrypoint } from '$lib/stores/entrypoints';
 import type { CustomLabel } from '$lib/stores/labels';
+import type { CustomComment } from '$lib/stores/comments';
 import type { AssemblerSyntax } from '$lib/types';
 import { get } from 'svelte/store';
 import { settings } from '$lib/stores/settings';
@@ -220,7 +221,8 @@ function createDataLine(
   startIndex: number,
   label: string | undefined,
   end: number,
-  pseudo: string
+  pseudo: string,
+  commentsMap: Map<number, string>
 ) {
   const bytes: string[] = [];
   const nums: number[] = [];
@@ -234,11 +236,15 @@ function createDataLine(
     i++;
   }
 
+  const address = byteArray[startIndex].addr;
+  const comment = commentsMap.get(address);
+
   return {
     line: {
-      address: byteArray[startIndex].addr,
+      address,
       label,
       instruction: `${pseudo}byte $${bytes.join(', $')}`,
+      comment,
       bytes: nums,
       isData: true
     },
@@ -256,24 +262,84 @@ function extractAbsoluteAddress(instr: string): number | null {
  * Checks custom labels first, then falls back to auto-generated label
  */
 function getLabel(address: number, customLabels: CustomLabel[], labelPrefix: string): string {
-  // Check if there's a custom label for this address
   const customLabel = customLabels.find(l => l.address === address);
   if (customLabel) {
     return customLabel.name;
   }
-  // Fall back to auto-generated label
   return labelPrefix + Hex.toWord(address);
+}
+
+/**
+ * Extract absolute address from opcode and operand bytes
+ * Returns null if the instruction doesn't reference an absolute address
+ */
+function getAbsoluteAddressFromBytes(
+  byteArray: DisassembledByte[],
+  startIndex: number,
+  opcode: { ins: string; ill?: number; rel?: number }
+): number | null {
+  const len = getInstructionLength(opcode.ins);
+
+  if (len === 2 && startIndex + 2 < byteArray.length) {
+    // Two-byte absolute address
+    const ll = byteArray[startIndex + 1].byte;
+    const hh = byteArray[startIndex + 2].byte;
+    return Hex.bytesToAddress(hh, ll);
+  }
+
+  return null;
+}
+
+/**
+ * Build a unified comments map from auto-generated C64 comments and custom comments
+ * Custom comments override auto-generated ones at the same address
+ */
+function buildCommentsMap(
+  byteArray: DisassembledByte[],
+  startAddr: number,
+  customComments: CustomComment[]
+): Map<number, string> {
+  const commentsMap = new Map<number, string>();
+
+  // First pass: Add all auto-generated C64 comments for code instructions
+  for (let i = 0; i < byteArray.length; i++) {
+    const b = byteArray[i];
+    if (!b.code || b.data) continue;
+
+    const opcode = opcodes[b.byte];
+    if (!opcode) continue;
+
+    // Extract absolute address and check for C64 memory map comment
+    const absAddr = getAbsoluteAddressFromBytes(byteArray, i, opcode);
+    if (absAddr !== null) {
+      const autoComment = getC64Comment(absAddr);
+      if (autoComment) {
+        commentsMap.set(b.addr, autoComment);
+      }
+    }
+  }
+
+  // Second pass: Add/override with custom comments (works for both code and data)
+  for (const customComment of customComments) {
+    commentsMap.set(customComment.address, customComment.comment);
+  }
+
+  return commentsMap;
 }
 
 export function convertToProgram(
   byteArray: DisassembledByte[],
   startAddr: number,
   pseudoOpcodePrefix = '!',
-  customLabels: CustomLabel[] = []
+  customLabels: CustomLabel[] = [],
+  customComments: CustomComment[] = []
 ): DisassembledLine[] {
   const program: DisassembledLine[] = [];
   const labelPrefix = get(settings).labelPrefix;
   const endAddr = startAddr + byteArray.length;
+
+  // Build unified comments map upfront
+  const commentsMap = buildCommentsMap(byteArray, startAddr, customComments);
 
   let i = 0;
   while (i < byteArray.length) {
@@ -286,7 +352,8 @@ export function convertToProgram(
         i,
         label,
         byteArray.length,
-        pseudoOpcodePrefix
+        pseudoOpcodePrefix,
+        commentsMap
       );
       program.push(line);
       i = nextIndex;
@@ -300,7 +367,8 @@ export function convertToProgram(
         i,
         label,
         byteArray.length,
-        pseudoOpcodePrefix
+        pseudoOpcodePrefix,
+        commentsMap
       );
       program.push(line);
       i = nextIndex;
@@ -328,15 +396,19 @@ export function convertToProgram(
       const hh = byteArray[++i].byte;
       bytes.push(Hex.toNumber(ll), Hex.toNumber(hh));
       const addr = Hex.bytesToAddress(hh, ll);
-      instr = instr.replace('hh', hh).replace('ll', ll);
+
       if (addrInProgram(addr, startAddr, endAddr)) {
+        // Replace the entire $hhll pattern with the label name
         const labelName = getLabel(addr, customLabels, labelPrefix);
-        instr = instr.replace('$', labelName);
+        instr = instr.replace('$hhll', labelName);
+      } else {
+        // Not in program, just replace with hex values
+        instr = instr.replace('hh', hh).replace('ll', ll);
       }
     }
 
-    const abs = extractAbsoluteAddress(instr);
-    const comment = abs !== null ? getC64Comment(abs) : undefined;
+    // Lookup comment from unified map
+    const comment = commentsMap.get(b.addr);
 
     program.push({
       address: b.addr,
@@ -356,7 +428,8 @@ export async function disassembleWithEntrypoints(
   bytes: Uint8Array,
   startAddress: number,
   entrypoints: Entrypoint[],
-  customLabels: CustomLabel[] = []
+  customLabels: CustomLabel[] = [],
+  customComments: CustomComment[] = []
 ): Promise<DisassembledLine[]> {
   await loadOpcodes();
   await loadC64Mapping();
@@ -364,5 +437,5 @@ export async function disassembleWithEntrypoints(
 
   const syntax = getSyntax();
   const analyzed = analyze(startAddress, bytes, entrypoints);
-  return convertToProgram(analyzed, startAddress, syntax.pseudoOpcodePrefix, customLabels);
+  return convertToProgram(analyzed, startAddress, syntax.pseudoOpcodePrefix, customLabels, customComments);
 }
