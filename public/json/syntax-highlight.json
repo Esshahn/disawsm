@@ -1,0 +1,18 @@
+{
+  "colors": {
+    "opcode": "#ffffff",
+    "label": "#ffaa00",
+    "immediate": "#88ddff",
+    "address": "#ff6699",
+    "register": "#aaaaaa",
+    "comment": "#888888"
+  },
+  "description": {
+    "opcode": "Instruction mnemonics (lda, sta, jsr, etc.)",
+    "label": "Label references in code and label definitions",
+    "immediate": "Immediate values (#$xx)",
+    "address": "Absolute addresses ($xxxx) and zero page ($xx)",
+    "register": "Registers and addressing mode syntax (x, y, a)",
+    "comment": "Comments starting with ; or custom comment prefix"
+  }
+}

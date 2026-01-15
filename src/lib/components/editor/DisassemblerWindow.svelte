@@ -11,6 +11,7 @@
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
   import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
   import { toHex } from '$lib/utils/format';
+  import { loadSyntaxColors, highlightInstruction, highlightDataLine, type SyntaxColors, type HighlightedToken } from '$lib/services/syntaxHighlight';
 
   // Load syntax definitions
   let syntaxDefinitions: Record<string, AssemblerSyntax> = {};
@@ -50,6 +51,7 @@
   let editingCommentAddress = $state<number | null>(null);
   let editingCommentValue = $state('');
   let pendingCommentSave = $state<{ address: number; comment: string } | null>(null);
+  let syntaxColors = $state<SyntaxColors | null>(null);
 
   // Line height in pixels - measured from actual rendered content
   const LINE_HEIGHT = 21;
@@ -179,8 +181,9 @@
         scrollToLineIndex = undefined; // Reset scroll position
         hoveredLineIndex = null; // Clear hover state
 
-        // Load syntax definitions
+        // Load syntax definitions and colors
         await loadSyntax();
+        syntaxColors = await loadSyntaxColors();
 
         // Update current syntax for display
         currentSyntax = getCurrentSyntax();
@@ -322,7 +325,18 @@
                       <span class="code-bytes code-bytes-empty"></span>
                     {/if}
                     <span class="code-instruction-wrapper">
-                      <span class="code-instruction">{line.instruction}</span>
+                      <span class="code-instruction">
+                        {#if syntaxColors}
+                          {@const tokens = line.isData
+                            ? highlightDataLine(line.instruction, syntaxColors)
+                            : highlightInstruction(line.instruction, syntaxColors)}
+                          {#each tokens as token}
+                            <span style="color: {token.color}">{token.text}</span>
+                          {/each}
+                        {:else}
+                          {line.instruction}
+                        {/if}
+                      </span>
                       {#if showComments}
                         {#if editingCommentAddress === line.address}
                           <input
