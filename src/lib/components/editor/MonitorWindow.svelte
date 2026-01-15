@@ -5,6 +5,7 @@
   import { toHex } from '$lib/utils/format';
   import { disassemble, type DisassembledLine } from '$lib/services/disassembler';
   import { loadPetsciiCharset, getPetsciiCharPosition } from '$lib/services/petsciiCharset';
+  import { loadSyntaxColors, highlightInstruction, type SyntaxColors } from '$lib/services/syntaxHighlight';
 
   // Command line state
   let commandInput = $state('');
@@ -15,13 +16,15 @@
   // PETSCII charset
   let spriteSheetUrl = $state<string | null>(null);
   let charsetLoaded = $state(false);
+  let syntaxColors = $state<SyntaxColors | null>(null);
 
   onMount(async () => {
     try {
       spriteSheetUrl = await loadPetsciiCharset();
       charsetLoaded = true;
+      syntaxColors = await loadSyntaxColors();
     } catch (error) {
-      console.error('Failed to load PETSCII charset:', error);
+      console.error('Failed to load PETSCII charset or syntax colors:', error);
     }
   });
 
@@ -429,7 +432,16 @@
                 <div class="code-line">
                   <span class="code-addr">{toHex(line.address, 4)}</span>
                   <span class="code-bytes">{line.bytes.map(b => toHex(b, 2)).join(' ')}</span>
-                  <span class="code-instruction">{line.instruction}</span>
+                  <span class="code-instruction">
+                    {#if syntaxColors}
+                      {@const tokens = highlightInstruction(line.instruction, syntaxColors)}
+                      {#each tokens as token}
+                        <span style="color: {token.color}">{token.text}</span>
+                      {/each}
+                    {:else}
+                      {line.instruction}
+                    {/if}
+                  </span>
                 </div>
               {/each}
             </div>

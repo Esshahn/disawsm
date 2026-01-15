@@ -116,4 +116,8 @@ export interface ProjectFile {
     address: number;
     name: string;
   }>;
+  comments?: Array<{
+    address: number;
+    comment: string;
+  }>;
 }
