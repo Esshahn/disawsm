@@ -5,6 +5,7 @@
   import InfoWindow from '$lib/components/editor/InfoWindow.svelte';
   import EntrypointsWindow from '$lib/components/editor/EntrypointsWindow.svelte';
   import DisassemblerWindow from '$lib/components/editor/DisassemblerWindow.svelte';
+  import LabelsWindow from '$lib/components/editor/LabelsWindow.svelte';
   import StatusBar from '$lib/components/ui/StatusBar.svelte';
   import About from '$lib/components/dialogs/About.svelte';
   import Settings from '$lib/components/dialogs/Settings.svelte';
@@ -12,6 +13,7 @@
   import FileLoader from '$lib/services/fileLoader';
   import { loadedFile, assemblyOutput, config, status, setStorageInstance, setFileLoaderInstance, loadPRGFile, updateWindowConfig } from '$lib/stores/app';
   import { entrypoints } from '$lib/stores/entrypoints';
+  import { customLabels } from '$lib/stores/labels';
   import { get_config } from '$lib/config';
   import { downloadAssembly } from '$lib/services/assemblyExporter';
   import { saveProject, loadProject } from '$lib/services/projectFile';
@@ -119,6 +121,12 @@
         for (const ep of projectData.entrypoints) {
           entrypoints.add(ep.address, ep.type);
         }
+
+        // Clear existing labels and load project labels
+        customLabels.clear();
+        for (const label of projectData.labels) {
+          customLabels.setLabel(label.address, label.name);
+        }
       } catch (error) {
         alert('Failed to load project: ' + (error as Error).message);
       }
@@ -130,13 +138,14 @@
   function handleSaveProject() {
     const file = $loadedFile;
     const eps = $entrypoints;
+    const labels = $customLabels;
 
     if (!file) {
       alert('No file loaded. Please load a PRG or project first.');
       return;
     }
 
-    saveProject(file.name, file.startAddress, file.bytes, eps);
+    saveProject(file.name, file.startAddress, file.bytes, eps, labels);
   }
 
   function handleClear() {
@@ -147,6 +156,7 @@
         loadedFile.set(null);
         assemblyOutput.set(null);
         entrypoints.clear();
+        customLabels.clear();
       }
     }
   }
@@ -203,6 +213,9 @@
     {/if}
     {#if $loadedFile && $config?.window_disassembler?.isOpen}
       <DisassemblerWindow />
+    {/if}
+    {#if $loadedFile && $config?.window_labels?.isOpen}
+      <LabelsWindow />
     {/if}
   </div>
 

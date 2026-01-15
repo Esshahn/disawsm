@@ -33,6 +33,7 @@ export interface AppConfig {
   window_info: WindowConfig;
   window_entrypoints: WindowConfig;
   window_disassembler: WindowConfig;
+  window_labels: WindowConfig;
 }
 
 /**
@@ -64,6 +65,13 @@ export interface UserConfig {
     isOpen?: boolean;
   };
   window_disassembler?: {
+    left?: number;
+    top?: number;
+    width?: number;
+    height?: number;
+    isOpen?: boolean;
+  };
+  window_labels?: {
     left?: number;
     top?: number;
     width?: number;
@@ -103,5 +111,9 @@ export interface ProjectFile {
   entrypoints: Array<{
     address: number;
     type: 'code' | 'data';
+  }>;
+  labels?: Array<{
+    address: number;
+    name: string;
   }>;
 }

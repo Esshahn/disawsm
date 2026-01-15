@@ -27,7 +27,7 @@
     if (!windowConfig?.isOpen) return false;
 
     // These windows require a loaded file to be visible
-    const requiresFile = ['window_monitor', 'window_entrypoints', 'window_disassembler'];
+    const requiresFile = ['window_monitor', 'window_entrypoints', 'window_disassembler', 'window_labels'];
     if (requiresFile.includes(windowKey)) {
       return !!$loadedFile;
     }
@@ -91,6 +91,10 @@
         <a onclick={() => ontoggleWindow?.('window_disassembler')}>
           <span class="checkmark">{#if isWindowVisible('window_disassembler')}✓{/if}</span>
           Disassembler
+        </a>
+        <a onclick={() => ontoggleWindow?.('window_labels')}>
+          <span class="checkmark">{#if isWindowVisible('window_labels')}✓{/if}</span>
+          Labels
         </a>
         <hr />
         <a id="menubar-fullscreen">

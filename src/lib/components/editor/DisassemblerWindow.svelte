@@ -2,6 +2,7 @@
   import Window from '$lib/components/ui/Window.svelte';
   import { loadedFile, config, assemblyOutput } from '$lib/stores/app';
   import { entrypoints } from '$lib/stores/entrypoints';
+  import { customLabels } from '$lib/stores/labels';
   import { settings } from '$lib/stores/settings';
   import type { AssemblerSyntax } from '$lib/types';
   import { disassembleWithEntrypoints, type DisassembledLine } from '$lib/services/enhancedDisassembler';
@@ -43,6 +44,8 @@
   let scrollToLineIndex = $state<number | undefined>(undefined);
   let showComments = $state(true);
   let currentSyntax = $state<AssemblerSyntax>({ name: 'ACME', commentPrefix: ';', labelSuffix: '', pseudoOpcodePrefix: '!' });
+  let editingLabelAddress = $state<number | null>(null);
+  let editingLabelValue = $state('');
 
   // Line height in pixels - measured from actual rendered content
   const LINE_HEIGHT = 21;
@@ -57,12 +60,59 @@
     return bytes.map(b => toHex(b, 2)).join(' ');
   }
 
+  function handleLabelClick(address: number, currentLabel: string) {
+    // Remove label prefix to get just the custom name (or hex address)
+    const prefix = $settings.labelPrefix;
+    let currentName = currentLabel;
+    if (currentLabel.startsWith(prefix)) {
+      currentName = currentLabel.substring(prefix.length);
+    }
+
+    editingLabelAddress = address;
+    editingLabelValue = currentName;
+  }
+
+  function handleLabelSave(address: number) {
+    const trimmed = editingLabelValue.trim();
+
+    if (!trimmed) {
+      // If empty, cancel editing
+      editingLabelAddress = null;
+      editingLabelValue = '';
+      return;
+    }
+
+    // Validate label name
+    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(trimmed)) {
+      alert('Invalid label name. Must start with a letter or underscore and contain only alphanumeric characters and underscores.');
+      return;
+    }
+
+    customLabels.setLabel(address, trimmed);
+    editingLabelAddress = null;
+    editingLabelValue = '';
+  }
+
+  function handleLabelCancel() {
+    editingLabelAddress = null;
+    editingLabelValue = '';
+  }
+
+  function handleLabelKeydown(event: KeyboardEvent, address: number) {
+    if (event.key === 'Enter') {
+      handleLabelSave(address);
+    } else if (event.key === 'Escape') {
+      handleLabelCancel();
+    }
+  }
+
   // Re-run disassembly whenever bytes, startAddress, entrypoints, or settings change
   $effect(() => {
     // CRITICAL: Capture reactive dependencies synchronously before async operations
     // Svelte's reactivity can't track dependencies accessed only inside async functions
     const currentFile = $loadedFile;
     const currentEntrypoints = $entrypoints;
+    const currentCustomLabels = $customLabels;
     // Trigger re-run on settings changes (settings are read inside disassembler)
     $settings.labelPrefix;
     $settings.assemblerSyntax;
@@ -88,7 +138,8 @@
         const lines = await disassembleWithEntrypoints(
           currentFile.bytes,
           currentFile.startAddress,
-          currentEntrypoints
+          currentEntrypoints,
+          currentCustomLabels
         );
         disassembledLines = lines;
 
@@ -188,7 +239,23 @@
                 >
                   {#if line.label}
                     <div class="code-label-line">
-                      <span class="code-label">{line.label}{currentSyntax.labelSuffix}</span>
+                      {#if editingLabelAddress === line.address}
+                        <input
+                          type="text"
+                          class="label-edit-input"
+                          bind:value={editingLabelValue}
+                          onblur={() => handleLabelSave(line.address)}
+                          onkeydown={(e) => handleLabelKeydown(e, line.address)}
+                          autofocus
+                        />
+                        <span class="code-label-suffix">{currentSyntax.labelSuffix}</span>
+                      {:else}
+                        <span
+                          class="code-label"
+                          onclick={() => handleLabelClick(line.address, line.label!)}
+                          title="Click to rename label"
+                        >{line.label}{currentSyntax.labelSuffix}</span>
+                      {/if}
                     </div>
                   {/if}
                   <div class="code-line">
@@ -410,6 +477,37 @@
     color: #ffaa00;
     font-weight: bold;
     margin-right: 8px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  .code-label:hover {
+    color: #ffcc44;
+    text-decoration: underline;
+  }
+
+  .code-label-suffix {
+    color: #ffaa00;
+    font-weight: bold;
+    margin-left: 2px;
+  }
+
+  .label-edit-input {
+    background: #1a1a1a;
+    border: 2px solid #ffaa00;
+    color: #ffaa00;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    font-weight: bold;
+    outline: none;
+    min-width: 100px;
+  }
+
+  .label-edit-input:focus {
+    border-color: #ffcc44;
+    background: #222222;
   }
 
   .loading {

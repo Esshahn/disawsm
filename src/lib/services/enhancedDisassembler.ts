@@ -4,6 +4,7 @@
  */
 
 import type { Entrypoint } from '$lib/stores/entrypoints';
+import type { CustomLabel } from '$lib/stores/labels';
 import type { AssemblerSyntax } from '$lib/types';
 import { get } from 'svelte/store';
 import { settings } from '$lib/stores/settings';
@@ -250,10 +251,25 @@ function extractAbsoluteAddress(instr: string): number | null {
   return m ? parseInt(m[1], 16) : null;
 }
 
+/**
+ * Helper function to get label for an address
+ * Checks custom labels first, then falls back to auto-generated label
+ */
+function getLabel(address: number, customLabels: CustomLabel[], labelPrefix: string): string {
+  // Check if there's a custom label for this address
+  const customLabel = customLabels.find(l => l.address === address);
+  if (customLabel) {
+    return customLabel.name;
+  }
+  // Fall back to auto-generated label
+  return labelPrefix + Hex.toWord(address);
+}
+
 export function convertToProgram(
   byteArray: DisassembledByte[],
   startAddr: number,
-  pseudoOpcodePrefix = '!'
+  pseudoOpcodePrefix = '!',
+  customLabels: CustomLabel[] = []
 ): DisassembledLine[] {
   const program: DisassembledLine[] = [];
   const labelPrefix = get(settings).labelPrefix;
@@ -262,7 +278,7 @@ export function convertToProgram(
   let i = 0;
   while (i < byteArray.length) {
     const b = byteArray[i];
-    const label = b.dest ? labelPrefix + Hex.toWord(b.addr) : undefined;
+    const label = b.dest ? getLabel(b.addr, customLabels, labelPrefix) : undefined;
 
     if (!b.code || b.data) {
       const { line, nextIndex } = createDataLine(
@@ -298,14 +314,13 @@ export function convertToProgram(
     if (len === 1 && i + 1 < byteArray.length) {
       const op = byteArray[++i].byte;
       bytes.push(Hex.toNumber(op));
-      instr =
-        'rel' in opcode
-          ? instr.replace(
-              '$hh',
-              labelPrefix +
-                Hex.toWord(getAbsFromRelative(op, startAddr + i + 1))
-            )
-          : instr.replace('hh', op);
+      if ('rel' in opcode) {
+        const targetAddr = getAbsFromRelative(op, startAddr + i + 1);
+        const labelName = getLabel(targetAddr, customLabels, labelPrefix);
+        instr = instr.replace('$hh', labelName);
+      } else {
+        instr = instr.replace('hh', op);
+      }
     }
 
     if (len === 2 && i + 2 < byteArray.length) {
@@ -315,7 +330,8 @@ export function convertToProgram(
       const addr = Hex.bytesToAddress(hh, ll);
       instr = instr.replace('hh', hh).replace('ll', ll);
       if (addrInProgram(addr, startAddr, endAddr)) {
-        instr = instr.replace('$', labelPrefix);
+        const labelName = getLabel(addr, customLabels, labelPrefix);
+        instr = instr.replace('$', labelName);
       }
     }
 
@@ -339,7 +355,8 @@ export function convertToProgram(
 export async function disassembleWithEntrypoints(
   bytes: Uint8Array,
   startAddress: number,
-  entrypoints: Entrypoint[]
+  entrypoints: Entrypoint[],
+  customLabels: CustomLabel[] = []
 ): Promise<DisassembledLine[]> {
   await loadOpcodes();
   await loadC64Mapping();
@@ -347,5 +364,5 @@ export async function disassembleWithEntrypoints(
 
   const syntax = getSyntax();
   const analyzed = analyze(startAddress, bytes, entrypoints);
-  return convertToProgram(analyzed, startAddress, syntax.pseudoOpcodePrefix);
+  return convertToProgram(analyzed, startAddress, syntax.pseudoOpcodePrefix, customLabels);
 }
