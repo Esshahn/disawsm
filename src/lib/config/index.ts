@@ -41,6 +41,16 @@ export function get_config() {
       closeable: true,
       isOpen: true,
       resizable: true
+    },
+    window_labels: {
+      top: 500,
+      left: 1000,
+      width: 500,
+      height: 400,
+      autoOpen: false,
+      closeable: true,
+      isOpen: false,
+      resizable: true
     }
   };
 
