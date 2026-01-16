@@ -56,12 +56,6 @@
   // Line height in pixels - measured from actual rendered content
   const LINE_HEIGHT = 21;
 
-  function getTooltipText(line: DisassembledLine): string {
-    const hexAddr = toHex(line.address, 4);
-    const bytesHex = line.bytes.map(b => toHex(b, 2)).join(' ');
-    return `${hexAddr}: ${bytesHex}`;
-  }
-
   function formatBytes(bytes: number[]): string {
     return bytes.map(b => toHex(b, 2)).join(' ');
   }
@@ -318,12 +312,7 @@
                   <div class="code-line">
                     <span class="code-addr">{toHex(line.address, 4)}</span>
                     {#if !line.isData}
-                      <span
-                        class="code-bytes"
-                        data-tooltip={getTooltipText(line)}
-                      >
-                        {formatBytes(line.bytes)}
-                      </span>
+                      <span class="code-bytes">{formatBytes(line.bytes)}</span>
                     {:else}
                       <span class="code-bytes code-bytes-empty"></span>
                     {/if}
@@ -506,50 +495,10 @@
     width: 80px;
     flex-shrink: 0;
     font-family: 'Courier New', Courier, monospace;
-    position: relative;
-    cursor: help;
   }
 
   .code-bytes-empty {
     cursor: default;
-  }
-
-  .code-bytes:hover {
-    color: #aaaaaa;
-  }
-
-  .code-bytes-empty:hover {
-    color: #888888;
-  }
-
-  /* Tooltip for bytes - only create on hover */
-  .code-bytes:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 0;
-    background: rgba(18, 18, 18, 0.95);
-    color: #00c698;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 11px;
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 1000;
-    border: 1px solid rgba(0, 198, 152, 0.3);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  }
-
-  .code-bytes:hover::before {
-    content: '';
-    position: absolute;
-    bottom: calc(100% + 2px);
-    left: 10px;
-    border: 6px solid transparent;
-    border-top-color: rgba(18, 18, 18, 0.95);
-    pointer-events: none;
-    z-index: 1000;
   }
 
   .code-instruction-wrapper {
