@@ -310,6 +310,9 @@
                           title="Click to rename label"
                         >{line.label}{currentSyntax.labelSuffix}</span>
                       {/if}
+                      {#if showComments && line.xrefComment}
+                        <span class="code-xref">{currentSyntax.commentPrefix} {line.xrefComment}</span>
+                      {/if}
                     </div>
                   {/if}
                   <div class="code-line">
@@ -623,6 +626,12 @@
     color: #ffaa00;
     font-weight: bold;
     margin-left: 2px;
+  }
+
+  .code-xref {
+    color: #888888;
+    font-style: italic;
+    margin-left: 16px;
   }
 
   .label-edit-input {
