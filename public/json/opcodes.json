@@ -1,883 +1,1655 @@
-
 {
-  "00": {
-    "ins": "brk"
-  },
-  "01": {
-    "ins": "ora ($hh,x)"
-  },
-  "02": {
-    "ins": "jam",
-    "ill": 1
-  },
-  "03": {
-    "ins": "slo ($hh,x)",
-    "ill": 1
-  },
-  "04": {
-    "ins": "slo ($hh),y",
-    "ill": 1
-  },
-  "05": {
-    "ins": "ora $hh"
-  },
-  "06": {
-    "ins": "asl $hh"
-  },
-  "07": {
-    "ins": "slo $hh"
-  },
-  "08": {
-    "ins": "php"
-  },
-  "09": {
-    "ins": "ora #$hh"
-  },
-  "0a": {
-    "ins": "asl"
-  },
-  "0b": {
-    "ins": "anc #$hh",
-    "ill": 1
-  },
-  "0c": {
-    "ins": "nop $hhll",
-    "ill": 1
-  },
-  "0d":{
-    "ins": "ora $hhll"
-  },
-  "0e":{
-    "ins": "asl $hhll"
-  },
-  "0f": {
-    "ins": "slo $hhll",
-    "ill": 1
-  },
   "10": {
     "ins": "bpl $hh",
-    "rel": 1
+    "len": 2,
+    "mode": "zp",
+    "cycles": 2,
+    "flow": "branch"
   },
-  "11":{
-    "ins": "ora ($hh),y"
+  "11": {
+    "ins": "ora ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5
   },
   "12": {
     "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "13": {
     "ins": "slo ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5,
     "ill": 1
   },
   "14": {
     "ins": "nop $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4,
     "ill": 1
   },
   "15": {
-    "ins": "ora $hh,x"
+    "ins": "ora $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4
   },
   "16": {
-    "ins": "asl $hh,x"
+    "ins": "asl $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 6
   },
   "17": {
     "ins": "slo $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4,
     "ill": 1
   },
   "18": {
-    "ins": "clc"
+    "ins": "clc",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
-  "19":{
-    "ins": "ora $hhll,y"
+  "19": {
+    "ins": "ora $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4
   },
-  "1a": {
-    "ins": "nop",
-    "ill": 1
-  },
-  "1b": {
-    "ins": "slo $hhll,y",
-    "ill": 1
-  },
-  "1c": {
-    "ins": "nop $hhll,x",
-    "ill": 1
-  },
-  "1d":{
-    "ins": "ora $hhll,x"
-  },
-  "1e":{
-    "ins": "asl $hhll,x"
-  },
-  "1f": {
-    "ins": "slo $hhll,x",
-    "ill": 1
-  },
-  "20":{
-    "ins": "jsr $hhll"
+  "20": {
+    "ins": "jsr $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 6,
+    "flow": "call"
   },
   "21": {
-    "ins": "and ($hh,x)"
+    "ins": "and ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6
   },
   "22": {
     "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "23": {
     "ins": "rla ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6,
     "ill": 1
   },
-  "24":{
-    "ins": "bit $hh"
+  "24": {
+    "ins": "bit $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
   "25": {
-    "ins": "and $hh"
+    "ins": "and $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
   "26": {
-    "ins": "rol $hh"
+    "ins": "rol $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 5
   },
   "27": {
     "ins": "rla $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3,
     "ill": 1
   },
   "28": {
-    "ins": "plp"
+    "ins": "plp",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 4
   },
-  "29":{
-    "ins": "and #$hh"
-  },
-  "2a": {
-    "ins": "rol"
-  },
-  "2b": {
-    "ins": "anc #$hh",
-    "ill": 1
-  },
-  "2c": {
-    "ins": "bit $hhll"
-  },
-  "2d": {
-    "ins": "and $hhll"
-  },
-  "2e": {
-    "ins": "rol $hhll"
-  },
-  "2f": {
-    "ins": "rla $hhll",
-    "ill": 1
+  "29": {
+    "ins": "and #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2
   },
   "30": {
     "ins": "bmi $hh",
-    "rel": 1
+    "len": 2,
+    "mode": "zp",
+    "cycles": 2,
+    "flow": "branch"
   },
-  "31":{
-    "ins": "and ($hh),y"
+  "31": {
+    "ins": "and ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5
   },
   "32": {
     "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "33": {
     "ins": "rla ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5,
     "ill": 1
   },
   "34": {
     "ins": "nop $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4,
     "ill": 1
   },
   "35": {
-    "ins": "and $hh,x"
+    "ins": "and $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4
   },
   "36": {
-    "ins": "rol $hh,x"
+    "ins": "rol $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 6
   },
   "37": {
     "ins": "rla $hh,y",
+    "len": 2,
+    "mode": "zpy",
+    "cycles": 4,
     "ill": 1
   },
   "38": {
-    "ins": "sec"
+    "ins": "sec",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
   "39": {
-    "ins": "and $hhll,y"
-  },
-  "3a": {
-    "ins": "nop",
-    "ill": 1
-  },
-  "3b": {
-    "ins": "rla $hhll,y",
-    "ill": 1
-  },
-  "3c": {
-    "ins": "nop $hhll,x",
-    "ill": 1
-  },
-  "3d":{
-    "ins": "and $hhll,x"
-  },
-  "3e":{
-    "ins": "rol $hhll,x"
-  },
-  "3f": {
-    "ins": "rla $hhll,x",
-    "ill": 1
+    "ins": "and $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4
   },
   "40": {
-    "ins": "rti"
+    "ins": "rti",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 6,
+    "flow": "return"
   },
   "41": {
-    "ins": "eor ($hh,x)"
+    "ins": "eor ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6
   },
   "42": {
     "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "43": {
     "ins": "sre ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6,
     "ill": 1
   },
   "44": {
     "ins": "nop $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3,
     "ill": 1
   },
   "45": {
-    "ins": "eor $hh"
+    "ins": "eor $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
   "46": {
-    "ins": "lsr $hh"
+    "ins": "lsr $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 5
   },
   "47": {
     "ins": "sre $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3,
     "ill": 1
   },
   "48": {
-    "ins": "pha"
+    "ins": "pha",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 3
   },
-  "49":{
-    "ins": "eor #$hh"
-  },
-  "4a": {
-    "ins": "lsr"
-  },
-  "4b": {
-    "ins": "alr #$hh",
-    "ill": 1
-  },
-  "4c": {
-    "ins": "jmp $hhll"
-  },
-  "4d": {
-    "ins": "eor $hhll"
-  },
-  "4e": {
-    "ins": "lsr $hhll"
-  },
-  "4f": {
-    "ins": "sre $hhll",
-    "ill": 1
+  "49": {
+    "ins": "eor #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2
   },
   "50": {
     "ins": "bvc $hh",
-    "rel": 1
+    "len": 2,
+    "mode": "zp",
+    "cycles": 2,
+    "flow": "branch"
   },
-  "51":{
-    "ins": "eor ($hh),y"
+  "51": {
+    "ins": "eor ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5
   },
   "52": {
     "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "53": {
     "ins": "sre ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5,
     "ill": 1
   },
   "54": {
     "ins": "nop $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4,
     "ill": 1
   },
   "55": {
-    "ins": "eor $hh,x"
+    "ins": "eor $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4
   },
   "56": {
-    "ins": "lsr $hh,x"
+    "ins": "lsr $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 6
   },
   "57": {
     "ins": "sre $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4,
     "ill": 1
   },
   "58": {
-    "ins": "cli"
+    "ins": "cli",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
-  "59":{
-    "ins": "eor $hhll,y"
-  },
-  "5a": {
-    "ins": "nop",
-    "ill": 1
-  },
-  "5b": {
-    "ins": "sre $hhll,y",
-    "ill": 1
-  },
-  "5c": {
-    "ins": "nop $hhll,x",
-    "ill": 1
-  },
-  "5d":{
-    "ins": "eor $hhll,x"
-  },
-  "5e":{
-    "ins": "lsr $hhll,x"
-  },
-  "5f": {
-    "ins": "sre $hhll,x",
-    "ill": 1
+  "59": {
+    "ins": "eor $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4
   },
   "60": {
-    "ins": "rts"
+    "ins": "rts",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 6,
+    "flow": "return"
   },
   "61": {
-    "ins": "adc ($hh,x)"
+    "ins": "adc ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6
   },
   "62": {
     "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "63": {
     "ins": "rra ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6,
     "ill": 1
   },
   "64": {
     "ins": "nop $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3,
     "ill": 1
   },
-  "65":{
-    "ins": "adc $hh"
+  "65": {
+    "ins": "adc $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
   "66": {
-    "ins": "ror $hh"
+    "ins": "ror $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 5
   },
   "67": {
     "ins": "rra $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3,
     "ill": 1
   },
   "68": {
-    "ins": "pla"
+    "ins": "pla",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 4
   },
-  "69":{
-    "ins": "adc #$hh"
-  },
-  "6a": {
-    "ins": "ror"
-  },
-  "6b": {
-    "ins": "arr #$hh",
-    "ill": 1
-  },
-  "6c": {
-    "ins": "jmp ($hhll)"
-  },
-  "6d": {
-    "ins": "adc $hhll"
-  },
-  "6e": {
-    "ins": "ror $hhll"
-  },
-  "6f": {
-    "ins": "rra $hhll",
-    "ill": 1
+  "69": {
+    "ins": "adc #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2
   },
   "70": {
     "ins": "bvs $hh",
-    "rel": 1
+    "len": 2,
+    "mode": "zp",
+    "cycles": 2,
+    "flow": "branch"
   },
-  "71":{
-    "ins": "adc ($hh),y"
+  "71": {
+    "ins": "adc ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5
   },
   "72": {
     "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "73": {
     "ins": "rra ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5,
     "ill": 1
   },
   "74": {
     "ins": "nop $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4,
     "ill": 1
   },
   "75": {
-    "ins": "adc $hh,x"
+    "ins": "adc $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4
   },
   "76": {
-    "ins": "ror $hh,x"
+    "ins": "ror $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 6
   },
   "77": {
     "ins": "rra $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4,
     "ill": 1
   },
   "78": {
-    "ins": "sei"
+    "ins": "sei",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
-  "79":{
-    "ins": "adc $hhll,y"
-  },
-  "7a": {
-    "ins": "nop",
-    "ill": 1
-  },
-  "7b": {
-    "ins": "rra $hhll,y",
-    "ill": 1
-  },
-  "7c": {
-    "ins": "nop $hhll,x",
-    "ill": 1
-  },
-  "7d":{
-    "ins": "adc $hhll,x"
-  },
-  "7e":{
-    "ins": "ror $hhll,x"
-  },
-  "7f": {
-    "ins": "rra $hhll,x",
-    "ill": 1
+  "79": {
+    "ins": "adc $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4
   },
   "80": {
     "ins": "nop #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
     "ill": 1
   },
   "81": {
-    "ins": "sta ($hh,x)"
+    "ins": "sta ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6
   },
   "82": {
     "ins": "nop #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
     "ill": 1
   },
   "83": {
     "ins": "sax ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6,
     "ill": 1
   },
   "84": {
-    "ins": "sty $hh"
+    "ins": "sty $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
   "85": {
-    "ins": "sta $hh"
+    "ins": "sta $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
-  "86":{
-    "ins": "stx $hh"
+  "86": {
+    "ins": "stx $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
   "87": {
     "ins": "sax $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3,
     "ill": 1
   },
   "88": {
-    "ins": "dey"
+    "ins": "dey",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
   "89": {
     "ins": "nop #$hh",
-    "ill": 1
-  },
-  "8a": {
-    "ins": "txa"
-  },
-  "8b": {
-    "ins": "ane #$hh",
-    "ill": 1
-  },
-  "8c":{
-    "ins": "sty $hhll"
-  },
-  "8d": {
-    "ins": "sta $hhll"
-  },
-  "8e":{
-    "ins": "stx $hhll"
-  },
-  "8f": {
-    "ins": "sax $hhll",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
     "ill": 1
   },
   "90": {
     "ins": "bcc $hh",
-    "rel": 1
+    "len": 2,
+    "mode": "zp",
+    "cycles": 2,
+    "flow": "branch"
   },
-  "91":{
-    "ins": "sta ($hh),y"
+  "91": {
+    "ins": "sta ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 6
   },
   "92": {
     "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "93": {
     "ins": "sha ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5,
     "ill": 1
   },
   "94": {
-    "ins": "sty $hh,x"
+    "ins": "sty $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4
   },
   "95": {
-    "ins": "sta $hh,x"
+    "ins": "sta $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4
   },
-  "96":{
-    "ins": "stx $hh,y"
+  "96": {
+    "ins": "stx $hh,y",
+    "len": 2,
+    "mode": "zpy",
+    "cycles": 4
   },
   "97": {
     "ins": "sax $hh,y",
+    "len": 2,
+    "mode": "zpy",
+    "cycles": 4,
     "ill": 1
   },
   "98": {
-    "ins": "tya"
+    "ins": "tya",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
-  "99":{
-    "ins": "sta $hhll,y"
+  "99": {
+    "ins": "sta $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 5
+  },
+  "00": {
+    "ins": "brk",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 7
+  },
+  "01": {
+    "ins": "ora ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6
+  },
+  "02": {
+    "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
+    "ill": 1
+  },
+  "03": {
+    "ins": "slo ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6,
+    "ill": 1
+  },
+  "04": {
+    "ins": "slo ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5,
+    "ill": 1
+  },
+  "05": {
+    "ins": "ora $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
+  },
+  "06": {
+    "ins": "asl $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 5
+  },
+  "07": {
+    "ins": "slo $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
+  },
+  "08": {
+    "ins": "php",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 3
+  },
+  "09": {
+    "ins": "ora #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2
+  },
+  "0a": {
+    "ins": "asl",
+    "len": 1,
+    "mode": "acc",
+    "cycles": 2
+  },
+  "0b": {
+    "ins": "anc #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
+    "ill": 1
+  },
+  "0c": {
+    "ins": "nop $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4,
+    "ill": 1
+  },
+  "0d": {
+    "ins": "ora $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
+  },
+  "0e": {
+    "ins": "asl $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 6
+  },
+  "0f": {
+    "ins": "slo $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4,
+    "ill": 1
+  },
+  "1a": {
+    "ins": "nop",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
+    "ill": 1
+  },
+  "1b": {
+    "ins": "slo $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4,
+    "ill": 1
+  },
+  "1c": {
+    "ins": "nop $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
+    "ill": 1
+  },
+  "1d": {
+    "ins": "ora $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4
+  },
+  "1e": {
+    "ins": "asl $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 7
+  },
+  "1f": {
+    "ins": "slo $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
+    "ill": 1
+  },
+  "2a": {
+    "ins": "rol",
+    "len": 1,
+    "mode": "acc",
+    "cycles": 2
+  },
+  "2b": {
+    "ins": "anc #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
+    "ill": 1
+  },
+  "2c": {
+    "ins": "bit $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
+  },
+  "2d": {
+    "ins": "and $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
+  },
+  "2e": {
+    "ins": "rol $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 6
+  },
+  "2f": {
+    "ins": "rla $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4,
+    "ill": 1
+  },
+  "3a": {
+    "ins": "nop",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
+    "ill": 1
+  },
+  "3b": {
+    "ins": "rla $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4,
+    "ill": 1
+  },
+  "3c": {
+    "ins": "nop $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
+    "ill": 1
+  },
+  "3d": {
+    "ins": "and $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4
+  },
+  "3e": {
+    "ins": "rol $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 7
+  },
+  "3f": {
+    "ins": "rla $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
+    "ill": 1
+  },
+  "4a": {
+    "ins": "lsr",
+    "len": 1,
+    "mode": "acc",
+    "cycles": 2
+  },
+  "4b": {
+    "ins": "alr #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
+    "ill": 1
+  },
+  "4c": {
+    "ins": "jmp $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 3,
+    "flow": "jump"
+  },
+  "4d": {
+    "ins": "eor $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
+  },
+  "4e": {
+    "ins": "lsr $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 6
+  },
+  "4f": {
+    "ins": "sre $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4,
+    "ill": 1
+  },
+  "5a": {
+    "ins": "nop",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
+    "ill": 1
+  },
+  "5b": {
+    "ins": "sre $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4,
+    "ill": 1
+  },
+  "5c": {
+    "ins": "nop $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
+    "ill": 1
+  },
+  "5d": {
+    "ins": "eor $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4
+  },
+  "5e": {
+    "ins": "lsr $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 7
+  },
+  "5f": {
+    "ins": "sre $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
+    "ill": 1
+  },
+  "6a": {
+    "ins": "ror",
+    "len": 1,
+    "mode": "acc",
+    "cycles": 2
+  },
+  "6b": {
+    "ins": "arr #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
+    "ill": 1
+  },
+  "6c": {
+    "ins": "jmp ($hhll)",
+    "len": 3,
+    "mode": "ind",
+    "cycles": 5,
+    "flow": "jump"
+  },
+  "6d": {
+    "ins": "adc $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
+  },
+  "6e": {
+    "ins": "ror $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 6
+  },
+  "6f": {
+    "ins": "rra $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4,
+    "ill": 1
+  },
+  "7a": {
+    "ins": "nop",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
+    "ill": 1
+  },
+  "7b": {
+    "ins": "rra $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4,
+    "ill": 1
+  },
+  "7c": {
+    "ins": "nop $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
+    "ill": 1
+  },
+  "7d": {
+    "ins": "adc $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4
+  },
+  "7e": {
+    "ins": "ror $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 7
+  },
+  "7f": {
+    "ins": "rra $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
+    "ill": 1
+  },
+  "8a": {
+    "ins": "txa",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
+  },
+  "8b": {
+    "ins": "ane #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
+    "ill": 1
+  },
+  "8c": {
+    "ins": "sty $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
+  },
+  "8d": {
+    "ins": "sta $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
+  },
+  "8e": {
+    "ins": "stx $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
+  },
+  "8f": {
+    "ins": "sax $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4,
+    "ill": 1
   },
   "9a": {
-    "ins": "txs"
+    "ins": "txs",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
   "9b": {
     "ins": "tas $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4,
     "ill": 1
   },
   "9c": {
     "ins": "shy $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
     "ill": 1
   },
-  "9d":{
-    "ins": "sta $hhll,x"
+  "9d": {
+    "ins": "sta $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 5
   },
   "9e": {
     "ins": "shx $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4,
     "ill": 1
   },
   "9f": {
     "ins": "sha $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4,
     "ill": 1
   },
-  "a0":{
-    "ins": "ldy #$hh"
+  "a0": {
+    "ins": "ldy #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2
   },
-  "a1":{
-    "ins": "lda ($hh,x)"
+  "a1": {
+    "ins": "lda ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6
   },
-  "a2":{
-    "ins": "ldx #$hh"
+  "a2": {
+    "ins": "ldx #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2
   },
   "a3": {
     "ins": "lax ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6,
     "ill": 1
   },
-  "a4":{
-    "ins": "ldy $hh"
+  "a4": {
+    "ins": "ldy $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
   "a5": {
-    "ins": "lda $hh"
+    "ins": "lda $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
-  "a6":{
-    "ins": "ldx $hh"
+  "a6": {
+    "ins": "ldx $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
   "a7": {
     "ins": "lax $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3,
     "ill": 1
   },
-  "a8":{
-    "ins": "tay"
+  "a8": {
+    "ins": "tay",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
-  "a9":{
-    "ins": "lda #$hh"
+  "a9": {
+    "ins": "lda #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2
   },
   "aa": {
-    "ins": "tax"
+    "ins": "tax",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
   "ab": {
     "ins": "lax #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
     "ill": 1
   },
-  "ac":{
-    "ins": "ldy $hhll"
+  "ac": {
+    "ins": "ldy $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
   },
-  "ad":{
-    "ins": "lda $hhll"
+  "ad": {
+    "ins": "lda $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
   },
-  "ae":{
-    "ins": "ldx $hhll"
+  "ae": {
+    "ins": "ldx $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
   },
   "af": {
     "ins": "lax $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4,
     "ill": 1
   },
   "b0": {
     "ins": "bcs $hh",
-    "rel": 1
+    "len": 2,
+    "mode": "zp",
+    "cycles": 2,
+    "flow": "branch"
   },
-  "b1":{
-    "ins": "lda ($hh),y"
+  "b1": {
+    "ins": "lda ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5
   },
   "b2": {
     "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "b3": {
     "ins": "lax ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5,
     "ill": 1
   },
   "b4": {
-    "ins": "ldy $hh,x"
+    "ins": "ldy $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4
   },
   "b5": {
-    "ins": "lda $hh,x"
+    "ins": "lda $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4
   },
   "b6": {
-    "ins": "ldx $hh,x"
+    "ins": "ldx $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4
   },
   "b7": {
     "ins": "lax $hh,y",
+    "len": 2,
+    "mode": "zpy",
+    "cycles": 4,
     "ill": 1
   },
   "b8": {
-    "ins": "clv"
+    "ins": "clv",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
-  "b9":{
-    "ins": "lda $hhll,y"
+  "b9": {
+    "ins": "lda $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4
   },
   "ba": {
-    "ins": "tsx"
+    "ins": "tsx",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
   "bb": {
     "ins": "las $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4,
     "ill": 1
   },
-  "bc":{
-    "ins": "ldy $hhll,x"
+  "bc": {
+    "ins": "ldy $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4
   },
-  "bd":{
-    "ins": "lda $hhll,x"
+  "bd": {
+    "ins": "lda $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4
   },
-  "be":{
-    "ins": "ldx $hhll,x"
+  "be": {
+    "ins": "ldx $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4
   },
   "bf": {
     "ins": "lax $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4,
     "ill": 1
   },
-  "c0":{
-    "ins": "cpy #$hh"
+  "c0": {
+    "ins": "cpy #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2
   },
   "c1": {
-    "ins": "cmp ($hh,x)"
+    "ins": "cmp ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6
   },
   "c2": {
     "ins": "nop #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
     "ill": 1
   },
   "c3": {
     "ins": "dcp ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6,
     "ill": 1
   },
-  "c4":{
-    "ins": "cpy $hh"
+  "c4": {
+    "ins": "cpy $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
   "c5": {
-    "ins": "cmp $hh"
+    "ins": "cmp $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
-  "c6":{
-    "ins": "dec $hh"
+  "c6": {
+    "ins": "dec $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 5
   },
   "c7": {
     "ins": "dcp $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3,
     "ill": 1
   },
-  "c8":{
-    "ins": "iny"
+  "c8": {
+    "ins": "iny",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
-  "c9":{
-    "ins": "cmp #$hh"
+  "c9": {
+    "ins": "cmp #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2
   },
   "ca": {
-    "ins": "dex"
+    "ins": "dex",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
   "cb": {
     "ins": "sbx #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
     "ill": 1
   },
   "cc": {
-    "ins": "cpy $hhll"
+    "ins": "cpy $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
   },
   "cd": {
-    "ins": "cmp $hhll"
+    "ins": "cmp $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
   },
-  "ce":{
-    "ins": "dec $hhll"
+  "ce": {
+    "ins": "dec $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 6
   },
   "cf": {
     "ins": "dcp $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4,
     "ill": 1
   },
-  "d0":{
+  "d0": {
     "ins": "bne $hh",
-    "rel": 1
+    "len": 2,
+    "mode": "zp",
+    "cycles": 2,
+    "flow": "branch"
   },
-  "d1":{
-    "ins": "cmp ($hh),y"
+  "d1": {
+    "ins": "cmp ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5
   },
   "d2": {
     "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "d3": {
     "ins": "dcp ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5,
     "ill": 1
   },
   "d4": {
     "ins": "nop $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4,
     "ill": 1
   },
   "d5": {
-    "ins": "cmp $hh,x"
+    "ins": "cmp $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4
   },
   "d6": {
-    "ins": "dec $hh,x"
+    "ins": "dec $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 6
   },
   "d7": {
     "ins": "dcp $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4,
     "ill": 1
   },
   "d8": {
-    "ins": "cld"
+    "ins": "cld",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
-  "d9":{
-    "ins": "cmp $hhll,y"
+  "d9": {
+    "ins": "cmp $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4
   },
   "da": {
     "ins": "nop",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "db": {
     "ins": "dcü $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4,
     "ill": 1
   },
   "dc": {
     "ins": "nop $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
     "ill": 1
   },
-  "dd":{
-    "ins": "cmp $hhll,x"
+  "dd": {
+    "ins": "cmp $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4
   },
-  "de":{
-    "ins": "dec $hhll,x"
+  "de": {
+    "ins": "dec $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 7
   },
   "df": {
     "ins": "dcp $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
     "ill": 1
   },
-  "e0":{
-    "ins": "cpx #$hh"
+  "e0": {
+    "ins": "cpx #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2
   },
   "e1": {
-    "ins": "sbc ($hh,x)"
+    "ins": "sbc ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6
   },
   "e2": {
     "ins": "nop #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
     "ill": 1
   },
   "e3": {
     "ins": "isb ($hh,x)",
+    "len": 2,
+    "mode": "izx",
+    "cycles": 6,
     "ill": 1
   },
   "e4": {
-    "ins": "cpx $hh"
+    "ins": "cpx $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
   "e5": {
-    "ins": "sbc $hh"
+    "ins": "sbc $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3
   },
-  "e6":{
-    "ins": "inc $hh"
+  "e6": {
+    "ins": "inc $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 5
   },
   "e7": {
     "ins": "isc $hh",
+    "len": 2,
+    "mode": "zp",
+    "cycles": 3,
     "ill": 1
   },
   "e8": {
-    "ins": "inx"
+    "ins": "inx",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
-  "e9":{
-    "ins": "sbc #$hh"
+  "e9": {
+    "ins": "sbc #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2
   },
   "ea": {
-    "ins": "nop"
+    "ins": "nop",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
   "eb": {
     "ins": "sbc #$hh",
+    "len": 2,
+    "mode": "imm",
+    "cycles": 2,
     "ill": 1
   },
-  "ec":{
-    "ins": "cpx $hhll"
+  "ec": {
+    "ins": "cpx $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
   },
   "ed": {
-    "ins": "sbc $hhll"
+    "ins": "sbc $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4
   },
   "ee": {
-    "ins": "inc $hhll"
+    "ins": "inc $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 6
   },
   "ef": {
     "ins": "isc $hhll",
+    "len": 3,
+    "mode": "abs",
+    "cycles": 4,
     "ill": 1
   },
-  "f0":{
+  "f0": {
     "ins": "beq $hh",
-    "rel": 1
+    "len": 2,
+    "mode": "zp",
+    "cycles": 2,
+    "flow": "branch"
   },
-  "f1":{
-    "ins": "sbc ($hh),y"
+  "f1": {
+    "ins": "sbc ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5
   },
   "f2": {
     "ins": "jam",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "f3": {
     "ins": "isc ($hh),y",
+    "len": 2,
+    "mode": "izy",
+    "cycles": 5,
     "ill": 1
   },
   "f4": {
     "ins": "nop $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4,
     "ill": 1
   },
   "f5": {
-    "ins": "sbc $hh,x"
+    "ins": "sbc $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4
   },
   "f6": {
-    "ins": "inc $hh,x"
+    "ins": "inc $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 6
   },
   "f7": {
     "ins": "isc $hh,x",
+    "len": 2,
+    "mode": "zpx",
+    "cycles": 4,
     "ill": 1
   },
   "f8": {
-    "ins": "sed"
+    "ins": "sed",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2
   },
-  "f9":{
-    "ins": "sbc $hhll,y"
+  "f9": {
+    "ins": "sbc $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4
   },
   "fa": {
     "ins": "nop",
+    "len": 1,
+    "mode": "imp",
+    "cycles": 2,
     "ill": 1
   },
   "fb": {
     "ins": "isc $hhll,y",
+    "len": 3,
+    "mode": "aby",
+    "cycles": 4,
     "ill": 1
   },
   "fc": {
     "ins": "nop $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
     "ill": 1
   },
-  "fd":{
-    "ins": "sbc $hhll,x"
+  "fd": {
+    "ins": "sbc $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4
   },
-  "fe":{
-    "ins": "inc $hhll,x"
+  "fe": {
+    "ins": "inc $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 7
   },
   "ff": {
     "ins": "isc $hhll,x",
+    "len": 3,
+    "mode": "abx",
+    "cycles": 4,
     "ill": 1
   }
 }

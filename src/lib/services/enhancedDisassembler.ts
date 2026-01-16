@@ -10,7 +10,32 @@ import type { AssemblerSyntax } from '$lib/types';
 import { get } from 'svelte/store';
 import { settings } from '$lib/stores/settings';
 
-let opcodes: Record<string, { ins: string; ill?: number; rel?: number }> = {};
+type AddressingMode =
+  | 'imp' // Implied (no operand)
+  | 'acc' // Accumulator
+  | 'imm' // Immediate #$hh
+  | 'zp' // Zero page $hh
+  | 'zpx' // Zero page,X $hh,x
+  | 'zpy' // Zero page,Y $hh,y
+  | 'abs' // Absolute $hhll
+  | 'abx' // Absolute,X $hhll,x
+  | 'aby' // Absolute,Y $hhll,y
+  | 'ind' // Indirect ($hhll)
+  | 'izx' // Indexed indirect ($hh,x)
+  | 'izy'; // Indirect indexed ($hh),y
+
+type FlowType = 'call' | 'jump' | 'return' | 'branch';
+
+interface OpcodeInfo {
+  ins: string;
+  len: number;
+  mode: AddressingMode;
+  cycles: number;
+  flow?: FlowType;
+  ill?: number;
+}
+
+let opcodes: Record<string, OpcodeInfo> = {};
 let opcodesLoaded = false;
 
 let c64Mapping: Map<number, string> = new Map();
@@ -87,15 +112,6 @@ function getAbsFromRelative(offset: string, pcAfter: number): number {
   return v > 127 ? pcAfter - (256 - v) : pcAfter + v;
 }
 
-function getInstructionLength(ins: string): number {
-  let len = 0;
-  if (ins.includes('hh')) len++;
-  if (ins.includes('ll')) len++;
-  return len;
-}
-
-const FLOW_TERMINATORS = new Set(['4c', '60', '40']); // JMP, RTS, RTI
-
 function generateByteArray(start: number, bytes: Uint8Array): DisassembledByte[] {
   return Array.from(bytes, (b, i) => ({
     addr: start + i,
@@ -107,8 +123,8 @@ function generateByteArray(start: number, bytes: Uint8Array): DisassembledByte[]
 }
 
 /**
- * ANALYSIS (FIXED)
- * - Full reset on every run
+ * ANALYSIS (REFACTORED)
+ * - Uses metadata from opcodes.json (len, mode, flow)
  * - Data entrypoints block code propagation
  * - Code never flows through data
  */
@@ -119,13 +135,6 @@ export function analyze(
 ): DisassembledByte[] {
   const table = generateByteArray(startAddr, bytes);
   const endAddr = startAddr + table.length;
-
-  // 🔴 HARD RESET (critical fix)
-  for (const b of table) {
-    b.code = false;
-    b.data = false;
-    b.dest = false;
-  }
 
   const worklist: number[] = [];
   const visited = new Set<number>();
@@ -160,30 +169,28 @@ export function analyze(
 
     byte.code = true;
 
-    const len = getInstructionLength(opcode.ins);
+    // ✅ Use metadata: direct property access
+    const len = opcode.len;
 
     // Mark operand bytes as code unless already data
-    for (let i = 1; i <= len; i++) {
+    for (let i = 1; i < len; i++) {
       if (pc + i < table.length && !table[pc + i].data) {
         table[pc + i].code = true;
       }
     }
 
+    // Extract target address for control flow tracking
     let targetAddr: number | null = null;
 
-    if ('rel' in opcode && pc + 1 < table.length) {
-      targetAddr = getAbsFromRelative(
-        table[pc + 1].byte,
-        startAddr + pc + 2
-      );
-    } else if (len === 2 && pc + 2 < table.length) {
-      targetAddr = Hex.bytesToAddress(
-        table[pc + 2].byte,
-        table[pc + 1].byte
-      );
+    if (opcode.flow === 'branch' && pc + 1 < table.length) {
+      // Branch instructions (relative addressing)
+      targetAddr = getAbsFromRelative(table[pc + 1].byte, startAddr + pc + len);
+    } else if ((opcode.mode === 'abs' || opcode.mode === 'abx' || opcode.mode === 'aby') && pc + 2 < table.length) {
+      // Absolute addressing (JMP, JSR, or memory operations)
+      targetAddr = Hex.bytesToAddress(table[pc + 2].byte, table[pc + 1].byte);
     }
 
-    // Branch / jump target
+    // Mark branch/jump targets
     if (targetAddr !== null && addrInProgram(targetAddr, startAddr, endAddr)) {
       const ti = targetAddr - startAddr;
       if (!table[ti].data) {
@@ -193,18 +200,16 @@ export function analyze(
       }
     }
 
-    const next = pc + len + 1;
+    const next = pc + len;
 
-    // JSR: follow fall-through
-    if (byte.byte === '20') {
+    // ✅ Use flow metadata instead of hardcoded opcodes
+    if (opcode.flow === 'call') {
+      // JSR: follow fall-through after subroutine call
       if (next < table.length && !table[next].data) {
         worklist.push(next);
       }
-      continue;
-    }
-
-    // Normal fall-through
-    if (!FLOW_TERMINATORS.has(byte.byte)) {
+    } else if (opcode.flow !== 'jump' && opcode.flow !== 'return') {
+      // Normal fall-through (not JMP, RTS, RTI)
       if (next < table.length && !table[next].data) {
         worklist.push(next);
       }
@@ -252,11 +257,6 @@ function createDataLine(
   };
 }
 
-function extractAbsoluteAddress(instr: string): number | null {
-  const m = instr.match(/\$([0-9a-f]{4})/i);
-  return m ? parseInt(m[1], 16) : null;
-}
-
 /**
  * Helper function to get label for an address
  * Checks custom labels first, then falls back to auto-generated label
@@ -276,15 +276,15 @@ function getLabel(address: number, customLabels: CustomLabel[], labelPrefix: str
 function getAbsoluteAddressFromBytes(
   byteArray: DisassembledByte[],
   startIndex: number,
-  opcode: { ins: string; ill?: number; rel?: number }
+  opcode: OpcodeInfo
 ): number | null {
-  const len = getInstructionLength(opcode.ins);
-
-  if (len === 2 && startIndex + 2 < byteArray.length) {
-    // Two-byte absolute address
-    const ll = byteArray[startIndex + 1].byte;
-    const hh = byteArray[startIndex + 2].byte;
-    return Hex.bytesToAddress(hh, ll);
+  // ✅ Use metadata instead of string parsing
+  if (opcode.mode === 'abs' || opcode.mode === 'abx' || opcode.mode === 'aby') {
+    if (startIndex + 2 < byteArray.length) {
+      const ll = byteArray[startIndex + 1].byte;
+      const hh = byteArray[startIndex + 2].byte;
+      return Hex.bytesToAddress(hh, ll);
+    }
   }
 
   return null;
@@ -376,35 +376,56 @@ export function convertToProgram(
     }
 
     let instr = opcode.ins;
-    const len = getInstructionLength(instr);
     const bytes = [Hex.toNumber(b.byte)];
 
-    if (len === 1 && i + 1 < byteArray.length) {
-      const op = byteArray[++i].byte;
-      bytes.push(Hex.toNumber(op));
-      if ('rel' in opcode) {
-        const targetAddr = getAbsFromRelative(op, startAddr + i + 1);
-        const labelName = getLabel(targetAddr, customLabels, labelPrefix);
-        instr = instr.replace('$hh', labelName);
-      } else {
-        instr = instr.replace('hh', op);
-      }
-    }
+    // ✅ Use addressing mode for intelligent formatting
+    switch (opcode.mode) {
+      case 'imm': // Immediate #$hh
+      case 'zp': // Zero page $hh (also used for branches)
+      case 'zpx': // Zero page,X
+      case 'zpy': // Zero page,Y
+      case 'izx': // Indexed indirect ($hh,x)
+      case 'izy': // Indirect indexed ($hh),y
+        if (i + 1 < byteArray.length) {
+          const operand = byteArray[++i].byte;
+          bytes.push(Hex.toNumber(operand));
 
-    if (len === 2 && i + 2 < byteArray.length) {
-      const ll = byteArray[++i].byte;
-      const hh = byteArray[++i].byte;
-      bytes.push(Hex.toNumber(ll), Hex.toNumber(hh));
-      const addr = Hex.bytesToAddress(hh, ll);
+          // Special handling for branch instructions (relative addressing)
+          if (opcode.flow === 'branch') {
+            const targetAddr = getAbsFromRelative(operand, startAddr + i + 1);
+            const labelName = getLabel(targetAddr, customLabels, labelPrefix);
+            instr = instr.replace('$hh', labelName);
+          } else {
+            instr = instr.replace('hh', operand);
+          }
+        }
+        break;
 
-      if (addrInProgram(addr, startAddr, endAddr)) {
-        // Replace the entire $hhll pattern with the label name
-        const labelName = getLabel(addr, customLabels, labelPrefix);
-        instr = instr.replace('$hhll', labelName);
-      } else {
-        // Not in program, just replace with hex values
-        instr = instr.replace('hh', hh).replace('ll', ll);
-      }
+      case 'abs': // Absolute $hhll
+      case 'abx': // Absolute,X
+      case 'aby': // Absolute,Y
+      case 'ind': // Indirect ($hhll)
+        if (i + 2 < byteArray.length) {
+          const ll = byteArray[++i].byte;
+          const hh = byteArray[++i].byte;
+          bytes.push(Hex.toNumber(ll), Hex.toNumber(hh));
+          const addr = Hex.bytesToAddress(hh, ll);
+
+          if (addrInProgram(addr, startAddr, endAddr)) {
+            // Replace with label name for in-program addresses
+            const labelName = getLabel(addr, customLabels, labelPrefix);
+            instr = instr.replace('$hhll', labelName);
+          } else {
+            // Not in program, just replace with hex values
+            instr = instr.replace('hh', hh).replace('ll', ll);
+          }
+        }
+        break;
+
+      case 'imp': // Implied (no operand)
+      case 'acc': // Accumulator
+        // No operands to process
+        break;
     }
 
     // Lookup comment from unified map
