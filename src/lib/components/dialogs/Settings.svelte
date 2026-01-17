@@ -84,11 +84,11 @@
     </div>
 
     <div class="dialog-content settings-content">
-      <div class="settings-section">
-        <label for="labelPrefix">
-          <strong>Label Prefix</strong>
-          <p class="help-text">Prefix used when generating labels (e.g., "_" creates "_d020")</p>
-        </label>
+      <div class="settings-row">
+        <div class="row-label">
+          <label for="labelPrefix">Label Prefix</label>
+          <p class="help-text">Prefix for generated labels</p>
+        </div>
         <input
           id="labelPrefix"
           type="text"
@@ -98,25 +98,30 @@
         />
       </div>
 
-      <div class="settings-section">
-        <label for="assemblerSyntax">
-          <strong>Assembler Syntax</strong>
-          <p class="help-text">Choose the output format for comments and labels</p>
-        </label>
-        <select
-          id="assemblerSyntax"
-          bind:value={assemblerSyntaxInput}
-        >
-          <option value="acme">ACME</option>
-          <option value="kickass">Kick Assembler</option>
-          <option value="krill">Krill</option>
-          <option value="custom">Custom</option>
-        </select>
-      </div>
+      <fieldset class="syntax-fieldset">
+        <legend>Assembler Syntax</legend>
 
-      <div class="settings-section syntax-details">
-        <div class="syntax-field">
-          <label for="commentPrefix">Comments</label>
+        <div class="settings-row">
+          <div class="row-label">
+            <label for="assemblerSyntax">Preset</label>
+            <p class="help-text">Output format for assembly</p>
+          </div>
+          <select
+            id="assemblerSyntax"
+            bind:value={assemblerSyntaxInput}
+          >
+            <option value="acme">ACME</option>
+            <option value="kickass">Kick Assembler</option>
+            <option value="krill">Krill</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+
+        <div class="settings-row" class:disabled={!isCustom}>
+          <div class="row-label">
+            <label for="commentPrefix">Comment Prefix</label>
+            <p class="help-text">Character(s) before comments</p>
+          </div>
           <input
             id="commentPrefix"
             type="text"
@@ -125,8 +130,12 @@
             maxlength="4"
           />
         </div>
-        <div class="syntax-field">
-          <label for="labelSuffix">Label Suffix</label>
+
+        <div class="settings-row" class:disabled={!isCustom}>
+          <div class="row-label">
+            <label for="labelSuffix">Label Suffix</label>
+            <p class="help-text">Character(s) after labels</p>
+          </div>
           <input
             id="labelSuffix"
             type="text"
@@ -135,8 +144,12 @@
             maxlength="4"
           />
         </div>
-        <div class="syntax-field">
-          <label for="pseudoOpcodePrefix">Pseudo-Opcode Prefix</label>
+
+        <div class="settings-row" class:disabled={!isCustom}>
+          <div class="row-label">
+            <label for="pseudoOpcodePrefix">Pseudo-Opcode Prefix</label>
+            <p class="help-text">Prefix for directives like .byte</p>
+          </div>
           <input
             id="pseudoOpcodePrefix"
             type="text"
@@ -145,7 +158,7 @@
             maxlength="4"
           />
         </div>
-      </div>
+      </fieldset>
 
       <div class="button-group">
         <button class="secondary-button" onclick={handleClose}>Cancel</button>
@@ -161,33 +174,44 @@
 
   .settings-dialog {
     position: static;
-    width: 480px;
+    width: 420px;
     max-width: 90vw;
   }
 
   .settings-content {
-    padding: 24px;
+    padding: 20px;
   }
 
-  .settings-section {
-    margin-bottom: 24px;
+  /* Row layout: label on left, input on right */
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
   }
 
-  .settings-section label {
+  .row-label {
+    flex: 1;
+  }
+
+  .row-label label {
     display: block;
-    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #ffffff;
   }
 
   .help-text {
-    color: #aaaaaa;
-    font-size: 13px;
-    margin: 4px 0 8px 0;
-    line-height: 140%;
+    color: #888;
+    font-size: 11px;
+    margin: 2px 0 0 0;
+    line-height: 1.3;
   }
 
-  input[type="text"] {
-    width: 100%;
-    padding: 8px 12px;
+  .settings-row input[type="text"] {
+    width: 80px;
+    padding: 6px 10px;
     font-family: 'Courier New', monospace;
     font-size: 14px;
     background-color: #1a1a1a;
@@ -195,45 +219,33 @@
     border: 1px solid #333;
     border-radius: 4px;
     box-sizing: border-box;
+    text-align: center;
   }
 
-  input[type="text"]:focus {
+  .settings-row input[type="text"]:focus {
     outline: none;
     border-color: #00c698;
   }
 
-  input[type="text"]:disabled {
+  .settings-row input[type="text"]:disabled {
     background-color: #0d0d0d;
-    color: #888;
+    color: #666;
     cursor: not-allowed;
   }
 
-  .syntax-details {
-    display: flex;
-    gap: 16px;
+  .settings-row.disabled .row-label label {
+    color: #666;
   }
 
-  .syntax-field {
-    flex: 1;
+  .settings-row.disabled .help-text {
+    color: #555;
   }
 
-  .syntax-field label {
-    display: block;
-    font-size: 12px;
-    color: #aaaaaa;
-    margin-bottom: 6px;
-  }
-
-  .syntax-field input {
-    width: 100%;
-    text-align: center;
-  }
-
-  select {
-    width: 100%;
-    padding: 8px 12px;
+  .settings-row select {
+    width: 140px;
+    padding: 6px 10px;
     font-family: 'Quicksand', sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     background-color: #1a1a1a;
     color: #ffffff;
     border: 1px solid #333;
@@ -242,7 +254,7 @@
     cursor: pointer;
   }
 
-  select:focus {
+  .settings-row select:focus {
     outline: none;
     border-color: #00c698;
   }
@@ -252,11 +264,32 @@
     color: #ffffff;
   }
 
+  /* Fieldset styling */
+  .syntax-fieldset {
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 16px;
+    margin: 20px 0;
+  }
+
+  .syntax-fieldset legend {
+    color: #00c698;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0 8px;
+  }
+
+  .syntax-fieldset .settings-row:last-child {
+    margin-bottom: 0;
+  }
+
   .button-group {
     display: flex;
     justify-content: center;
     gap: 12px;
-    margin-top: 24px;
+    margin-top: 8px;
   }
 
   .primary-button,
