@@ -86,7 +86,12 @@ export interface UserConfig {
  */
 export interface UserSettings {
   labelPrefix: string;
-  assemblerSyntax: 'acme' | 'kickass';
+  assemblerSyntax: 'acme' | 'kickass' | 'krill' | 'custom';
+  customSyntax?: {
+    commentPrefix: string;
+    labelSuffix: string;
+    pseudoOpcodePrefix: string;
+  };
 }
 
 /**

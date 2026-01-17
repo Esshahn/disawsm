@@ -6,9 +6,7 @@
 import type { Entrypoint } from '$lib/stores/entrypoints';
 import type { CustomLabel } from '$lib/stores/labels';
 import type { CustomComment } from '$lib/stores/comments';
-import type { AssemblerSyntax } from '$lib/types';
-import { get } from 'svelte/store';
-import { settings } from '$lib/stores/settings';
+import { loadSyntax, getSyntax } from '$lib/services/syntaxService';
 
 type AddressingMode =
   | 'imp' // Implied (no operand)
@@ -41,9 +39,6 @@ let opcodesLoaded = false;
 let c64Mapping: Map<number, string> = new Map();
 let mappingLoaded = false;
 
-let syntaxDefinitions: Record<string, AssemblerSyntax> = {};
-let syntaxLoaded = false;
-
 async function loadOpcodes() {
   if (opcodesLoaded) return;
   const response = await fetch('/json/opcodes.json');
@@ -59,19 +54,6 @@ async function loadC64Mapping() {
     c64Mapping.set(parseInt(entry.addr, 16), entry.comm);
   }
   mappingLoaded = true;
-}
-
-async function loadSyntax() {
-  if (syntaxLoaded) return;
-  const response = await fetch('/json/syntax.json');
-  const data = await response.json();
-  syntaxDefinitions = data.syntaxes;
-  syntaxLoaded = true;
-}
-
-function getSyntax(): AssemblerSyntax {
-  const syntaxKey = get(settings).assemblerSyntax;
-  return syntaxDefinitions[syntaxKey] || syntaxDefinitions['acme'];
 }
 
 function getC64Comment(address: number): string | undefined {
