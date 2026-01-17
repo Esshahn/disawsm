@@ -7,6 +7,8 @@ import type { Entrypoint } from '$lib/stores/entrypoints';
 import type { CustomLabel } from '$lib/stores/labels';
 import type { CustomComment } from '$lib/stores/comments';
 import { loadSyntax, getSyntax } from '$lib/services/syntaxService';
+import { get } from 'svelte/store';
+import { settings } from '$lib/stores/settings';
 
 type AddressingMode =
   | 'imp' // Implied (no operand)
