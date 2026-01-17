@@ -3,7 +3,7 @@
  * Centralized loading and retrieval of assembler syntax definitions
  */
 
-import type { AssemblerSyntax, UserSettings } from '$lib/types';
+import type { AssemblerSyntax } from '$lib/types';
 import { get } from 'svelte/store';
 import { settings } from '$lib/stores/settings';
 
@@ -38,14 +38,6 @@ export async function loadSyntax(): Promise<void> {
  */
 export function getSyntax(): AssemblerSyntax {
   const currentSettings = get(settings);
-  return getSyntaxFromSettings(currentSettings);
-}
-
-/**
- * Get syntax from a specific settings object
- * Useful when you already have the settings available
- */
-export function getSyntaxFromSettings(currentSettings: UserSettings): AssemblerSyntax {
   const syntaxKey = currentSettings.assemblerSyntax;
 
   // Handle custom syntax
@@ -70,11 +62,4 @@ export function getSyntaxFromSettings(currentSettings: UserSettings): AssemblerS
  */
 export function getSyntaxDefinitions(): Record<string, AssemblerSyntax> {
   return syntaxDefinitions;
-}
-
-/**
- * Check if syntax definitions have been loaded
- */
-export function isSyntaxLoaded(): boolean {
-  return syntaxLoaded;
 }
