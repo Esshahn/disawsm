@@ -7,6 +7,7 @@ import type { Entrypoint } from '$lib/stores/entrypoints';
 import type { CustomLabel } from '$lib/stores/labels';
 import type { CustomComment } from '$lib/stores/comments';
 import { loadSyntax, getSyntax } from '$lib/services/syntaxService';
+import { loadPatterns, findPatternMatches } from '$lib/services/patternService';
 import { get } from 'svelte/store';
 import { settings } from '$lib/stores/settings';
 
@@ -68,6 +69,7 @@ export interface DisassembledByte {
   dest: boolean;
   code: boolean;
   data: boolean;
+  patternMatch: boolean; // Detected as code via pattern matching
   xrefs: number[]; // Addresses that reference this location
 }
 
@@ -105,6 +107,7 @@ function generateByteArray(start: number, bytes: Uint8Array): DisassembledByte[]
     dest: false,
     code: false,
     data: false,
+    patternMatch: false,
     xrefs: []
   }));
 }
@@ -112,11 +115,13 @@ function generateByteArray(start: number, bytes: Uint8Array): DisassembledByte[]
 /**
  * Analyze binary to identify code vs data regions.
  * Uses worklist algorithm with metadata from opcodes.json.
+ * Pattern matching is used to detect likely code sequences.
  */
 export function analyze(
   startAddr: number,
   bytes: Uint8Array,
-  entrypoints: Entrypoint[]
+  entrypoints: Entrypoint[],
+  usePatternMatching: boolean = true
 ): DisassembledByte[] {
   const table = generateByteArray(startAddr, bytes);
   const endAddr = startAddr + table.length;
@@ -124,7 +129,7 @@ export function analyze(
   const worklist: number[] = [];
   const visited = new Set<number>();
 
-  // Seed entrypoints
+  // Seed entrypoints (highest priority - user defined)
   for (const ep of entrypoints || []) {
     const idx = ep.address - startAddr;
     if (idx < 0 || idx >= table.length) continue;
@@ -136,6 +141,18 @@ export function analyze(
       worklist.push(idx);
     } else {
       table[idx].data = true;
+    }
+  }
+
+  // Pattern matching pass - find likely code sequences
+  if (usePatternMatching) {
+    for (const idx of findPatternMatches(bytes)) {
+      // Skip if already marked as data or code
+      if (table[idx].data || table[idx].code) continue;
+
+      table[idx].patternMatch = true;
+      table[idx].code = true;
+      worklist.push(idx);
     }
   }
 
@@ -416,13 +433,15 @@ export async function disassembleWithEntrypoints(
   startAddress: number,
   entrypoints: Entrypoint[],
   customLabels: CustomLabel[] = [],
-  customComments: CustomComment[] = []
+  customComments: CustomComment[] = [],
+  usePatternMatching: boolean = true
 ): Promise<DisassembledLine[]> {
   await loadOpcodes();
   await loadC64Mapping();
   await loadSyntax();
+  await loadPatterns();
 
   const syntax = getSyntax();
-  const analyzed = analyze(startAddress, bytes, entrypoints);
+  const analyzed = analyze(startAddress, bytes, entrypoints, usePatternMatching);
   return convertToProgram(analyzed, startAddress, syntax.pseudoOpcodePrefix, customLabels, customComments);
 }

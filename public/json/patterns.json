@@ -1,0 +1,135 @@
+{
+  "description": "6502 byte patterns that indicate code sequences. Trailing wildcards are omitted since the disassembler follows instruction flow automatically.",
+  "patterns": [
+    {
+      "name": "LDA immediate + STA absolute",
+      "bytes": ["a9", "??", "8d"],
+      "description": "LDA #$xx STA $xxxx - common value assignment"
+    },
+    {
+      "name": "LDA immediate + STA zeropage",
+      "bytes": ["a9", "??", "85"],
+      "description": "LDA #$xx STA $xx - zeropage value assignment"
+    },
+    {
+      "name": "LDX immediate + STX absolute",
+      "bytes": ["a2", "??", "8e"],
+      "description": "LDX #$xx STX $xxxx - X register assignment"
+    },
+    {
+      "name": "LDX immediate + STX zeropage",
+      "bytes": ["a2", "??", "86"],
+      "description": "LDX #$xx STX $xx - X register zeropage assignment"
+    },
+    {
+      "name": "LDY immediate + STY absolute",
+      "bytes": ["a0", "??", "8c"],
+      "description": "LDY #$xx STY $xxxx - Y register assignment"
+    },
+    {
+      "name": "LDY immediate + STY zeropage",
+      "bytes": ["a0", "??", "84"],
+      "description": "LDY #$xx STY $xx - Y register zeropage assignment"
+    },
+    {
+      "name": "JSR + RTS",
+      "bytes": ["20", "??", "??", "60"],
+      "description": "JSR $xxxx RTS - subroutine call followed by return"
+    },
+    {
+      "name": "SEI + LDA",
+      "bytes": ["78", "a9"],
+      "description": "SEI LDA #$xx - disable interrupts then load (common init)"
+    },
+    {
+      "name": "LDA absolute + CMP immediate",
+      "bytes": ["ad", "??", "??", "c9"],
+      "description": "LDA $xxxx CMP #$xx - load and compare pattern"
+    },
+    {
+      "name": "LDA zeropage + CMP immediate",
+      "bytes": ["a5", "??", "c9"],
+      "description": "LDA $xx CMP #$xx - zeropage load and compare"
+    },
+    {
+      "name": "INC absolute + BNE",
+      "bytes": ["ee", "??", "??", "d0"],
+      "description": "INC $xxxx BNE - increment and branch loop"
+    },
+    {
+      "name": "DEC absolute + BNE",
+      "bytes": ["ce", "??", "??", "d0"],
+      "description": "DEC $xxxx BNE - decrement and branch loop"
+    },
+    {
+      "name": "INX + CPX + BNE",
+      "bytes": ["e8", "e0", "??", "d0"],
+      "description": "INX CPX #$xx BNE - X register loop"
+    },
+    {
+      "name": "INY + CPY + BNE",
+      "bytes": ["c8", "c0", "??", "d0"],
+      "description": "INY CPY #$xx BNE - Y register loop"
+    },
+    {
+      "name": "DEX + BNE",
+      "bytes": ["ca", "d0"],
+      "description": "DEX BNE - X decrement loop"
+    },
+    {
+      "name": "DEY + BNE",
+      "bytes": ["88", "d0"],
+      "description": "DEY BNE - Y decrement loop"
+    },
+    {
+      "name": "PHA + TXA",
+      "bytes": ["48", "8a"],
+      "description": "PHA TXA - push A, transfer X to A"
+    },
+    {
+      "name": "PHA + TYA",
+      "bytes": ["48", "98"],
+      "description": "PHA TYA - push A, transfer Y to A"
+    },
+    {
+      "name": "PLA + RTS",
+      "bytes": ["68", "60"],
+      "description": "PLA RTS - restore A and return"
+    },
+    {
+      "name": "LDA indirect Y + STA indirect Y",
+      "bytes": ["b1", "??", "91"],
+      "description": "LDA ($xx),Y STA ($xx),Y - indirect indexed copy"
+    },
+    {
+      "name": "CLC + ADC immediate",
+      "bytes": ["18", "69"],
+      "description": "CLC ADC #$xx - clear carry then add"
+    },
+    {
+      "name": "SEC + SBC immediate",
+      "bytes": ["38", "e9"],
+      "description": "SEC SBC #$xx - set carry then subtract"
+    },
+    {
+      "name": "LDA + AND + STA zeropage",
+      "bytes": ["a9", "??", "29", "??", "85"],
+      "description": "LDA #$xx AND #$xx STA $xx - mask and store pattern"
+    },
+    {
+      "name": "LDA + ORA + STA zeropage",
+      "bytes": ["a9", "??", "09", "??", "85"],
+      "description": "LDA #$xx ORA #$xx STA $xx - or and store pattern"
+    },
+    {
+      "name": "STA $d020",
+      "bytes": ["8d", "20", "d0"],
+      "description": "Border color $d020"
+    },
+    {
+      "name": "STA $d021",
+      "bytes": ["8d", "21", "d0"],
+      "description": "BG color $d020"
+    }
+  ]
+}
