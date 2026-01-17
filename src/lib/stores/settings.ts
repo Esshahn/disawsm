@@ -8,10 +8,18 @@ import type { UserSettings } from '$lib/types';
 
 const STORAGE_KEY = 'disawsm_settings';
 
+// Default custom syntax (matches ACME defaults)
+const defaultCustomSyntax = {
+  commentPrefix: ';',
+  labelSuffix: '',
+  pseudoOpcodePrefix: '!'
+};
+
 // Default settings
 const defaultSettings: UserSettings = {
   labelPrefix: '_',
-  assemblerSyntax: 'acme'
+  assemblerSyntax: 'acme',
+  customSyntax: defaultCustomSyntax
 };
 
 /**
@@ -26,10 +34,15 @@ function loadSettings(): UserSettings {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      // Merge with defaults to ensure all properties exist
+      // Deep merge with defaults to ensure all properties exist
       return {
         ...defaultSettings,
-        ...parsed
+        ...parsed,
+        // Ensure customSyntax is fully populated
+        customSyntax: {
+          ...defaultCustomSyntax,
+          ...parsed.customSyntax
+        }
       };
     }
   } catch (error) {

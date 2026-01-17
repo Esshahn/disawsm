@@ -1,5 +1,7 @@
 <script lang="ts">
   import { settings } from '$lib/stores/settings';
+  import type { AssemblerSyntax } from '$lib/types';
+  import { loadSyntax, getSyntaxDefinitions } from '$lib/services/syntaxService';
 
   let {
     onclose
@@ -7,9 +9,41 @@
     onclose?: () => void;
   } = $props();
 
+  // Syntax definitions loaded from shared service
+  let syntaxDefinitions = $state<Record<string, AssemblerSyntax>>({});
+
+  // Load syntax definitions on mount
+  $effect(() => {
+    loadSyntax().then(() => {
+      syntaxDefinitions = getSyntaxDefinitions();
+    });
+  });
+
   // Local state for input fields
   let labelPrefixInput = $state($settings.labelPrefix);
-  let assemblerSyntaxInput = $state($settings.assemblerSyntax);
+  let assemblerSyntaxInput = $state<'acme' | 'kickass' | 'krill' | 'custom'>($settings.assemblerSyntax);
+
+  // Custom syntax fields (customSyntax is always defined in settings store)
+  let customCommentPrefix = $state($settings.customSyntax!.commentPrefix);
+  let customLabelSuffix = $state($settings.customSyntax!.labelSuffix);
+  let customPseudoOpcodePrefix = $state($settings.customSyntax!.pseudoOpcodePrefix);
+
+  // Whether custom fields are editable
+  let isCustom = $derived(assemblerSyntaxInput === 'custom');
+
+  // Update custom fields when syntax selection changes (for non-custom selections)
+  $effect(() => {
+    // Track both dependencies
+    const selectedSyntax = assemblerSyntaxInput;
+    const definitions = syntaxDefinitions;
+
+    if (selectedSyntax !== 'custom' && definitions[selectedSyntax]) {
+      const syntax = definitions[selectedSyntax];
+      customCommentPrefix = syntax.commentPrefix;
+      customLabelSuffix = syntax.labelSuffix;
+      customPseudoOpcodePrefix = syntax.pseudoOpcodePrefix;
+    }
+  });
 
   function handleClose() {
     onclose?.();
@@ -20,7 +54,12 @@
     settings.update(s => ({
       ...s,
       labelPrefix: labelPrefixInput,
-      assemblerSyntax: assemblerSyntaxInput
+      assemblerSyntax: assemblerSyntaxInput,
+      customSyntax: {
+        commentPrefix: customCommentPrefix,
+        labelSuffix: customLabelSuffix,
+        pseudoOpcodePrefix: customPseudoOpcodePrefix
+      }
     }));
     handleClose();
   }
@@ -70,7 +109,42 @@
         >
           <option value="acme">ACME</option>
           <option value="kickass">Kick Assembler</option>
+          <option value="krill">Krill</option>
+          <option value="custom">Custom</option>
         </select>
+      </div>
+
+      <div class="settings-section syntax-details">
+        <div class="syntax-field">
+          <label for="commentPrefix">Comments</label>
+          <input
+            id="commentPrefix"
+            type="text"
+            bind:value={customCommentPrefix}
+            disabled={!isCustom}
+            maxlength="4"
+          />
+        </div>
+        <div class="syntax-field">
+          <label for="labelSuffix">Label Suffix</label>
+          <input
+            id="labelSuffix"
+            type="text"
+            bind:value={customLabelSuffix}
+            disabled={!isCustom}
+            maxlength="4"
+          />
+        </div>
+        <div class="syntax-field">
+          <label for="pseudoOpcodePrefix">Pseudo-Opcode Prefix</label>
+          <input
+            id="pseudoOpcodePrefix"
+            type="text"
+            bind:value={customPseudoOpcodePrefix}
+            disabled={!isCustom}
+            maxlength="4"
+          />
+        </div>
       </div>
 
       <div class="button-group">
@@ -126,6 +200,33 @@
   input[type="text"]:focus {
     outline: none;
     border-color: #00c698;
+  }
+
+  input[type="text"]:disabled {
+    background-color: #0d0d0d;
+    color: #888;
+    cursor: not-allowed;
+  }
+
+  .syntax-details {
+    display: flex;
+    gap: 16px;
+  }
+
+  .syntax-field {
+    flex: 1;
+  }
+
+  .syntax-field label {
+    display: block;
+    font-size: 12px;
+    color: #aaaaaa;
+    margin-bottom: 6px;
+  }
+
+  .syntax-field input {
+    width: 100%;
+    text-align: center;
   }
 
   select {

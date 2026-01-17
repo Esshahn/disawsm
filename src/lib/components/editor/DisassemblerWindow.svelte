@@ -8,27 +8,11 @@
   import type { AssemblerSyntax } from '$lib/types';
   import { disassembleWithEntrypoints, type DisassembledLine } from '$lib/services/enhancedDisassembler';
   import { formatAsAssembly } from '$lib/services/assemblyExporter';
+  import { loadSyntax, getSyntax } from '$lib/services/syntaxService';
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
   import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
   import { toHex } from '$lib/utils/format';
   import { loadSyntaxColors, highlightInstruction, highlightDataLine, type SyntaxColors, type HighlightedToken } from '$lib/services/syntaxHighlight';
-
-  // Load syntax definitions
-  let syntaxDefinitions: Record<string, AssemblerSyntax> = {};
-  let syntaxLoaded = false;
-
-  async function loadSyntax() {
-    if (syntaxLoaded) return;
-    const response = await fetch('/json/syntax.json');
-    const data = await response.json();
-    syntaxDefinitions = data.syntaxes;
-    syntaxLoaded = true;
-  }
-
-  function getCurrentSyntax(): AssemblerSyntax {
-    const syntaxKey = $settings.assemblerSyntax;
-    return syntaxDefinitions[syntaxKey] || syntaxDefinitions['acme'] || { name: 'ACME', commentPrefix: ';', labelSuffix: '', pseudoOpcodePrefix: '!' };
-  }
 
   // Reactive declarations using $derived
   let disassemblerConfig = $derived($config?.window_disassembler);
@@ -163,6 +147,7 @@
     // Trigger re-run on settings changes (settings are read inside disassembler)
     $settings.labelPrefix;
     $settings.assemblerSyntax;
+    $settings.customSyntax;
 
     async function loadDisassembly() {
       if (!currentFile) {
@@ -181,7 +166,7 @@
         syntaxColors = await loadSyntaxColors();
 
         // Update current syntax for display
-        currentSyntax = getCurrentSyntax();
+        currentSyntax = getSyntax();
 
         const lines = await disassembleWithEntrypoints(
           currentFile.bytes,
