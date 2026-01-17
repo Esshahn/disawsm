@@ -151,8 +151,11 @@ export function analyze(
 
     const opcode = opcodes[byte.byte];
     if (!opcode || opcode.ill) {
-      // Treat illegal/unknown opcodes as data - stops code propagation
-      byte.data = true;
+      // Unknown/illegal opcode: only mark as data if not an explicit entrypoint
+      // (preserve user's intent when they explicitly mark something as code)
+      if (!byte.dest) {
+        byte.data = true;
+      }
       continue;
     }
 
@@ -334,8 +337,8 @@ export function convertToProgram(
 
     const opcode = opcodes[b.byte];
 
-    // Handle data bytes or unknown opcodes
-    if (!b.code || b.data || !opcode) {
+    // Handle data bytes, unknown opcodes, or illegal opcodes (unless explicitly marked as code destination)
+    if (!b.code || b.data || !opcode || (opcode.ill && !b.dest)) {
       const { line, nextIndex } = createDataLine(byteArray, i, label, pseudoOpcodePrefix, commentsMap);
       program.push(line);
       i = nextIndex;
