@@ -136,13 +136,14 @@
   // Effect to clear editing state once the saved comment appears in disassembledLines
   $effect(() => {
     if (!pendingCommentSave) return;
+    const pending = pendingCommentSave;
 
-    const line = disassembledLines.find(l => l.address === pendingCommentSave.address);
+    const line = disassembledLines.find(l => l.address === pending.address);
 
     // Check if the comment has been updated in the disassembled lines
     if (line && (
-      (pendingCommentSave.comment && line.comment === pendingCommentSave.comment) ||
-      (!pendingCommentSave.comment && !line.comment)
+      (pending.comment && line.comment === pending.comment) ||
+      (!pending.comment && !line.comment)
     )) {
       // Comment has been saved and reflected in disassembledLines
       editingCommentAddress = null;
