@@ -4,28 +4,8 @@
  */
 
 import type { DisassembledLine } from '$lib/services/enhancedDisassembler';
-import type { AssemblerSyntax } from '$lib/types';
 import { toHex } from '$lib/utils/format';
-import { get } from 'svelte/store';
-import { settings } from '$lib/stores/settings';
-
-// Load syntax definitions
-let syntaxDefinitions: Record<string, AssemblerSyntax> = {};
-let syntaxLoaded = false;
-
-async function loadSyntax() {
-  if (syntaxLoaded) return;
-
-  const response = await fetch('/json/syntax.json');
-  const data = await response.json();
-  syntaxDefinitions = data.syntaxes;
-  syntaxLoaded = true;
-}
-
-function getSyntax(): AssemblerSyntax {
-  const syntaxKey = get(settings).assemblerSyntax;
-  return syntaxDefinitions[syntaxKey] || syntaxDefinitions['acme'];
-}
+import { loadSyntax, getSyntax } from '$lib/services/syntaxService';
 
 /**
  * Format a disassembled program as assembly text

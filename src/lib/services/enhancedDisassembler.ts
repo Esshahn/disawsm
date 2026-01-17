@@ -6,18 +6,38 @@
 import type { Entrypoint } from '$lib/stores/entrypoints';
 import type { CustomLabel } from '$lib/stores/labels';
 import type { CustomComment } from '$lib/stores/comments';
-import type { AssemblerSyntax } from '$lib/types';
-import { get } from 'svelte/store';
-import { settings } from '$lib/stores/settings';
+import { loadSyntax, getSyntax } from '$lib/services/syntaxService';
 
-let opcodes: Record<string, { ins: string; ill?: number; rel?: number }> = {};
+type AddressingMode =
+  | 'imp' // Implied (no operand)
+  | 'acc' // Accumulator
+  | 'imm' // Immediate #$hh
+  | 'zp' // Zero page $hh
+  | 'zpx' // Zero page,X $hh,x
+  | 'zpy' // Zero page,Y $hh,y
+  | 'abs' // Absolute $hhll
+  | 'abx' // Absolute,X $hhll,x
+  | 'aby' // Absolute,Y $hhll,y
+  | 'ind' // Indirect ($hhll)
+  | 'izx' // Indexed indirect ($hh,x)
+  | 'izy'; // Indirect indexed ($hh),y
+
+type FlowType = 'call' | 'jump' | 'return' | 'branch';
+
+interface OpcodeInfo {
+  ins: string;
+  len: number;
+  mode: AddressingMode;
+  cycles: number;
+  flow?: FlowType;
+  ill?: number;
+}
+
+let opcodes: Record<string, OpcodeInfo> = {};
 let opcodesLoaded = false;
 
 let c64Mapping: Map<number, string> = new Map();
 let mappingLoaded = false;
-
-let syntaxDefinitions: Record<string, AssemblerSyntax> = {};
-let syntaxLoaded = false;
 
 async function loadOpcodes() {
   if (opcodesLoaded) return;
@@ -36,19 +56,6 @@ async function loadC64Mapping() {
   mappingLoaded = true;
 }
 
-async function loadSyntax() {
-  if (syntaxLoaded) return;
-  const response = await fetch('/json/syntax.json');
-  const data = await response.json();
-  syntaxDefinitions = data.syntaxes;
-  syntaxLoaded = true;
-}
-
-function getSyntax(): AssemblerSyntax {
-  const syntaxKey = get(settings).assemblerSyntax;
-  return syntaxDefinitions[syntaxKey] || syntaxDefinitions['acme'];
-}
-
 function getC64Comment(address: number): string | undefined {
   return c64Mapping.get(address);
 }
@@ -59,6 +66,7 @@ export interface DisassembledByte {
   dest: boolean;
   code: boolean;
   data: boolean;
+  xrefs: number[]; // Addresses that reference this location
 }
 
 export interface DisassembledLine {
@@ -66,6 +74,7 @@ export interface DisassembledLine {
   label?: string;
   instruction: string;
   comment?: string;
+  xrefComment?: string; // XREF comment for label lines
   bytes: number[];
   isData?: boolean;
 }
@@ -87,30 +96,20 @@ function getAbsFromRelative(offset: string, pcAfter: number): number {
   return v > 127 ? pcAfter - (256 - v) : pcAfter + v;
 }
 
-function getInstructionLength(ins: string): number {
-  let len = 0;
-  if (ins.includes('hh')) len++;
-  if (ins.includes('ll')) len++;
-  return len;
-}
-
-const FLOW_TERMINATORS = new Set(['4c', '60', '40']); // JMP, RTS, RTI
-
 function generateByteArray(start: number, bytes: Uint8Array): DisassembledByte[] {
   return Array.from(bytes, (b, i) => ({
     addr: start + i,
     byte: Hex.toByte(b),
     dest: false,
     code: false,
-    data: false
+    data: false,
+    xrefs: []
   }));
 }
 
 /**
- * ANALYSIS (FIXED)
- * - Full reset on every run
- * - Data entrypoints block code propagation
- * - Code never flows through data
+ * Analyze binary to identify code vs data regions.
+ * Uses worklist algorithm with metadata from opcodes.json.
  */
 export function analyze(
   startAddr: number,
@@ -119,13 +118,6 @@ export function analyze(
 ): DisassembledByte[] {
   const table = generateByteArray(startAddr, bytes);
   const endAddr = startAddr + table.length;
-
-  // 🔴 HARD RESET (critical fix)
-  for (const b of table) {
-    b.code = false;
-    b.data = false;
-    b.dest = false;
-  }
 
   const worklist: number[] = [];
   const visited = new Set<number>();
@@ -156,105 +148,91 @@ export function analyze(
     if (byte.data) continue;
 
     const opcode = opcodes[byte.byte];
-    if (!opcode || opcode.ill) continue;
+    if (!opcode || opcode.ill) {
+      // Treat illegal/unknown opcodes as data - stops code propagation
+      byte.data = true;
+      continue;
+    }
 
     byte.code = true;
-
-    const len = getInstructionLength(opcode.ins);
+    const len = opcode.len;
 
     // Mark operand bytes as code unless already data
-    for (let i = 1; i <= len; i++) {
+    for (let i = 1; i < len; i++) {
       if (pc + i < table.length && !table[pc + i].data) {
         table[pc + i].code = true;
       }
     }
 
+    // Extract target address for control flow tracking
     let targetAddr: number | null = null;
 
-    if ('rel' in opcode && pc + 1 < table.length) {
-      targetAddr = getAbsFromRelative(
-        table[pc + 1].byte,
-        startAddr + pc + 2
-      );
-    } else if (len === 2 && pc + 2 < table.length) {
-      targetAddr = Hex.bytesToAddress(
-        table[pc + 2].byte,
-        table[pc + 1].byte
-      );
+    if (opcode.flow === 'branch' && pc + 1 < table.length) {
+      // Branch instructions (relative addressing)
+      targetAddr = getAbsFromRelative(table[pc + 1].byte, startAddr + pc + len);
+    } else if ((opcode.mode === 'abs' || opcode.mode === 'abx' || opcode.mode === 'aby') && pc + 2 < table.length) {
+      // Absolute addressing (JMP, JSR, or memory operations)
+      targetAddr = Hex.bytesToAddress(table[pc + 2].byte, table[pc + 1].byte);
     }
 
-    // Branch / jump target
+    // Mark branch/jump targets and track XREFs
     if (targetAddr !== null && addrInProgram(targetAddr, startAddr, endAddr)) {
       const ti = targetAddr - startAddr;
       if (!table[ti].data) {
         table[ti].dest = true;
         table[ti].code = true;
+        // Track cross-reference: source address references target
+        table[ti].xrefs.push(startAddr + pc);
         worklist.push(ti);
       }
     }
 
-    const next = pc + len + 1;
-
-    // JSR: follow fall-through
-    if (byte.byte === '20') {
-      if (next < table.length && !table[next].data) {
-        worklist.push(next);
-      }
-      continue;
-    }
-
-    // Normal fall-through
-    if (!FLOW_TERMINATORS.has(byte.byte)) {
-      if (next < table.length && !table[next].data) {
-        worklist.push(next);
-      }
+    // Follow fall-through unless this is an unconditional jump or return
+    const next = pc + len;
+    const terminatesFlow = opcode.flow === 'jump' || opcode.flow === 'return';
+    if (!terminatesFlow && next < table.length && !table[next].data) {
+      worklist.push(next);
     }
   }
 
   return table;
 }
 
-/* ---------------- CONVERSION PASS (UNCHANGED) ---------------- */
+/* ---------------- CONVERSION PASS ---------------- */
 
 function createDataLine(
   byteArray: DisassembledByte[],
   startIndex: number,
   label: string | undefined,
-  end: number,
   pseudo: string,
   commentsMap: Map<number, string>
-) {
-  const bytes: string[] = [];
-  const nums: number[] = [];
+): { line: DisassembledLine; nextIndex: number } {
+  const hexBytes: string[] = [];
+  const numBytes: number[] = [];
   let i = startIndex;
 
-  while (i < end && bytes.length < 8) {
+  while (i < byteArray.length && hexBytes.length < 8) {
     const b = byteArray[i];
     if (i !== startIndex && (b.dest || b.code)) break;
-    bytes.push(b.byte);
-    nums.push(Hex.toNumber(b.byte));
+    hexBytes.push(b.byte);
+    numBytes.push(Hex.toNumber(b.byte));
     i++;
   }
 
-  const address = byteArray[startIndex].addr;
-  const comment = commentsMap.get(address);
+  const firstByte = byteArray[startIndex];
 
   return {
     line: {
-      address,
+      address: firstByte.addr,
       label,
-      instruction: `${pseudo}byte $${bytes.join(', $')}`,
-      comment,
-      bytes: nums,
+      instruction: `${pseudo}byte $${hexBytes.join(', $')}`,
+      comment: commentsMap.get(firstByte.addr),
+      xrefComment: label ? formatXrefComment(firstByte.xrefs) : undefined,
+      bytes: numBytes,
       isData: true
     },
     nextIndex: i
   };
-}
-
-function extractAbsoluteAddress(instr: string): number | null {
-  const m = instr.match(/\$([0-9a-f]{4})/i);
-  return m ? parseInt(m[1], 16) : null;
 }
 
 /**
@@ -276,32 +254,31 @@ function getLabel(address: number, customLabels: CustomLabel[], labelPrefix: str
 function getAbsoluteAddressFromBytes(
   byteArray: DisassembledByte[],
   startIndex: number,
-  opcode: { ins: string; ill?: number; rel?: number }
+  opcode: OpcodeInfo
 ): number | null {
-  const len = getInstructionLength(opcode.ins);
-
-  if (len === 2 && startIndex + 2 < byteArray.length) {
-    // Two-byte absolute address
-    const ll = byteArray[startIndex + 1].byte;
-    const hh = byteArray[startIndex + 2].byte;
-    return Hex.bytesToAddress(hh, ll);
+  // ✅ Use metadata instead of string parsing
+  if (opcode.mode === 'abs' || opcode.mode === 'abx' || opcode.mode === 'aby') {
+    if (startIndex + 2 < byteArray.length) {
+      const ll = byteArray[startIndex + 1].byte;
+      const hh = byteArray[startIndex + 2].byte;
+      return Hex.bytesToAddress(hh, ll);
+    }
   }
 
   return null;
 }
 
 /**
- * Build a unified comments map from auto-generated C64 comments and custom comments
- * Custom comments override auto-generated ones at the same address
+ * Build a unified comments map from auto-generated C64 comments and custom comments.
+ * Custom comments override auto-generated ones at the same address.
  */
 function buildCommentsMap(
   byteArray: DisassembledByte[],
-  startAddr: number,
   customComments: CustomComment[]
 ): Map<number, string> {
   const commentsMap = new Map<number, string>();
 
-  // First pass: Add all auto-generated C64 comments for code instructions
+  // Add auto-generated C64 comments for code instructions
   for (let i = 0; i < byteArray.length; i++) {
     const b = byteArray[i];
     if (!b.code || b.data) continue;
@@ -309,7 +286,6 @@ function buildCommentsMap(
     const opcode = opcodes[b.byte];
     if (!opcode) continue;
 
-    // Extract absolute address and check for C64 memory map comment
     const absAddr = getAbsoluteAddressFromBytes(byteArray, i, opcode);
     if (absAddr !== null) {
       const autoComment = getC64Comment(absAddr);
@@ -319,12 +295,23 @@ function buildCommentsMap(
     }
   }
 
-  // Second pass: Add/override with custom comments (works for both code and data)
-  for (const customComment of customComments) {
-    commentsMap.set(customComment.address, customComment.comment);
+  // Custom comments override auto-generated
+  for (const cc of customComments) {
+    commentsMap.set(cc.address, cc.comment);
   }
 
   return commentsMap;
+}
+
+/**
+ * Format XREF comment for a label line
+ * Example: "XREF: $c010, $c050"
+ */
+function formatXrefComment(xrefs: number[]): string | undefined {
+  if (xrefs.length === 0) return undefined;
+  const sorted = [...xrefs].sort((a, b) => a - b);
+  const formatted = sorted.map(addr => '$' + Hex.toWord(addr));
+  return 'XREF: ' + formatted.join(', ');
 }
 
 export function convertToProgram(
@@ -339,82 +326,80 @@ export function convertToProgram(
   const endAddr = startAddr + byteArray.length;
 
   // Build unified comments map upfront
-  const commentsMap = buildCommentsMap(byteArray, startAddr, customComments);
+  const commentsMap = buildCommentsMap(byteArray, customComments);
 
   let i = 0;
   while (i < byteArray.length) {
     const b = byteArray[i];
     const label = b.dest ? getLabel(b.addr, customLabels, labelPrefix) : undefined;
 
-    if (!b.code || b.data) {
-      const { line, nextIndex } = createDataLine(
-        byteArray,
-        i,
-        label,
-        byteArray.length,
-        pseudoOpcodePrefix,
-        commentsMap
-      );
-      program.push(line);
-      i = nextIndex;
-      continue;
-    }
-
     const opcode = opcodes[b.byte];
-    if (!opcode) {
-      const { line, nextIndex } = createDataLine(
-        byteArray,
-        i,
-        label,
-        byteArray.length,
-        pseudoOpcodePrefix,
-        commentsMap
-      );
+
+    // Handle data bytes or unknown opcodes
+    if (!b.code || b.data || !opcode) {
+      const { line, nextIndex } = createDataLine(byteArray, i, label, pseudoOpcodePrefix, commentsMap);
       program.push(line);
       i = nextIndex;
       continue;
     }
 
     let instr = opcode.ins;
-    const len = getInstructionLength(instr);
     const bytes = [Hex.toNumber(b.byte)];
 
-    if (len === 1 && i + 1 < byteArray.length) {
-      const op = byteArray[++i].byte;
-      bytes.push(Hex.toNumber(op));
-      if ('rel' in opcode) {
-        const targetAddr = getAbsFromRelative(op, startAddr + i + 1);
-        const labelName = getLabel(targetAddr, customLabels, labelPrefix);
-        instr = instr.replace('$hh', labelName);
-      } else {
-        instr = instr.replace('hh', op);
-      }
+    // Format operands based on addressing mode
+    switch (opcode.mode) {
+      case 'imm':
+      case 'zp':
+      case 'zpx':
+      case 'zpy':
+      case 'izx':
+      case 'izy':
+        if (i + 1 < byteArray.length) {
+          const operand = byteArray[++i].byte;
+          bytes.push(Hex.toNumber(operand));
+
+          if (opcode.flow === 'branch') {
+            // Branch: use label for target
+            const targetAddr = getAbsFromRelative(operand, startAddr + i + 1);
+            instr = instr.replace('$hh', getLabel(targetAddr, customLabels, labelPrefix));
+          } else {
+            instr = instr.replace('hh', operand);
+          }
+        }
+        break;
+
+      case 'abs':
+      case 'abx':
+      case 'aby':
+      case 'ind':
+        if (i + 2 < byteArray.length) {
+          const ll = byteArray[++i].byte;
+          const hh = byteArray[++i].byte;
+          bytes.push(Hex.toNumber(ll), Hex.toNumber(hh));
+          const addr = Hex.bytesToAddress(hh, ll);
+
+          if (addrInProgram(addr, startAddr, endAddr)) {
+            instr = instr.replace('$hhll', getLabel(addr, customLabels, labelPrefix));
+          } else {
+            instr = instr.replace('hh', hh).replace('ll', ll);
+          }
+        }
+        break;
+
+      case 'imp':
+      case 'acc':
+        break;
     }
 
-    if (len === 2 && i + 2 < byteArray.length) {
-      const ll = byteArray[++i].byte;
-      const hh = byteArray[++i].byte;
-      bytes.push(Hex.toNumber(ll), Hex.toNumber(hh));
-      const addr = Hex.bytesToAddress(hh, ll);
-
-      if (addrInProgram(addr, startAddr, endAddr)) {
-        // Replace the entire $hhll pattern with the label name
-        const labelName = getLabel(addr, customLabels, labelPrefix);
-        instr = instr.replace('$hhll', labelName);
-      } else {
-        // Not in program, just replace with hex values
-        instr = instr.replace('hh', hh).replace('ll', ll);
-      }
-    }
-
-    // Lookup comment from unified map
     const comment = commentsMap.get(b.addr);
+    const xrefComment = label ? formatXrefComment(b.xrefs) : undefined;
 
     program.push({
       address: b.addr,
       label,
       instruction: instr,
       comment,
+      xrefComment,
       bytes
     });
 

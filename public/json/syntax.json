@@ -11,6 +11,12 @@
       "commentPrefix": "//",
       "labelSuffix": ":",
       "pseudoOpcodePrefix":"."
+    },
+     "krill": {
+      "name": "Krill",
+      "commentPrefix": ";",
+      "labelSuffix": ":",
+      "pseudoOpcodePrefix":"."
     }
   }
 }
