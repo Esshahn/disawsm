@@ -239,14 +239,10 @@ function createDataLine(
 
 /**
  * Helper function to get label for an address
- * Checks custom labels first, then falls back to auto-generated label
+ * Checks custom labels map first, then falls back to auto-generated label
  */
-function getLabel(address: number, customLabels: CustomLabel[], labelPrefix: string): string {
-  const customLabel = customLabels.find(l => l.address === address);
-  if (customLabel) {
-    return customLabel.name;
-  }
-  return labelPrefix + Hex.toWord(address);
+function getLabel(address: number, labelMap: Map<number, string>, labelPrefix: string): string {
+  return labelMap.get(address) ?? labelPrefix + Hex.toWord(address);
 }
 
 /**
@@ -327,13 +323,14 @@ export function convertToProgram(
   const labelPrefix = get(settings).labelPrefix;
   const endAddr = startAddr + byteArray.length;
 
-  // Build unified comments map upfront
+  // Build maps upfront for O(1) lookups
+  const labelMap = new Map(customLabels.map(l => [l.address, l.name]));
   const commentsMap = buildCommentsMap(byteArray, customComments);
 
   let i = 0;
   while (i < byteArray.length) {
     const b = byteArray[i];
-    const label = b.dest ? getLabel(b.addr, customLabels, labelPrefix) : undefined;
+    const label = b.dest ? getLabel(b.addr, labelMap, labelPrefix) : undefined;
 
     const opcode = opcodes[b.byte];
 
@@ -363,7 +360,7 @@ export function convertToProgram(
           if (opcode.flow === 'branch') {
             // Branch: use label for target
             const targetAddr = getAbsFromRelative(operand, startAddr + i + 1);
-            instr = instr.replace('$hh', getLabel(targetAddr, customLabels, labelPrefix));
+            instr = instr.replace('$hh', getLabel(targetAddr, labelMap, labelPrefix));
           } else {
             instr = instr.replace('hh', operand);
           }
@@ -381,7 +378,7 @@ export function convertToProgram(
           const addr = Hex.bytesToAddress(hh, ll);
 
           if (addrInProgram(addr, startAddr, endAddr)) {
-            instr = instr.replace('$hhll', getLabel(addr, customLabels, labelPrefix));
+            instr = instr.replace('$hhll', getLabel(addr, labelMap, labelPrefix));
           } else {
             instr = instr.replace('hh', hh).replace('ll', ll);
           }
