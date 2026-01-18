@@ -34,7 +34,6 @@
   let editingLabelValue = $state('');
   let editingCommentAddress = $state<number | null>(null);
   let editingCommentValue = $state('');
-  let pendingCommentSave = $state<{ address: number; comment: string } | null>(null);
   let syntaxColors = $state<SyntaxColors | null>(null);
 
   // Line height in pixels - measured from actual rendered content
@@ -104,11 +103,15 @@
   }
 
   function handleCommentSave(address: number) {
+    // Prevent double-save (blur fires after Enter clears editingCommentAddress)
+    if (editingCommentAddress !== address) return;
+
     const trimmed = editingCommentValue.trim();
     customComments.setComment(address, trimmed);
 
-    // Track that we're waiting for this comment to appear in disassembledLines
-    pendingCommentSave = { address, comment: trimmed };
+    // Clear editing state immediately - the store update will trigger re-disassembly
+    editingCommentAddress = null;
+    editingCommentValue = '';
   }
 
   function handleCommentCancel() {
@@ -124,25 +127,6 @@
       handleCommentCancel();
     }
   }
-
-  // Effect to clear editing state once the saved comment appears in disassembledLines
-  $effect(() => {
-    if (!pendingCommentSave) return;
-    const pending = pendingCommentSave;
-
-    const line = disassembledLines.find(l => l.address === pending.address);
-
-    // Check if the comment has been updated in the disassembled lines
-    if (line && (
-      (pending.comment && line.comment === pending.comment) ||
-      (!pending.comment && !line.comment)
-    )) {
-      // Comment has been saved and reflected in disassembledLines
-      editingCommentAddress = null;
-      editingCommentValue = '';
-      pendingCommentSave = null;
-    }
-  });
 
   // Track previous file/entrypoints to detect structural changes
   let prevFileId: string | null = null;
