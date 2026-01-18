@@ -110,7 +110,7 @@
           README on github<span class="hotkey"></span>
         </a>
         <a href="https://github.com/Esshahn/disawsm/issues" target="_blank">
-          Repot a bug<span class="hotkey"></span>
+          Report a bug<span class="hotkey"></span>
         </a>
         <hr>
         <a href="http://www.spritemate.com" target="_blank">
