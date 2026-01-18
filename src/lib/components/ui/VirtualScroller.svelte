@@ -20,6 +20,16 @@
   let scrollTop = $state(0);
   let viewportElement = $state<HTMLDivElement>();
 
+  // Restore scroll position when items array is replaced
+  $effect(() => {
+    items; // Track items changes
+    if (viewportElement && scrollTop > 0) {
+      queueMicrotask(() => {
+        if (viewportElement) viewportElement.scrollTop = scrollTop;
+      });
+    }
+  });
+
   // Calculate visible range
   let visibleRange = $derived.by(() => {
     if (!viewportElement) return { start: 0, end: 0, offsetY: 0 };
