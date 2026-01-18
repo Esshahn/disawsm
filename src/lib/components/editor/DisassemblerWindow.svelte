@@ -29,7 +29,7 @@
   let error = $state<string | null>(null);
   let scrollToLineIndex = $state<number | undefined>(undefined);
   let showComments = $state(true);
-  let currentSyntax = $state<AssemblerSyntax>({ name: 'ACME', commentPrefix: ';', labelSuffix: '', pseudoOpcodePrefix: '!' });
+  let currentSyntax = $state<AssemblerSyntax>({ id: '', name: '', commentPrefix: ';', labelSuffix: '', pseudoOpcodePrefix: '!' });
   let editingLabelAddress = $state<number | null>(null);
   let editingLabelValue = $state('');
   let editingCommentAddress = $state<number | null>(null);

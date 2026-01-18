@@ -1,22 +1,25 @@
 {
-  "syntaxes": {
-    "acme": {
-      "name": "ACME",
+  "syntaxes": [
+    {
+      "id": "acme",
+      "name": "ACME Assembler",
       "commentPrefix": ";",
       "labelSuffix": "",
-      "pseudoOpcodePrefix":"!"
+      "pseudoOpcodePrefix": "!"
     },
-    "kickass": {
+    {
+      "id": "kickass",
       "name": "Kick Assembler",
       "commentPrefix": "//",
       "labelSuffix": ":",
-      "pseudoOpcodePrefix":"."
+      "pseudoOpcodePrefix": "."
     },
-     "krill": {
-      "name": "Krill",
+    {
+      "id": "tass",
+      "name": "Turbo Assembler",
       "commentPrefix": ";",
       "labelSuffix": ":",
-      "pseudoOpcodePrefix":"."
+      "pseudoOpcodePrefix": "."
     }
-  }
+  ]
 }

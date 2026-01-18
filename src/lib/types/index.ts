@@ -86,7 +86,7 @@ export interface UserConfig {
  */
 export interface UserSettings {
   labelPrefix: string;
-  assemblerSyntax: 'acme' | 'kickass' | 'krill' | 'custom';
+  assemblerSyntax: string; // syntax id or 'custom'
   customSyntax?: {
     commentPrefix: string;
     labelSuffix: string;
@@ -95,9 +95,10 @@ export interface UserSettings {
 }
 
 /**
- * Assembler syntax definition
+ * Assembler syntax definition (loaded from JSON)
  */
 export interface AssemblerSyntax {
+  id: string;
   name: string;
   commentPrefix: string;
   labelSuffix: string;
