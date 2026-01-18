@@ -1,47 +1,37 @@
 <script lang="ts">
   import { settings } from '$lib/stores/settings';
   import type { AssemblerSyntax } from '$lib/types';
-  import { loadSyntax, getSyntaxDefinitions } from '$lib/services/syntaxService';
+  import { loadSyntax, getSyntaxList } from '$lib/services/syntaxService';
 
-  let {
-    onclose
-  }: {
-    onclose?: () => void;
-  } = $props();
+  let { onclose }: { onclose?: () => void } = $props();
 
-  // Syntax definitions loaded from shared service
-  let syntaxDefinitions = $state<Record<string, AssemblerSyntax>>({});
+  // Syntax list loaded from JSON
+  let syntaxList = $state<AssemblerSyntax[]>([]);
 
-  // Load syntax definitions on mount
   $effect(() => {
     loadSyntax().then(() => {
-      syntaxDefinitions = getSyntaxDefinitions();
+      syntaxList = getSyntaxList();
     });
   });
 
   // Local state for input fields
   let labelPrefixInput = $state($settings.labelPrefix);
-  let assemblerSyntaxInput = $state<'acme' | 'kickass' | 'krill' | 'custom'>($settings.assemblerSyntax);
-
-  // Custom syntax fields (customSyntax is always defined in settings store)
+  let assemblerSyntaxInput = $state($settings.assemblerSyntax);
   let customCommentPrefix = $state($settings.customSyntax!.commentPrefix);
   let customLabelSuffix = $state($settings.customSyntax!.labelSuffix);
   let customPseudoOpcodePrefix = $state($settings.customSyntax!.pseudoOpcodePrefix);
 
-  // Whether custom fields are editable
   let isCustom = $derived(assemblerSyntaxInput === 'custom');
 
-  // Update custom fields when syntax selection changes (for non-custom selections)
+  // Update preview fields when syntax selection changes
   $effect(() => {
-    // Track both dependencies
-    const selectedSyntax = assemblerSyntaxInput;
-    const definitions = syntaxDefinitions;
-
-    if (selectedSyntax !== 'custom' && definitions[selectedSyntax]) {
-      const syntax = definitions[selectedSyntax];
-      customCommentPrefix = syntax.commentPrefix;
-      customLabelSuffix = syntax.labelSuffix;
-      customPseudoOpcodePrefix = syntax.pseudoOpcodePrefix;
+    if (assemblerSyntaxInput !== 'custom') {
+      const syntax = syntaxList.find(s => s.id === assemblerSyntaxInput);
+      if (syntax) {
+        customCommentPrefix = syntax.commentPrefix;
+        customLabelSuffix = syntax.labelSuffix;
+        customPseudoOpcodePrefix = syntax.pseudoOpcodePrefix;
+      }
     }
   });
 
@@ -110,9 +100,9 @@
             id="assemblerSyntax"
             bind:value={assemblerSyntaxInput}
           >
-            <option value="acme">ACME</option>
-            <option value="kickass">Kick Assembler</option>
-            <option value="krill">Krill</option>
+            {#each syntaxList as syntax}
+              <option value={syntax.id}>{syntax.name}</option>
+            {/each}
             <option value="custom">Custom</option>
           </select>
         </div>

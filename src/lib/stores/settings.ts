@@ -1,6 +1,7 @@
 /**
  * Settings Store - User Preferences
  * Handles application settings with localStorage persistence
+ * Note: Default assembler syntax comes from first entry in syntax.json
  */
 
 import { writable } from 'svelte/store';
@@ -8,18 +9,15 @@ import type { UserSettings } from '$lib/types';
 
 const STORAGE_KEY = 'disawsm_settings';
 
-// Default custom syntax (matches ACME defaults)
-const defaultCustomSyntax = {
-  commentPrefix: ';',
-  labelSuffix: '',
-  pseudoOpcodePrefix: '!'
-};
-
-// Default settings
+// Default settings - 'acme' is the default syntax id (first entry in syntax.json)
 const defaultSettings: UserSettings = {
   labelPrefix: '_',
   assemblerSyntax: 'acme',
-  customSyntax: defaultCustomSyntax
+  customSyntax: {
+    commentPrefix: ';',
+    labelSuffix: '',
+    pseudoOpcodePrefix: '!'
+  }
 };
 
 /**
@@ -38,9 +36,8 @@ function loadSettings(): UserSettings {
       return {
         ...defaultSettings,
         ...parsed,
-        // Ensure customSyntax is fully populated
         customSyntax: {
-          ...defaultCustomSyntax,
+          ...defaultSettings.customSyntax,
           ...parsed.customSyntax
         }
       };
