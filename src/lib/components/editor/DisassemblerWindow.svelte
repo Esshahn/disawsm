@@ -4,6 +4,7 @@
   import { entrypoints } from '$lib/stores/entrypoints';
   import { customLabels } from '$lib/stores/labels';
   import { customComments } from '$lib/stores/comments';
+  import { customDataFormats, type DataFormatType } from '$lib/stores/dataFormats';
   import { settings } from '$lib/stores/settings';
   import type { AssemblerSyntax } from '$lib/types';
   import { disassembleWithEntrypoints, type DisassembledLine } from '$lib/services/enhancedDisassembler';
@@ -117,6 +118,12 @@
     }
   }
 
+  function handleDataFormatToggle(address: number, currentFormat: DataFormatType | undefined) {
+    // Cycle through formats: byte -> text -> byte
+    const newFormat: DataFormatType = currentFormat === 'text' ? 'byte' : 'text';
+    customDataFormats.setFormat(address, newFormat);
+  }
+
   // Effect to clear editing state once the saved comment appears in disassembledLines
   $effect(() => {
     if (!pendingCommentSave) return;
@@ -144,6 +151,7 @@
     const currentEntrypoints = $entrypoints;
     const currentCustomLabels = $customLabels;
     const currentCustomComments = $customComments;
+    const currentDataFormats = $customDataFormats;
     // Trigger re-run on settings changes (settings are read inside disassembler)
     $settings.labelPrefix;
     $settings.assemblerSyntax;
@@ -173,7 +181,8 @@
           currentFile.startAddress,
           currentEntrypoints,
           currentCustomLabels,
-          currentCustomComments
+          currentCustomComments,
+          currentDataFormats
         );
         disassembledLines = lines;
 
@@ -303,7 +312,12 @@
                       <span class="code-bytes code-bytes-empty"></span>
                     {/if}
                     <span class="code-instruction-wrapper">
-                      <span class="code-instruction">
+                      <span
+                        class="code-instruction"
+                        class:code-instruction-clickable={line.isData}
+                        onclick={line.isData ? () => handleDataFormatToggle(line.address, line.dataFormat) : undefined}
+                        title={line.isData ? "Click to toggle data format" : undefined}
+                      >
                         {#if syntaxColors}
                           {@const tokens = line.isData
                             ? highlightDataLine(line.instruction, syntaxColors)
@@ -498,6 +512,18 @@
   .code-instruction {
     color: #ffffff;
     font-family: 'Courier New', Courier, monospace;
+  }
+
+  .code-instruction-clickable {
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0 4px;
+    margin: 0 -4px;
+    transition: background-color 0.15s ease;
+  }
+
+  .code-instruction-clickable:hover {
+    background-color: rgba(255, 170, 0, 0.2);
   }
 
   .code-comment {

@@ -126,4 +126,8 @@ export interface ProjectFile {
     address: number;
     comment: string;
   }>;
+  dataFormats?: Array<{
+    address: number;
+    format: 'byte' | 'text';
+  }>;
 }

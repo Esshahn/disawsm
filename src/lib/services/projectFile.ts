@@ -7,6 +7,7 @@ import type { ProjectFile } from '$lib/types';
 import type { Entrypoint } from '$lib/stores/entrypoints';
 import type { CustomLabel } from '$lib/stores/labels';
 import type { CustomComment } from '$lib/stores/comments';
+import type { DataFormat } from '$lib/stores/dataFormats';
 
 const PROJECT_VERSION = '1.2';
 
@@ -19,7 +20,8 @@ export function saveProject(
   bytes: Uint8Array,
   entrypoints: Entrypoint[],
   customLabels: CustomLabel[] = [],
-  customComments: CustomComment[] = []
+  customComments: CustomComment[] = [],
+  dataFormats: DataFormat[] = []
 ): void {
   const projectData: ProjectFile = {
     version: PROJECT_VERSION,
@@ -37,6 +39,10 @@ export function saveProject(
     comments: customComments.map(comment => ({
       address: comment.address,
       comment: comment.comment
+    })),
+    dataFormats: dataFormats.map(df => ({
+      address: df.address,
+      format: df.format
     }))
   };
 
@@ -68,6 +74,7 @@ export async function loadProject(file: File): Promise<{
   entrypoints: Array<{ address: number; type: 'code' | 'data' }>;
   labels: Array<{ address: number; name: string }>;
   comments: Array<{ address: number; comment: string }>;
+  dataFormats: Array<{ address: number; format: 'byte' | 'text' }>;
 }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -92,7 +99,8 @@ export async function loadProject(file: File): Promise<{
           bytes,
           entrypoints: projectData.entrypoints || [],
           labels: projectData.labels || [],
-          comments: projectData.comments || []
+          comments: projectData.comments || [],
+          dataFormats: projectData.dataFormats || []
         });
       } catch (error) {
         reject(new Error('Failed to parse project file: ' + (error as Error).message));

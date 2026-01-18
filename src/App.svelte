@@ -15,6 +15,7 @@
   import { entrypoints } from '$lib/stores/entrypoints';
   import { customLabels } from '$lib/stores/labels';
   import { customComments } from '$lib/stores/comments';
+  import { customDataFormats } from '$lib/stores/dataFormats';
   import { get_config } from '$lib/config';
   import { downloadAssembly } from '$lib/services/assemblyExporter';
   import { saveProject, loadProject } from '$lib/services/projectFile';
@@ -134,6 +135,12 @@
         for (const comment of projectData.comments) {
           customComments.setComment(comment.address, comment.comment);
         }
+
+        // Clear existing data formats and load project data formats
+        customDataFormats.clear();
+        if (projectData.dataFormats) {
+          customDataFormats.load(projectData.dataFormats);
+        }
       } catch (error) {
         alert('Failed to load project: ' + (error as Error).message);
       }
@@ -147,13 +154,14 @@
     const eps = $entrypoints;
     const labels = $customLabels;
     const comments = $customComments;
+    const dataFormats = $customDataFormats;
 
     if (!file) {
       alert('No file loaded. Please load a PRG or project first.');
       return;
     }
 
-    saveProject(file.name, file.startAddress, file.bytes, eps, labels, comments);
+    saveProject(file.name, file.startAddress, file.bytes, eps, labels, comments, dataFormats);
   }
 
   function handleClear() {
@@ -166,6 +174,7 @@
         entrypoints.clear();
         customLabels.clear();
         customComments.clear();
+        customDataFormats.clear();
       }
     }
   }

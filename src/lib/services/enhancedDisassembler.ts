@@ -6,6 +6,7 @@
 import type { Entrypoint } from '$lib/stores/entrypoints';
 import type { CustomLabel } from '$lib/stores/labels';
 import type { CustomComment } from '$lib/stores/comments';
+import type { DataFormat, DataFormatType } from '$lib/stores/dataFormats';
 import { loadSyntax, getSyntax } from '$lib/services/syntaxService';
 import { loadPatterns, findPatternMatches } from '$lib/services/patternService';
 import { get } from 'svelte/store';
@@ -71,6 +72,7 @@ export interface DisassembledLine {
   xrefComment?: string;
   bytes: number[];
   isData?: boolean;
+  dataFormat?: DataFormatType;
 }
 
 /* ================== HELPERS ================== */
@@ -264,18 +266,50 @@ function buildCommentsMap(table: DisassembledByte[], customComments: CustomComme
   return map;
 }
 
+function petsciiScreenCodeToChar(b: number): string | null {
+  // C64 screen codes: @=0, A-Z=1-26, digits and punctuation follow
+  // See: https://sta.c64.org/cbm64scr.html
+  if (b === 0) return '@';
+  if (b >= 1 && b <= 26) return String.fromCharCode(64 + b); // A-Z
+  if (b >= 32 && b <= 63) return String.fromCharCode(b); // space, !"#$%&'()*+,-./0-9:;<=>?
+  return null; // Non-printable or special characters
+}
+
+function formatBytesAsText(bytes: number[], pseudo: string): string {
+  // Convert bytes to text using PETSCII screen codes
+  let text = '';
+
+  for (const b of bytes) {
+    const char = petsciiScreenCodeToChar(b);
+    if (char !== null) {
+      text += char;
+    } else {
+      // Non-printable byte - show as escaped hex
+      text += `{$${Hex.toByte(b)}}`;
+    }
+  }
+
+  // Escape quotes in text
+  const escapedText = text.replace(/"/g, '""');
+  return `${pseudo}text "${escapedText}"`;
+}
+
 function createDataLine(
   table: DisassembledByte[],
   startIdx: number,
   label: string | undefined,
   pseudo: string,
-  comments: Map<number, string>
+  comments: Map<number, string>,
+  format: DataFormatType = 'byte'
 ): { line: DisassembledLine; nextIndex: number } {
   const bytes: number[] = [];
   let i = startIdx;
 
-  // Collect up to 8 bytes, stopping at targets or code
-  while (i < table.length && bytes.length < 8) {
+  // Allow more bytes per line for text format (20) vs byte format (8)
+  const maxBytes = format === 'text' ? 20 : 8;
+
+  // Collect bytes, stopping at targets or code
+  while (i < table.length && bytes.length < maxBytes) {
     const b = table[i];
     if (i !== startIdx && (b.isTarget || b.state === 'code')) break;
     bytes.push(b.byte);
@@ -283,17 +317,24 @@ function createDataLine(
   }
 
   const first = table[startIdx];
-  const hexBytes = bytes.map(b => '$' + Hex.toByte(b)).join(', ');
+
+  let instruction: string;
+  if (format === 'text') {
+    instruction = formatBytesAsText(bytes, pseudo);
+  } else {
+    instruction = `${pseudo}byte ` + bytes.map(b => '$' + Hex.toByte(b)).join(', ');
+  }
 
   return {
     line: {
       address: first.addr,
       label,
-      instruction: `${pseudo}byte ${hexBytes}`,
+      instruction,
       comment: comments.get(first.addr),
       xrefComment: label ? formatXrefs(first.xrefs) : undefined,
       bytes,
-      isData: true
+      isData: true,
+      dataFormat: format
     },
     nextIndex: i
   };
@@ -304,7 +345,8 @@ export function convertToProgram(
   startAddr: number,
   pseudoPrefix = '!',
   customLabels: CustomLabel[] = [],
-  customComments: CustomComment[] = []
+  customComments: CustomComment[] = [],
+  dataFormats: DataFormat[] = []
 ): DisassembledLine[] {
   const program: DisassembledLine[] = [];
   const labelPrefix = get(settings).labelPrefix;
@@ -312,8 +354,11 @@ export function convertToProgram(
 
   const labelMap = new Map(customLabels.map(l => [l.address, l.name]));
   const comments = buildCommentsMap(table, customComments);
+  const formatMap = new Map(dataFormats.map(f => [f.address, f.format]));
 
   let i = 0;
+  let activeDataFormat: DataFormatType | null = null; // Track format for contiguous data blocks
+
   while (i < table.length) {
     const b = table[i];
     const label = b.isTarget ? getLabel(b.addr, labelMap, labelPrefix) : undefined;
@@ -324,11 +369,21 @@ export function convertToProgram(
     const isData = b.state !== 'code' || !opcode || (opcode.ill && !b.userMarked);
 
     if (isData) {
-      const { line, nextIndex } = createDataLine(table, i, label, pseudoPrefix, comments);
+      // Check if this address has an explicit format set
+      const explicitFormat = formatMap.get(b.addr);
+      if (explicitFormat) {
+        activeDataFormat = explicitFormat;
+      }
+      // Use active format if set, otherwise default to 'byte'
+      const format = activeDataFormat || 'byte';
+      const { line, nextIndex } = createDataLine(table, i, label, pseudoPrefix, comments, format);
       program.push(line);
       i = nextIndex;
       continue;
     }
+
+    // Reset active format when we hit code
+    activeDataFormat = null;
 
     // Format instruction
     let instr = opcode.ins;
@@ -396,11 +451,12 @@ export async function disassembleWithEntrypoints(
   entrypoints: Entrypoint[],
   customLabels: CustomLabel[] = [],
   customComments: CustomComment[] = [],
+  dataFormats: DataFormat[] = [],
   usePatternMatching: boolean = true
 ): Promise<DisassembledLine[]> {
   await Promise.all([loadOpcodes(), loadC64Mapping(), loadSyntax(), loadPatterns()]);
 
   const syntax = getSyntax();
   const analyzed = analyze(startAddress, bytes, entrypoints, usePatternMatching);
-  return convertToProgram(analyzed, startAddress, syntax.pseudoOpcodePrefix, customLabels, customComments);
+  return convertToProgram(analyzed, startAddress, syntax.pseudoOpcodePrefix, customLabels, customComments, dataFormats);
 }
