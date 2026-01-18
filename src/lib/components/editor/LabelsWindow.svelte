@@ -34,6 +34,9 @@
   // Update all labels when disassembly changes
   $effect(() => {
     const file = $loadedFile;
+    // Track settings changes so labels update when prefix changes
+    $settings.labelPrefix;
+
     if (!file) {
       allLabels = [];
       return;
