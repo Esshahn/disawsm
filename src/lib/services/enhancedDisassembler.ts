@@ -177,7 +177,8 @@ export function analyze(
       }
     }
 
-    // Extract target address for flow control
+    // Extract target address and determine if it's a control flow instruction
+    const isControlFlow = opcode.flow === 'jump' || opcode.flow === 'call' || opcode.flow === 'branch';
     let targetAddr: number | null = null;
 
     if (opcode.flow === 'branch' && pc + 1 < table.length) {
@@ -189,11 +190,21 @@ export function analyze(
     // Mark targets and track XREFs
     if (targetAddr !== null && inRange(targetAddr, startAddr, endAddr)) {
       const ti = targetAddr - startAddr;
-      if (table[ti].state !== 'data') {
-        table[ti].isTarget = true;
-        table[ti].state = 'code';
-        table[ti].xrefs.push(startAddr + pc);
-        worklist.push(ti);
+      table[ti].xrefs.push(startAddr + pc);
+
+      table[ti].isTarget = true;
+
+      if (isControlFlow) {
+        // JMP, JSR, branches - target is code
+        if (table[ti].state !== 'data') {
+          table[ti].state = 'code';
+          worklist.push(ti);
+        }
+      } else {
+        // LDA, STA, CMP, etc. - target is likely data
+        if (table[ti].state === 'unknown') {
+          table[ti].state = 'data';
+        }
       }
     }
 
