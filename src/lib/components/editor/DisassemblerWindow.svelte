@@ -2,7 +2,7 @@
   import Window from '$lib/components/ui/Window.svelte';
   import { loadedFile, config, assemblyOutput } from '$lib/stores/app';
   import { entrypoints } from '$lib/stores/entrypoints';
-  import { customLabels } from '$lib/stores/labels';
+  import { customLabels, isValidLabelName, LABEL_NAME_ERROR } from '$lib/stores/labels';
   import { customComments } from '$lib/stores/comments';
   import { settings } from '$lib/stores/settings';
   import type { AssemblerSyntax } from '$lib/types';
@@ -12,7 +12,7 @@
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
   import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
   import { toHex } from '$lib/utils/format';
-  import { loadSyntaxColors, highlightInstruction, highlightDataLine, type SyntaxColors, type HighlightedToken } from '$lib/services/syntaxHighlight';
+  import { loadSyntaxColors, highlightInstruction, highlightDataLine, type SyntaxColors } from '$lib/services/syntaxHighlight';
 
   // Reactive declarations using $derived
   let disassemblerConfig = $derived($config?.window_disassembler);
@@ -57,6 +57,9 @@
   }
 
   function handleLabelSave(address: number) {
+    // Prevent double-save (from both Enter key and blur)
+    if (editingLabelAddress !== address) return;
+
     const trimmed = editingLabelValue.trim();
 
     if (!trimmed) {
@@ -67,8 +70,11 @@
     }
 
     // Validate label name
-    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(trimmed)) {
-      alert('Invalid label name. Must start with a letter or underscore and contain only alphanumeric characters and underscores.');
+    if (!isValidLabelName(trimmed)) {
+      alert(LABEL_NAME_ERROR);
+      // Cancel editing on invalid input so user can exit
+      editingLabelAddress = null;
+      editingLabelValue = '';
       return;
     }
 
@@ -84,8 +90,10 @@
 
   function handleLabelKeydown(event: KeyboardEvent, address: number) {
     if (event.key === 'Enter') {
+      event.preventDefault();
       handleLabelSave(address);
     } else if (event.key === 'Escape') {
+      event.preventDefault();
       handleLabelCancel();
     }
   }

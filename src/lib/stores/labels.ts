@@ -5,6 +5,14 @@ export interface CustomLabel {
   name: string;
 }
 
+// Shared validation for label names
+export const LABEL_NAME_REGEX = /^[a-zA-Z_][a-zA-Z0-9_-]*$/;
+export const LABEL_NAME_ERROR = 'Invalid label name. Must start with a letter or underscore and contain only alphanumeric characters, underscores, and hyphens.';
+
+export function isValidLabelName(name: string): boolean {
+  return LABEL_NAME_REGEX.test(name.trim());
+}
+
 const STORAGE_KEY = 'disawsm_labels';
 
 function loadLabels(): CustomLabel[] {
@@ -37,7 +45,7 @@ function createLabelsStore() {
 
     setLabel: (address: number, name: string) => {
       update(labels => {
-        if (!name.trim() || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+        if (!name.trim() || !isValidLabelName(name)) {
           console.warn('Invalid label name:', name);
           return labels;
         }
