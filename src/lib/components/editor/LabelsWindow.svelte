@@ -1,7 +1,7 @@
 <script lang="ts">
   import Window from '$lib/components/ui/Window.svelte';
   import { config, loadedFile } from '$lib/stores/app';
-  import { customLabels } from '$lib/stores/labels';
+  import { customLabels, isValidLabelName, LABEL_NAME_ERROR } from '$lib/stores/labels';
   import { customComments } from '$lib/stores/comments';
   import { entrypoints } from '$lib/stores/entrypoints';
   import { settings } from '$lib/stores/settings';
@@ -10,12 +10,18 @@
   let labelsConfig = $derived($config?.window_labels);
   let allLabels = $state<Array<{ address: number; name: string; isCustom: boolean }>>([]);
 
-  function handleNameChange(address: number, oldName: string, value: string) {
+  function handleNameChange(address: number, oldName: string, value: string, inputElement?: HTMLInputElement) {
     const trimmed = value.trim();
-    if (!trimmed || trimmed === oldName) return;
+    if (!trimmed || trimmed === oldName) {
+      // Revert to old name if empty or unchanged
+      if (inputElement) inputElement.value = oldName;
+      return;
+    }
 
-    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(trimmed)) {
-      alert('Invalid label name. Must start with a letter or underscore and contain only alphanumeric characters and underscores.');
+    if (!isValidLabelName(trimmed)) {
+      alert(LABEL_NAME_ERROR);
+      // Revert to old name on invalid input
+      if (inputElement) inputElement.value = oldName;
       return;
     }
 
@@ -26,14 +32,22 @@
     if (event.key === 'Enter') {
       event.preventDefault();
       const target = event.currentTarget as HTMLInputElement;
-      handleNameChange(address, oldName, target.value);
+      handleNameChange(address, oldName, target.value, target);
       target.blur(); // Remove focus after saving
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      const target = event.currentTarget as HTMLInputElement;
+      target.value = oldName; // Revert on escape
+      target.blur();
     }
   }
 
   // Update all labels when disassembly changes
   $effect(() => {
     const file = $loadedFile;
+    // Track settings changes so labels update when prefix changes
+    $settings.labelPrefix;
+
     if (!file) {
       allLabels = [];
       return;
@@ -92,7 +106,7 @@
             class="name"
             class:custom={label.isCustom}
             value={label.name}
-            onblur={(e) => handleNameChange(label.address, label.name, e.currentTarget.value)}
+            onblur={(e) => handleNameChange(label.address, label.name, e.currentTarget.value, e.currentTarget)}
             onkeydown={(e) => handleKeydown(e, label.address, label.name)}
             placeholder="Enter custom name"
           />
