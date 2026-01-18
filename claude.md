@@ -182,6 +182,7 @@ disawsm_session      # Auto-saved session
 3. Svelte 5 runes used - not classic reactive statements
 4. Window configs in both AppConfig (defaults) and UserConfig (persisted)
 5. DisassemblerWindow uses `scrollTop` + `scrollIntoView` - avoid scrollTo on data changes
+6. **Comment/Label save handlers**: Must guard against double-save (blur fires after Enter removes input from DOM). Check `editingCommentAddress !== address` before saving.
 
 ## Finishing a Task
 
