@@ -144,6 +144,10 @@
     }
   });
 
+  // Track previous file/entrypoints to detect structural changes
+  let prevFileId: string | null = null;
+  let prevEntrypointsJson: string | null = null;
+
   // Re-run disassembly whenever bytes, startAddress, entrypoints, or settings change
   $effect(() => {
     // CRITICAL: Capture reactive dependencies synchronously before async operations
@@ -157,6 +161,13 @@
     $settings.assemblerSyntax;
     $settings.customSyntax;
 
+    // Detect if this is a structural change (file or entrypoints) vs cosmetic (labels/comments/settings)
+    const currentFileId = currentFile ? `${currentFile.name}-${currentFile.startAddress}` : null;
+    const currentEntrypointsJson = JSON.stringify(currentEntrypoints);
+    const isStructuralChange = currentFileId !== prevFileId || currentEntrypointsJson !== prevEntrypointsJson;
+    prevFileId = currentFileId;
+    prevEntrypointsJson = currentEntrypointsJson;
+
     async function loadDisassembly() {
       if (!currentFile) {
         disassembledLines = [];
@@ -164,10 +175,12 @@
       }
 
       try {
-        isLoading = true;
+        // Only show loading indicator for structural changes to avoid unmounting VirtualScroller
+        if (isStructuralChange) {
+          isLoading = true;
+          scrollToLineIndex = undefined;
+        }
         error = null;
-        scrollToLineIndex = undefined; // Reset scroll position
-        hoveredLineIndex = null; // Clear hover state
 
         // Load syntax definitions and colors
         await loadSyntax();
