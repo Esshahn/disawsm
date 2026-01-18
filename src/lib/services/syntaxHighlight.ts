@@ -15,6 +15,12 @@ export interface SyntaxColors {
 export interface HighlightedToken {
   text: string;
   color: string;
+  targetAddress?: number; // For clickable labels - the address this label points to
+}
+
+export interface LabelLookup {
+  // Map from label name to address
+  labelToAddress: Map<string, number>;
 }
 
 let colors: SyntaxColors | null = null;
@@ -35,8 +41,10 @@ export async function loadSyntaxColors(): Promise<SyntaxColors> {
  *   "jsr _0824"      -> [opcode, label]
  *   "sta $d020"      -> [opcode, address]
  *   "lda $0824,x"    -> [opcode, address, register]
+ *
+ * @param labelLookup Optional label lookup for making labels clickable
  */
-export function highlightInstruction(instruction: string, colors: SyntaxColors): HighlightedToken[] {
+export function highlightInstruction(instruction: string, colors: SyntaxColors, labelLookup?: LabelLookup): HighlightedToken[] {
   const tokens: HighlightedToken[] = [];
 
   // Pattern: opcode followed by optional operand
@@ -54,12 +62,12 @@ export function highlightInstruction(instruction: string, colors: SyntaxColors):
   }
 
   tokens.push({ text: ' ', color: colors.opcode });
-  tokens.push(...parseOperand(operand, colors));
+  tokens.push(...parseOperand(operand, colors, labelLookup));
 
   return tokens;
 }
 
-function parseOperand(operand: string, colors: SyntaxColors): HighlightedToken[] {
+function parseOperand(operand: string, colors: SyntaxColors, labelLookup?: LabelLookup): HighlightedToken[] {
   const tokens: HighlightedToken[] = [];
 
   const addSuffix = (suffix: string) => {
@@ -88,9 +96,11 @@ function parseOperand(operand: string, colors: SyntaxColors): HighlightedToken[]
     if (match) {
       tokens.push({ text: '(', color: colors.register });
       const inner = match[1];
+      const targetAddress = labelLookup?.labelToAddress.get(inner);
       tokens.push({
         text: inner,
-        color: inner.startsWith('$') ? colors.address : colors.label
+        color: inner.startsWith('$') ? colors.address : colors.label,
+        targetAddress
       });
       tokens.push({ text: ')', color: colors.register });
       addSuffix(match[2]);
@@ -108,10 +118,12 @@ function parseOperand(operand: string, colors: SyntaxColors): HighlightedToken[]
     }
   }
 
-  // Everything else is a label
-  const match = operand.match(/^(\S+)(.*)/);
+  // Everything else is a label (stop at comma for indexed addressing like screen,x)
+  const match = operand.match(/^([^,\s]+)(.*)/);
   if (match) {
-    tokens.push({ text: match[1], color: colors.label });
+    const labelName = match[1];
+    const targetAddress = labelLookup?.labelToAddress.get(labelName);
+    tokens.push({ text: labelName, color: colors.label, targetAddress });
     addSuffix(match[2]);
     return tokens;
   }

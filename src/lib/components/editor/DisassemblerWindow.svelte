@@ -12,7 +12,7 @@
   import VirtualScroller from '$lib/components/ui/VirtualScroller.svelte';
   import JumpToAddress from '$lib/components/ui/JumpToAddress.svelte';
   import { toHex } from '$lib/utils/format';
-  import { loadSyntaxColors, highlightInstruction, highlightDataLine, type SyntaxColors, type HighlightedToken } from '$lib/services/syntaxHighlight';
+  import { loadSyntaxColors, highlightInstruction, highlightDataLine, type SyntaxColors, type HighlightedToken, type LabelLookup } from '$lib/services/syntaxHighlight';
 
   // Reactive declarations using $derived
   let disassemblerConfig = $derived($config?.window_disassembler);
@@ -36,6 +36,15 @@
   let editingCommentValue = $state('');
   let pendingCommentSave = $state<{ address: number; comment: string } | null>(null);
   let syntaxColors = $state<SyntaxColors | null>(null);
+
+  // Build label lookup map for clickable labels in instructions
+  let labelLookup = $derived<LabelLookup>({
+    labelToAddress: new Map(
+      disassembledLines
+        .filter(line => line.label)
+        .map(line => [line.label!, line.address])
+    )
+  });
 
   // Line height in pixels - measured from actual rendered content
   const LINE_HEIGHT = 21;
@@ -307,9 +316,18 @@
                         {#if syntaxColors}
                           {@const tokens = line.isData
                             ? highlightDataLine(line.instruction, syntaxColors)
-                            : highlightInstruction(line.instruction, syntaxColors)}
+                            : highlightInstruction(line.instruction, syntaxColors, labelLookup)}
                           {#each tokens as token}
-                            <span style="color: {token.color}">{token.text}</span>
+                            {#if token.targetAddress !== undefined}
+                              <span
+                                class="code-label-link"
+                                style="color: {token.color}"
+                                onclick={() => handleJump(token.targetAddress!)}
+                                title="Jump to {token.text}"
+                              >{token.text}</span>
+                            {:else}
+                              <span style="color: {token.color}">{token.text}</span>
+                            {/if}
                           {/each}
                         {:else}
                           {line.instruction}
@@ -555,6 +573,16 @@
   .code-label:hover {
     color: #ffcc44;
     text-decoration: underline;
+  }
+
+  .code-label-link {
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+
+  .code-label-link:hover {
+    text-decoration: underline;
+    filter: brightness(1.3);
   }
 
   .code-label-suffix {
