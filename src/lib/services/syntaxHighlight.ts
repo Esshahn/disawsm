@@ -24,7 +24,7 @@ export async function loadSyntaxColors(): Promise<SyntaxColors> {
 
   const response = await fetch('/json/syntax-highlight.json');
   const data = await response.json();
-  colors = data.colors;
+  colors = data.colors as SyntaxColors;
   return colors;
 }
 
@@ -43,25 +43,18 @@ export function highlightInstruction(instruction: string, colors: SyntaxColors):
   const match = instruction.match(/^([a-z]{3})(?:\s+(.+))?$/i);
 
   if (!match) {
-    // No match, return as plain text
     return [{ text: instruction, color: colors.opcode }];
   }
 
   const [, opcode, operand] = match;
-
-  // Add opcode
   tokens.push({ text: opcode, color: colors.opcode });
 
   if (!operand) {
-    // No operand (e.g., "rts", "nop")
     return tokens;
   }
 
   tokens.push({ text: ' ', color: colors.opcode });
-
-  // Parse operand
-  const operandTokens = parseOperand(operand, colors);
-  tokens.push(...operandTokens);
+  tokens.push(...parseOperand(operand, colors));
 
   return tokens;
 }
@@ -69,7 +62,6 @@ export function highlightInstruction(instruction: string, colors: SyntaxColors):
 function parseOperand(operand: string, colors: SyntaxColors): HighlightedToken[] {
   const tokens: HighlightedToken[] = [];
 
-  // Helper to add suffix (indexed addressing like ,x or ,y)
   const addSuffix = (suffix: string) => {
     const match = suffix.match(/^(,)([xy])/i);
     if (match) {
@@ -106,16 +98,6 @@ function parseOperand(operand: string, colors: SyntaxColors): HighlightedToken[]
     }
   }
 
-  // Label (starts with letter or underscore)
-  if (/^[a-z_]/i.test(operand)) {
-    const match = operand.match(/^([a-z_][a-z0-9_]*)(.*)/i);
-    if (match) {
-      tokens.push({ text: match[1], color: colors.label });
-      addSuffix(match[2]);
-      return tokens;
-    }
-  }
-
   // Address: $xxxx or $xx
   if (operand.startsWith('$')) {
     const match = operand.match(/^(\$[0-9a-f]+)(.*)/i);
@@ -126,8 +108,15 @@ function parseOperand(operand: string, colors: SyntaxColors): HighlightedToken[]
     }
   }
 
-  // Fallback: treat entire operand as register/punctuation
-  return [{ text: operand, color: colors.register }];
+  // Everything else is a label
+  const match = operand.match(/^(\S+)(.*)/);
+  if (match) {
+    tokens.push({ text: match[1], color: colors.label });
+    addSuffix(match[2]);
+    return tokens;
+  }
+
+  return [{ text: operand, color: colors.label }];
 }
 
 /**
